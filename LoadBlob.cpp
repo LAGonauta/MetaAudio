@@ -5,8 +5,11 @@
 
 extern IFileSystem *g_pFileSystem;
 
+#ifndef _USRDLL
 #pragma data_seg(".data")
 BYTE g_pBlobBuffer[0x2000000];
+#endif
+
 BlobHeader_t g_BlobHeader;
 
 BlobHeader_t *GetBlobHeader(void)

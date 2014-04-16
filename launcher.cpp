@@ -145,8 +145,10 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 		if (FIsBlob(pszEngineDLL))
 		{
+#ifndef _USRDLL
 			Sys_CloseDEP();
 			SetupExceptHandler3();
+#endif
 			NLoadBlobFile(pszEngineDLL, &g_blobfootprintClient, (void **)&engineAPI);
 			bUseBlobDLL = true;
 		}

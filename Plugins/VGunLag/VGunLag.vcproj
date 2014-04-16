@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="MetaHook"
-	ProjectGUID="{0931F284-681C-41F1-AF30-97D1DCE2283C}"
-	RootNamespace="MetaHook"
+	Name="VGunLag"
+	ProjectGUID="{FBF9CAF6-8DED-4EB0-8E7B-18294607C5C5}"
+	RootNamespace="VGunLag"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -19,7 +19,7 @@
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="2"
 			>
 			<Tool
@@ -39,10 +39,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\;..\;HLSDK\common;HLSDK\cl_dll;HLSDK\engine;HLSDK\pm_shared;HLSDK\public;Interface"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				AdditionalIncludeDirectories=".\;..\;..\..\;..\..\HLSDK\cl_dll;..\..\HLSDK\common;..\..\HLSDK\engine;..\..\HLSDK\pm_shared;..\..\HLSDK\Public;..\..\Interface"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -50,6 +49,7 @@
 				WarningLevel="0"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4311;4312;4819;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -65,7 +65,6 @@
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="2"
-				BaseAddress="0x1400000"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -97,7 +96,7 @@
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -118,14 +117,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/MP"
-				AdditionalIncludeDirectories=".\;..\;HLSDK\common;HLSDK\cl_dll;HLSDK\engine;HLSDK\pm_shared;HLSDK\public;Interface"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				AdditionalIncludeDirectories=".\;..\;..\..\;..\..\HLSDK\cl_dll;..\..\HLSDK\common;..\..\HLSDK\engine;..\..\HLSDK\pm_shared;..\..\HLSDK\Public;..\..\Interface"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4311;4312;4819;4996"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -138,14 +137,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="bufferoverflowu.lib"
 				LinkIncremental="1"
-				GenerateManifest="false"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				BaseAddress="0x1400000"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -153,7 +148,6 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
-				AdditionalManifestFiles="UAC.manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -184,31 +178,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\commandline.cpp"
+				RelativePath=".\engfuncs.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HLSDK\common\interface.cpp"
+				RelativePath=".\exportfuncs.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\launcher.cpp"
+				RelativePath="..\..\HLSDK\common\interface.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\LoadBlob.cpp"
+				RelativePath=".\mathlib.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\metahook.cpp"
+				RelativePath=".\plugins.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\registry.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\sys_launcher.cpp"
+				RelativePath=".\view.cpp"
 				>
 			</File>
 		</Filter>
@@ -218,23 +208,27 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\cdll_export.h"
+				RelativePath=".\engfuncs.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ExceptHandle.h"
+				RelativePath=".\exportfuncs.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LoadBlob.h"
+				RelativePath="..\..\HLSDK\common\interface.h"
 				>
 			</File>
 			<File
-				RelativePath=".\metahook.h"
+				RelativePath=".\mathlib.h"
 				>
 			</File>
 			<File
-				RelativePath=".\sys.h"
+				RelativePath="..\..\metahook.h"
+				>
+			</File>
+			<File
+				RelativePath=".\plugins.h"
 				>
 			</File>
 		</Filter>
@@ -243,66 +237,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath=".\Launcher.rc"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Interface"
-			>
-			<File
-				RelativePath=".\Interface\ICommandLine.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Interface\IEngine.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Interface\IFileSystem.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Interface\IPlugins.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Interface\IPluginsV1.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Interface\IRegistry.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Detours"
-			>
-			<File
-				RelativePath=".\Detours\detours.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Detours\detours.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Detours\detver.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Detours\disasm.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Detours\image.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Detours\modules.cpp"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>
