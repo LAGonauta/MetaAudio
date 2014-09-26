@@ -41,7 +41,7 @@ private:
 		MAX_PARAMETERS = 256,
 	};
 
-	void LoadParametersFromFile(const char *&pSrc, char *&pDst, int maxDestLen, bool bInQuotes);
+	void LoadParametersFromFile(const char *&pSrc, char *&pDst, size_t maxDestLen, bool bInQuotes);
 	void ParseCommandLine(void);
 	void CleanUpParms(void);
 	void AddArgument(const char *pFirst, const char *pLast);
@@ -71,7 +71,7 @@ CCommandLine::~CCommandLine(void)
 	delete [] m_pszCmdLine;
 }
 
-void CCommandLine::LoadParametersFromFile(const char *&pSrc, char *&pDst, int maxDestLen, bool bInQuotes)
+void CCommandLine::LoadParametersFromFile(const char *&pSrc, char *&pDst, size_t maxDestLen, bool bInQuotes)
 {
 	char szFileName[_MAX_PATH];
 	char *pOut;
@@ -114,7 +114,7 @@ void CCommandLine::LoadParametersFromFile(const char *&pSrc, char *&pDst, int ma
 
 			*pDst++ = c;
 
-			if ((pDst - pDestStart) >= (maxDestLen - 2))
+			if ((size_t)(pDst - pDestStart) >= (maxDestLen - 2))
 				break;
 
 			c = (char)fgetc(fp);
@@ -125,7 +125,9 @@ void CCommandLine::LoadParametersFromFile(const char *&pSrc, char *&pDst, int ma
 		fclose(fp);
 	}
 	else
+	{
 		printf("Parameter file '%s' not found, skipping...", szFileName);
+	}
 }
 
 void CCommandLine::CreateCmdLine(int argc, char **argv)
@@ -188,7 +190,7 @@ void CCommandLine::CreateCmdLine(const char *commandline)
 
 	*pDst = '\0';
 
-	int len = strlen(szFull) + 1;
+	size_t len = strlen(szFull) + 1;
 	m_pszCmdLine = new char [len];
 	memcpy(m_pszCmdLine, szFull, len);
 
@@ -238,8 +240,8 @@ void CCommandLine::RemoveParm(const char *pszParm)
 
 	char *p, *found;
 	char *pnextparam;
-	int n;
-	int curlen;
+	size_t n;
+	size_t curlen;
 
 	p = m_pszCmdLine;
 
@@ -280,7 +282,7 @@ void CCommandLine::RemoveParm(const char *pszParm)
 
 	while (1)
 	{
-		int len = strlen(m_pszCmdLine);
+		size_t len = strlen(m_pszCmdLine);
 
 		if (len == 0 || m_pszCmdLine[len - 1] != ' ')
 			break;
@@ -293,7 +295,7 @@ void CCommandLine::RemoveParm(const char *pszParm)
 
 void CCommandLine::AppendParm(const char *pszParm, const char *pszValues)
 {
-	int nNewLength = 0;
+	size_t nNewLength = 0;
 	char *pCmdString;
 
 	nNewLength = strlen(pszParm);
@@ -492,7 +494,7 @@ const char *CCommandLine::ParmValue(const char *psz, const char *pDefaultVal)
 	return m_ppParms[nIndex + 1];
 }
 
-int	CCommandLine::ParmValue(const char *psz, int nDefaultVal)
+int CCommandLine::ParmValue(const char *psz, int nDefaultVal)
 {
 	int nIndex = FindParm(psz);
 
@@ -515,7 +517,7 @@ float CCommandLine::ParmValue(const char *psz, float flDefaultVal)
 	if (m_ppParms[nIndex + 1][0] == '-' || m_ppParms[nIndex + 1][0] == '+')
 		return flDefaultVal;
 
-	return atof(m_ppParms[nIndex + 1]);
+	return (float)atof(m_ppParms[nIndex + 1]);
 }
 
 void CCommandLine::SetParm(const char *pszParm, const char *pszValues)

@@ -97,7 +97,7 @@ void CRegistry::WriteString(const char *key, const char *value)
 	if (!m_bValid)
 		return;
 
-	dwSize = strlen(value) + 1;
+	dwSize = (DWORD)(strlen(value) + 1);
 	RegSetValueEx(m_hKey, key, 0, REG_SZ, (LPBYTE)value, dwSize);
 }
 

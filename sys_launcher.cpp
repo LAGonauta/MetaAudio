@@ -87,7 +87,7 @@ char *Sys_GetLongPathName(void)
 		if (pszPath[0])
 			pszPath[1] = 0;
 
-		int len = strlen(szLongPath);
+		size_t len = strlen(szLongPath);
 
 		if (len > 0)
 		{

@@ -47,6 +47,9 @@ DWORD MH_GetModuleSize(HMODULE hModule);
 void *MH_SearchPattern(void *pStartSearch, DWORD dwSearchLen, char *pPattern, DWORD dwPatternLen);
 void MH_WriteDWORD(void *pAddress, DWORD dwValue);
 DWORD MH_ReadDWORD(void *pAddress);
+void MH_WriteBYTE(void *pAddress, BYTE ucValue);
+BYTE MH_ReadBYTE(void *pAddress);
+void MH_WriteNOP(void *pAddress, DWORD dwCount);
 DWORD MH_WriteMemory(void *pAddress, BYTE *pData, DWORD dwDataSize);
 DWORD MH_ReadMemory(void *pAddress, BYTE *pData, DWORD dwDataSize);
 DWORD MH_GetVideoMode(int *wide, int *height, int *bpp, bool *windowed);
@@ -268,16 +271,48 @@ void MH_FreeAllPlugin(void)
 	g_pPluginBase = NULL;
 }
 
+void MH_ShutdownPlugins(void)
+{
+	plugin_t *plug = g_pPluginBase;
+
+	while (plug)
+	{
+		plugin_t *pfree = plug;
+		plug = plug->next;
+
+		if (pfree->pPluginAPI)
+		{
+			if (pfree->iInterfaceVersion > 1)
+				((IPlugins *)pfree->pPluginAPI)->Shutdown();
+		}
+
+		free(pfree->filename);
+		FreeLibrary((HMODULE)pfree->module);
+		delete pfree;
+	}
+
+	g_pPluginBase = NULL;
+}
+
 void MH_Shutdown(void)
 {
-	MH_FreeAllHook();
-	MH_FreeAllPlugin();
+	if (g_pHookBase)
+		MH_FreeAllHook();
+
+	if (g_pPluginBase)
+		MH_ShutdownPlugins();
 
 	if (gMetaSave.pExportFuncs)
+	{
 		delete gMetaSave.pExportFuncs;
+		gMetaSave.pExportFuncs = NULL;
+	}
 
 	if (gMetaSave.pEngineFuncs)
+	{
 		delete gMetaSave.pEngineFuncs;
+		gMetaSave.pEngineFuncs = NULL;
+	}
 }
 
 hook_t *MH_NewHook(void)
@@ -528,7 +563,7 @@ void *MH_SearchPattern(void *pStartSearch, DWORD dwSearchLen, char *pPattern, DW
 	{
 		bool found = true;
 
-		for (int i = 0; i < dwPatternLen; i++)
+		for (DWORD i = 0; i < dwPatternLen; i++)
 		{
 			char code = *(char *)(dwStartAddr + i);
 
@@ -571,6 +606,44 @@ DWORD MH_ReadDWORD(void *pAddress)
 	}
 
 	return dwValue;
+}
+
+void MH_WriteBYTE(void *pAddress, BYTE ucValue)
+{
+	DWORD dwProtect;
+
+	if (VirtualProtect((void *)pAddress, 1, PAGE_EXECUTE_READWRITE, &dwProtect))
+	{
+		*(BYTE *)pAddress = ucValue;
+		VirtualProtect((void *)pAddress, 1, dwProtect, &dwProtect);
+	}
+}
+
+BYTE MH_ReadBYTE(void *pAddress)
+{
+	DWORD dwProtect;
+	BYTE ucValue = 0;
+
+	if (VirtualProtect((void *)pAddress, 1, PAGE_EXECUTE_READWRITE, &dwProtect))
+	{
+		ucValue = *(BYTE *)pAddress;
+		VirtualProtect((void *)pAddress, 1, dwProtect, &dwProtect);
+	}
+
+	return ucValue;
+}
+
+void MH_WriteNOP(void *pAddress, DWORD dwCount)
+{
+	static DWORD dwProtect;
+
+	if (VirtualProtect(pAddress, dwCount, PAGE_EXECUTE_READWRITE, &dwProtect))
+	{
+		for (DWORD i = 0; i < dwCount; i++)
+			*(BYTE *)((DWORD)pAddress + i) = 0x90;
+
+		VirtualProtect(pAddress, dwCount, dwProtect, &dwProtect);
+	}
 }
 
 DWORD MH_WriteMemory(void *pAddress, BYTE *pData, DWORD dwDataSize)
@@ -632,7 +705,9 @@ DWORD MH_GetVideoMode(int *width, int *height, int *bpp, bool *windowed)
 				iSaveMode = VIDEOMODE_OPENGL;
 		}
 		else
+		{
 			iSaveMode = VIDEOMODE_SOFTWARE;
+		}
 
 		bSaveWindowed = registry->ReadInt("ScreenWindowed") != false;
 
@@ -759,4 +834,7 @@ metahook_api_t gMetaHookAPI =
 	MH_GetEngineVersion,
 	MH_GetEngineFactory,
 	MH_GetNextCallAddr,
+	MH_WriteBYTE,
+	MH_ReadBYTE,
+	MH_WriteNOP,
 };

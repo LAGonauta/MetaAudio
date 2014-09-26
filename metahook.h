@@ -45,6 +45,9 @@ typedef struct metahook_api_s
 	DWORD (*GetEngineBuildnum)(void);
 	CreateInterfaceFn (*GetEngineFactory)(void);
 	DWORD (*GetNextCallAddr)(void *pAddress, DWORD dwCount);
+	void (*WriteBYTE)(void *pAddress, BYTE ucValue);
+	BYTE (*ReadBYTE)(void *pAddress);
+	void (*WriteNOP)(void *pAddress, DWORD dwCount);
 }
 metahook_api_t;
 

@@ -1,6 +1,7 @@
 #include <metahook.h>
 #include <keydefs.h>
 #include <net_api.h>
+#include <cvardef.h>
 #include "IMEInput.h"
 #include "Encode.h"
 #include "cmd.h"
@@ -109,16 +110,19 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 void IMEIN_PatchNonASCIICheck(void)
 {
-	unsigned char data[10] = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
 	DWORD addr = (DWORD)g_pMetaHookAPI->SearchPattern((void *)((DWORD)gEngfuncs.pNetAPI->SetValueForKey + 0x1B0), 0xFF, "\x83\xFB\x20\x7C\x2A\x83\xFB\x7E", 8);
-	DWORD base = (DWORD)gEngfuncs.pfnGetCvarPointer;
-	DWORD addr2 = (DWORD)g_pMetaHookAPI->SearchPattern((void *)base, addr - base, "\x8A\x01\xC6\x44\x24\x08\x00\x84\xC0\x8D\x54\x24\x08\x74\x2A\x8A\x01\x3C\x20\x7C\x2A\x3C\x7E", 23);
 
 	if (addr)
-		g_pMetaHookAPI->WriteMemory((void *)addr, data, 10);
+	{
+		g_pMetaHookAPI->WriteNOP((void *)addr, 10);
+	}
 
-	if (addr2)
-		g_pMetaHookAPI->WriteMemory((void *)(addr2 + 0x11), data, 8);
+	cvar_t *cl_name = gEngfuncs.pfnGetCvarPointer("name");
+
+	if (cl_name)
+	{
+		cl_name->flags &= ~FCVAR_PRINTABLEONLY;
+	}
 }
 
 void INEIN_InstallHook(void)

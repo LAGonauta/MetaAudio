@@ -673,7 +673,7 @@ public:
 
             m_nThunks++;
             m_nThunkVirtAddr += sizeof(IMAGE_THUNK_DATA);
-            m_pThunks->u1.Ordinal = nData;
+            m_pThunks->u1.Ordinal = (DWORD)nData;
             return m_pThunks++;
         }
         *pnVirtAddr = 0;

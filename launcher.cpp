@@ -49,9 +49,14 @@ BlobFootprint_t g_blobfootprintClient;
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	HANDLE hObject = NULL;
+
+	CommandLine()->CreateCmdLine(GetCommandLine());
+	CommandLine()->RemoveParm("-steam");
+
+#ifndef _DEBUG
 	BOOL (*IsDebuggerPresent)(void) = (BOOL (*)(void))GetProcAddress(GetModuleHandle("kernel32.dll"), "IsDebuggerPresent");
 
-	if (!IsDebuggerPresent() && !CommandLine()->CheckParm("-nomutex") == NULL)
+	if (!IsDebuggerPresent() && CommandLine()->CheckParm("-nomutex") == NULL)
 	{
 		hObject = CreateMutex(NULL, FALSE, "ValveHalfLifeLauncherMutex");
 
@@ -63,13 +68,12 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			return 0;
 		}
 	}
+#endif
 
 	WSAData WSAData;
 	WSAStartup(2, &WSAData);
 
 	registry->Init();
-	CommandLine()->CreateCmdLine(GetCommandLine());
-	CommandLine()->AppendParm("-nomaster", NULL);
 
 	char szFileName[256];
 	Sys_GetExecutableName(szFileName, sizeof(szFileName));
@@ -134,9 +138,9 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		const char *pszEngineDLL;
 		int iResult = ENGINE_RESULT_NONE;
 
-		szNewCommandParams[0] = 0;
 		SetEngineDLL(pszEngineDLL);
 
+		szNewCommandParams[0] = 0;
 		g_blobfootprintClient.m_hDll = NULL;
 
 		IEngine *engineAPI = NULL;
@@ -198,7 +202,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 			case ENGINE_RESULT_UNSUPPORTEDVIDEO:
 			{
-				bContinue = OnVideoModeFailed();
+				bContinue = OnVideoModeFailed() != FALSE;
 				break;
 			}
 		}
