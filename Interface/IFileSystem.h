@@ -5,8 +5,8 @@
 #pragma once
 #endif
 
-#define FILESYSTEM_INVALID_HANDLE NULL
-
+typedef void *FileHandle_t;
+typedef int FileFindHandle_t;
 typedef int WaitForResourcesHandle_t;
 
 enum FileSystemSeek_t
@@ -15,9 +15,6 @@ enum FileSystemSeek_t
 	FILESYSTEM_SEEK_CURRENT,
 	FILESYSTEM_SEEK_TAIL,
 };
-
-typedef void *FileHandle_t;
-typedef int FileFindHandle_t;
 
 enum
 {
@@ -34,8 +31,9 @@ enum FileWarningLevel_t
 	FILESYSTEM_WARNING_REPORTALLACCESSES_READ,
 	FILESYSTEM_WARNING_REPORTALLACCESSES_READWRITE,
 	FILESYSTEM_WARNING_REPORTALLACCESSES_ASYNC,
-
 };
+
+#define FILESYSTEM_INVALID_HANDLE (FileHandle_t)NULL
 
 class IFileSystem : public IBaseInterface
 {
@@ -56,7 +54,7 @@ public:
 	virtual unsigned Size(FileHandle_t file) = 0;
 	virtual unsigned Size(const char *pFileName) = 0;
 	virtual long GetFileTime(const char *pFileName) = 0;
-	virtual void FileTimeToString(char* pStrip, int maxCharsIncludingTerminator, long fileTime) = 0;
+	virtual void FileTimeToString(char *pStrip, int maxCharsIncludingTerminator, long fileTime) = 0;
 	virtual bool IsOk(FileHandle_t file) = 0;
 	virtual void Flush(FileHandle_t file) = 0;
 	virtual bool EndOfFile(FileHandle_t file) = 0;
@@ -92,14 +90,8 @@ public:
 	virtual bool IsAppReadyForOfflinePlay(void) = 0;
 	virtual void AddPackFile(const char *pPath, const char *pathID = 0) = 0;
 	virtual void *OpenFromCacheForRead(const char *pFileName, const char *pOptions, const char *pathID = 0) = 0;
-
-public:
-	bool FileExists(const char *pFileName, const char *pPathID);
-	bool IsFileWritable(char const *pFileName, const char *pPathID = 0);
-	bool SetFileWritable(char const *pFileName, bool writable, const char *pPathID = 0);
-	bool IsDirectory(const char *pFileName, const char *pathID);
-	bool GetFileTypeForFullPath(char const *pFullPath, wchar_t *buf, size_t bufSizeInBytes);
 };
 
 #define FILESYSTEM_INTERFACE_VERSION "VFileSystem009"
+
 #endif

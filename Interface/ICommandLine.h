@@ -18,4 +18,5 @@ public:
 };
 
 ICommandLine *CommandLine(void);
+
 #endif

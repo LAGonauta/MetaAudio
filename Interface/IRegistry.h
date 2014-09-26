@@ -17,4 +17,5 @@ public:
 };
 
 extern IRegistry *registry;
+
 #endif
