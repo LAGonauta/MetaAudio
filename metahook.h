@@ -83,4 +83,5 @@ extern mh_interface_t *g_pInterface;
 extern cl_enginefunc_t gEngfuncs;
 extern metahook_api_t *g_pMetaHookAPI;
 extern mh_enginesave_t *g_pMetaSave;
+
 #endif

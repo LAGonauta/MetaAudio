@@ -477,7 +477,7 @@ hook_t *MH_VFTHook(void *pClass, int iTableIndex, int iFuncIndex, void *pNewFunc
 
 	pCallBackFuncAddr = h->pOldFuncAddr;
 	MH_WriteMemory(info->pVFTInfoAddr, (BYTE *)&pNewFuncAddr, sizeof(DWORD));
-	return 0;
+	return h;
 }
 
 hook_t *MH_IATHook(HMODULE hModule, const char *pszModuleName, const char *pszFuncName, void *pNewFuncAddr, void *&pCallBackFuncAddr)
@@ -699,7 +699,7 @@ DWORD MH_GetVideoMode(int *width, int *height, int *bpp, bool *windowed)
 
 		if (!strcmp(pszValues, "hw.dll"))
 		{
-			if ((!CommandLine()->CheckParm("-gl") && iEngineD3D) || CommandLine()->CheckParm("-d3d"))
+			if (CommandLine()->CheckParm("-d3d") || (!CommandLine()->CheckParm("-gl") && iEngineD3D))
 				iSaveMode = VIDEOMODE_D3D;
 			else
 				iSaveMode = VIDEOMODE_OPENGL;

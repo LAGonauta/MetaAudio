@@ -1,4 +1,3 @@
-#include <windows.h>
 #include <metahook.h>
 #include "exportfuncs.h"
 #include "BaseUI.h"
