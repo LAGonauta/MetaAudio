@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource">
+      <UniqueIdentifier>{73ab30be-01bd-4a7f-9b91-255f36b3e3a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{a2b708ad-5d54-450a-b5ec-c93282dbee7d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="exportfuncs.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="plugins.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="qal.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_dma.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_fx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_hook.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_mem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_voice.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_vox..cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="snd_wav.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="zone.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\interface.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="enginedef.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="exportfuncs.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSystem.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="plat.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="plugins.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="qal.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="snd_local.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="zone.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="aud_int_internal.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Interface\IAudio.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

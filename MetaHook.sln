@@ -1,7 +1,14 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MetaHook", "MetaHook.vcproj", "{0931F284-681C-41F1-AF30-97D1DCE2283C}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MetaHook", "MetaHook.vcxproj", "{0931F284-681C-41F1-AF30-97D1DCE2283C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio", "Plugins\Audio\Audio.vcxproj", "{076D2FBC-CAB6-4E26-931A-E5E8E9A4EBA7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0931F284-681C-41F1-AF30-97D1DCE2283C} = {0931F284-681C-41F1-AF30-97D1DCE2283C}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,8 +20,15 @@ Global
 		{0931F284-681C-41F1-AF30-97D1DCE2283C}.Debug|Win32.Build.0 = Debug|Win32
 		{0931F284-681C-41F1-AF30-97D1DCE2283C}.Release|Win32.ActiveCfg = Release|Win32
 		{0931F284-681C-41F1-AF30-97D1DCE2283C}.Release|Win32.Build.0 = Release|Win32
+		{076D2FBC-CAB6-4E26-931A-E5E8E9A4EBA7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{076D2FBC-CAB6-4E26-931A-E5E8E9A4EBA7}.Debug|Win32.Build.0 = Debug|Win32
+		{076D2FBC-CAB6-4E26-931A-E5E8E9A4EBA7}.Release|Win32.ActiveCfg = Release|Win32
+		{076D2FBC-CAB6-4E26-931A-E5E8E9A4EBA7}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F5BD051D-7539-49C9-ADF1-A3B6602D18D0}
 	EndGlobalSection
 EndGlobal
