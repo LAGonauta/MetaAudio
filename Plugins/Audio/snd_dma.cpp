@@ -35,8 +35,9 @@ char al_device_name[64] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
 
-/* translates from AL coordinate system to quake */
-#define AL_UnpackVector(v) -v[1], v[2], -v[0]
+// translates from AL coordinate system to quake
+// HL seems to use centimeters, convert to meters.
+#define AL_UnpackVector(v) -v[1] * 0.01, v[2] * 0.01, -v[0] * 0.01
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 
 void S_FreeCache(sfx_t *sfx)
@@ -385,7 +386,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 			qalListenerf(AL_GAIN, 1);
 	}
 
-	qalListener3f(AL_POSITION, AL_UnpackVector(origin) );
+	qalListener3f(AL_POSITION, AL_UnpackVector(origin));
 	qalListenerfv(AL_ORIENTATION, orientation);
 
 	for (i = NUM_AMBIENTS, ch = channels+NUM_AMBIENTS; i < total_channels; i++, ch++)
@@ -536,6 +537,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
 	aud_channel_t *ch;
 	aud_sfxcache_t *sc;
 
+    // Check all channels and check if it is available for use
 	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
 	{
 		ch = &channels[ch_idx];
@@ -547,7 +549,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
 			continue;
 		}
 
-		//ÇÕµãchannel
+		// Appointed channel
 		if (entchannel != 0 && ch->entnum == entnum && (ch->entchannel == entchannel || entchannel == -1))
 		{
 			first_to_die = ch_idx;
@@ -576,8 +578,14 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
 			break;
 		}
 
-		sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
-		if(!sc)
+        // Sometimes the cache_check crashes, lets comment it out for now
+		//sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
+        if (sfx->cache.data != nullptr)
+        {
+            sc = (aud_sfxcache_t *)(sfx->cache.data);
+        }
+
+		if(sc == nullptr)
 		{
 			first_to_die = ch_idx;
 			break;
@@ -610,6 +618,9 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
 	{
 		return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
 	}
+
+    // Dynamic sound aren't working very well yet, lets force it to behave like a static sound.
+    return S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
 
 	aud_channel_t *ch;
 	aud_sfxcache_t *sc;
@@ -704,8 +715,6 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
 
 	SND_InitMouth(entnum, entchannel);
 
-	qalSourcef(ch->source, AL_REFERENCE_DISTANCE, 0.0f);
-	qalSourcef(ch->source, AL_MAX_DISTANCE, 1000.0f);
 	qalSourcef(ch->source, AL_ROLLOFF_FACTOR, ch->attenuation);
 	qalSourcei(ch->source, AL_SAMPLE_OFFSET, ch->start);
 
@@ -731,11 +740,24 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
 	int i;
 	aud_channel_t *ch = NULL;
 
- 	for (i = MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
-	{
-		if (channels[i].sfx == NULL)
-			break;
-	}
+    for (i = MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
+    {
+        if (channels[i].sfx == NULL)
+            break;
+
+        // This should allow channels to be reused, but won't work on some
+        // bugged Creative drivers.
+        if (qalIsSource(channels[i].source))
+        {
+            ALint state;
+            qalGetSourcei(channels[i].source, AL_SOURCE_STATE, &state);
+            if (state == AL_STOPPED)
+            {
+                qalSourcei(channels[i].source, AL_BUFFER, 0);
+                break;
+            }
+        }
+    }
 
 	if (i < total_channels) 
 	{
@@ -856,8 +878,6 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
 	VOX_TrimStartEndTimes(ch, sc);
 
-	qalSourcef(ch->source, AL_REFERENCE_DISTANCE, 0.0f);
-	qalSourcef(ch->source, AL_MAX_DISTANCE, 1000.0f);
 	qalSourcef(ch->source, AL_ROLLOFF_FACTOR, ch->attenuation);
 	qalSourcei(ch->source, AL_SAMPLE_OFFSET, ch->start);
 
@@ -951,8 +971,6 @@ void S_Startup(void)
 	{
 		if(OpenAL_Init())
 		{
-			qalDistanceModel(AL_LINEAR_DISTANCE);
-
 			QAL_InitEFXExtension();
 
 			openal_started = true;
