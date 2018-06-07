@@ -93,8 +93,8 @@ typedef struct sx_preset_s
 #define SND_CHANGE_PITCH	(1<<7)
 #define SND_SPAWNING	(1<<8)
 
-#define	NUM_AMBIENTS			4		// automatic ambient sounds
-#define	MAX_DYNAMIC_CHANNELS	8
+#define	NUM_AMBIENTS			8		// automatic ambient sounds
+#define	MAX_DYNAMIC_CHANNELS	96
 #define MAX_CHANNELS			128
 
 #define MAX_WAVSTREAM_SIZE	(32*1024)
