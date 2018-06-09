@@ -41,16 +41,16 @@
     <ClCompile Include="snd_voice.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="snd_vox..cpp">
+    <ClCompile Include="snd_wav.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="snd_wav.cpp">
+    <ClCompile Include="..\..\common\interface.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="zone.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\interface.cpp">
+    <ClCompile Include="snd_vox.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -79,14 +79,14 @@
     <ClInclude Include="util.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="zone.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="aud_int_internal.h">
       <Filter>Interface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Interface\IAudio.h">
       <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="zone.h">
+      <Filter>Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -47,7 +47,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
     <CodeAnalysisRuleAssemblies />
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>
+    </PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(Configuration)\</OutDir>
@@ -56,7 +57,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
     <CodeAnalysisRuleAssemblies />
-    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>
+    </PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -72,6 +74,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <DisableSpecificWarnings>4311;4312;4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -81,8 +84,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(ProjectName).dll" "..\..\Test\ckf3\audio.dll"
-copy "$(OutDir)$(ProjectName).dll" "F:\Steam\steamapps\common\Half-Life\ckf3\audio.dll"
+      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -100,6 +102,7 @@ copy "$(OutDir)$(ProjectName).dll" "F:\Steam\steamapps\common\Half-Life\ckf3\aud
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat />
       <DisableSpecificWarnings>4244;4267;4305;4311;4312;4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile />
@@ -112,9 +115,7 @@ copy "$(OutDir)$(ProjectName).dll" "F:\Steam\steamapps\common\Half-Life\ckf3\aud
       <Profile>true</Profile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(ProjectName).dll" "..\..\test\ckf3\audio.dll"
-copy "$(OutDir)$(ProjectName).dll" "F:\Steam\steamapps\common\Half-Life\ckf3\audio.dll"
-</Command>
+      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -127,7 +128,7 @@ copy "$(OutDir)$(ProjectName).dll" "F:\Steam\steamapps\common\Half-Life\ckf3\aud
     <ClCompile Include="snd_hook.cpp" />
     <ClCompile Include="snd_mem.cpp" />
     <ClCompile Include="snd_voice.cpp" />
-    <ClCompile Include="snd_vox..cpp" />
+    <ClCompile Include="snd_vox.cpp" />
     <ClCompile Include="snd_wav.cpp" />
     <ClCompile Include="zone.cpp" />
   </ItemGroup>
