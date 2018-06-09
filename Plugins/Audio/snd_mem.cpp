@@ -45,7 +45,7 @@ qboolean S_StreamLoadNextChunk( aud_channel_t *ch, aud_sfxcache_t *sc, ALuint al
 	if(loadsize == expectsize)
 	{
 		g_pFileSystem->Close(sc->file);
-		sc->file = NULL;
+		sc->file = nullptr;
 	}
 	return true;
 }
@@ -61,10 +61,10 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 	qboolean		ffileopened = false;
 
 	//if (cl.fPrecaching)
-	//	return NULL;
+	//	return nullptr;
 
-	if(!ch)
-		return NULL;
+	if(ch == nullptr)
+		return nullptr;
 
 	//We have FileHandle in cache so just use it to read but open a new handle
 	sc = (aud_sfxcache_t *)Cache_Check(&s->cache);
@@ -74,11 +74,11 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 	}
 
 	//Alloc cache if we don't have one
-	if(!sc)
+	if(sc == nullptr)
 	{
 		sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
-		if (!sc)
-			return NULL;
+		if (sc == nullptr)
+			return nullptr;
 
 		//Clear before use
 		memset(sc, 0, sizeof(aud_sfxcache_t));
@@ -91,7 +91,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 		sc->file = g_pFileSystem->Open( namebuffer, "rb" );
 	}
 
-	data = NULL;
+	data = nullptr;
 	loadsize = 0;
 
 	if(sc->file)
@@ -112,21 +112,21 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 		if(sc->filesize == loadsize)
 		{
 			g_pFileSystem->Close(sc->file);
-			sc->file = NULL;
+			sc->file = nullptr;
 		}
 	}
 
-	if (!data)
+	if (data == nullptr)
 	{
 		gEngfuncs.Con_DPrintf("S_LoadStreamSound: Couldn't load %s\n", s->name);
-		return NULL;
+		return nullptr;
 	}
 
 	//need to parse wave info
 	if(sc->length == 0)
 	{
 		if(!GetWavinfo(&info, s->name, (byte *)data, loadsize))
-			return NULL;
+			return nullptr;
 
 		sc->length = info.samples;
 		sc->loopstart = info.loopstart;
@@ -205,7 +205,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 		strncat(namebuffer, "/", sizeof(namebuffer) - strlen(namebuffer) - 1);
 	strncat(namebuffer, s->name, sizeof(namebuffer) - strlen(namebuffer) - 1);
 
-	data = NULL;
+	data = nullptr;
 	hFile = g_pFileSystem->Open( namebuffer, "rb" );
 
 	if ( hFile )
@@ -214,7 +214,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 		data = (byte *)Hunk_TempAlloc( filesize + 1 );
 		g_pFileSystem->Read( data, filesize, hFile );
 		g_pFileSystem->Close( hFile );
-		hFile = NULL;
+		hFile = nullptr;
 	}
 	else
 	{
@@ -232,43 +232,43 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 			data = (byte *)Hunk_TempAlloc( filesize + 1 );
 			g_pFileSystem->Read( data, filesize, hFile );
 			g_pFileSystem->Close( hFile );
-			hFile = NULL;
+			hFile = nullptr;
 		}
 	}
 
-	if (!data)
+	if (data == nullptr)
 	{
 		gEngfuncs.Con_DPrintf ("S_LoadSound: Couldn't load %s\n", namebuffer);
-		return NULL;
+		return nullptr;
 	}
 
 	wavinfo_t info;
 
 	if(!GetWavinfo(&info, s->name, data, filesize))
-		return NULL;
+		return nullptr;
 
 	if(info.width > 2)
 	{
 		gEngfuncs.Con_DPrintf ("S_LoadSound: Couldn't load %s, width > 16bits\n", namebuffer);
-		return NULL;
+		return nullptr;
 	}
 
 	if(info.channels > 2)
 	{
 		gEngfuncs.Con_DPrintf ("S_LoadSound: Couldn't load %s, channels > 2\n", namebuffer);
-		return NULL;
+		return nullptr;
 	}
 
 	int datalen = info.samples * info.width * info.channels;
 
 	sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, datalen + sizeof(aud_sfxcache_t), s->name);
-	if (!sc)
-		return NULL;
+	if (sc == nullptr)
+		return nullptr;
 
 	memset(sc, 0, sizeof(aud_sfxcache_t));
 
 	//we still give it a value though we don't need it
-	sc->file = NULL;
+	sc->file = nullptr;
 	sc->filesize = filesize;
 
 	sc->length = info.samples;//number of samples ( include channels )
