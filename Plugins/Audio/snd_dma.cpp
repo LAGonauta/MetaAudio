@@ -583,21 +583,21 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
         if (sfx->cache.data != nullptr)
         {
             sc = (aud_sfxcache_t *)(sfx->cache.data);
-        }
 
-        if (sc == nullptr)
-        {
-            first_to_die = ch_idx;
-            break;
-        }
+            if (sc == nullptr)
+            {
+                first_to_die = ch_idx;
+                break;
+            }
 
-        qalGetSourcei(ch->source, AL_SAMPLE_OFFSET, &played);
-        life = (float)(ch->end - played) / (float)sc->speed;
+            qalGetSourcei(ch->source, AL_SAMPLE_OFFSET, &played);
+            life = (float)(ch->end - played) / (float)sc->speed;
 
-        if (life < life_left)
-        {
-            life_left = life;
-            first_to_die = ch_idx;
+            if (life < life_left)
+            {
+                life_left = life;
+                first_to_die = ch_idx;
+            }
         }
     }
 
@@ -727,8 +727,8 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     int err;
     if ((err = qalGetError()) != AL_NO_ERROR)
     {
+        gEngfuncs.Con_DPrintf("S_StartDynamicSound: got an error 0x%X on %s.\n", err, ch->sfx ? ch->sfx->name : "");
         S_FreeChannel(ch);
-        gEngfuncs.Con_DPrintf("S_StartStaticSound: got an error 0x%X on %s.\n", err, ch->sfx ? ch->sfx->name : "");
     }
 }
 
@@ -890,8 +890,8 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
     int err;
     if ((err = qalGetError()) != AL_NO_ERROR)
     {
-        S_FreeChannel(ch);
         gEngfuncs.Con_DPrintf("S_StartStaticSound: got an error 0x%X on %s.\n", err, ch->sfx ? ch->sfx->name : "");
+        S_FreeChannel(ch);
     }
 }
 
@@ -901,8 +901,8 @@ void S_StopSound(int entnum, int entchannel)
     {
         return gAudEngine.S_StopSound(entnum, entchannel);
     }
-
-    for (int i = NUM_AMBIENTS; i < total_channels; i++)
+    
+    for (int i = NUM_AMBIENTS; i < total_channels; ++i)
     {
         if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
         {
