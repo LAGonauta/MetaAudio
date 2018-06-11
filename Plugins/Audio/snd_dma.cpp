@@ -26,18 +26,21 @@ cvar_t *snd_show = NULL;
 cvar_t *al_enable = NULL;
 qboolean openal_started = false;
 qboolean openal_enabled = false;
-qboolean opanal_mute = false;
+qboolean openal_mute = false;
 
 //other cvars
 
 //OpenAL device
+static alure::DeviceManager al_dev_manager;
+static alure::Device al_device;
+static alure::Context al_context;
 char al_device_name[64] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
 
 // translates from AL coordinate system to quake
 // HL seems to use centimeters, convert to meters.
-#define AL_UnpackVector(v) -v[1] * 0.01, v[2] * 0.01, -v[0] * 0.01
+#define AL_UnpackVector(v) -v[1] * 0.01f, v[2] * 0.01f, -v[0] * 0.01f
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 
 void S_FreeCache(sfx_t *sfx)
@@ -52,17 +55,10 @@ void S_FreeCache(sfx_t *sfx)
 
     if (openal_enabled)
     {
-        qalGetError();
-
         if (sc->albuffer)
         {
-            qalDeleteBuffers(1, &sc->albuffer);
-        }
-
-        int err;
-        if ((err = qalGetError()) != AL_NO_ERROR)
-        {
-            gEngfuncs.Con_DPrintf("S_CheckWavEnd: got an error %d.\n", err);
+            al_context.removeBuffer(sc->albuffer);
+            sc->albuffer = nullptr;
         }
 
         if (sc->file)
@@ -146,47 +142,22 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
     if (ch->voicecache)
     {
-        VoiceSE_QueueBuffers(ch);
+        //VoiceSE_QueueBuffers(ch);
         return;
     }
 
     if (!sc)
         return;
 
-    //Queue buffers for stream sound
-    if (ch->alstreambuffers[0])
-    {
-        ALint iBuffersProcessed;
-        ALuint uiBuffer;
-
-        qalGetSourcei(ch->source, AL_BUFFERS_PROCESSED, &iBuffersProcessed);
-
-        while (iBuffersProcessed)
-        {
-            qalSourceUnqueueBuffers(ch->source, 1, &uiBuffer);
-
-            if (S_StreamLoadNextChunk(ch, sc, uiBuffer))
-            {
-                qalSourceQueueBuffers(ch->source, 1, &uiBuffer);
-            }
-
-            iBuffersProcessed--;
-        }
-    }
-
     qboolean fWaveEnd = false;
 
-    ALint iSourceState;
-    qalGetSourcei(ch->source, AL_SOURCE_STATE, &iSourceState);
-
-    if (iSourceState == AL_STOPPED)
+    if (ch->source.isPlayingOrPending() == false)
     {
         fWaveEnd = true;
     }
-    else if (!ch->alstreambuffers[0])
+    else if (ch->entchannel != CHAN_STREAM)
     {
-        ALint iSamplesPlayed;
-        qalGetSourcei(ch->source, AL_SAMPLE_OFFSET, &iSamplesPlayed);
+        ALint iSamplesPlayed = ch->source.getSampleOffset();
 
         if (sc->loopstart != -1)
         {
@@ -213,24 +184,10 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
     {
         if (sc->loopstart < ch->end)
         {
-            qalSourcei(ch->source, AL_SAMPLE_OFFSET, sc->loopstart);
-            qalSourcePlay(ch->source);
+            ch->source.setOffset(sc->loopstart);
+            ch->source.play(sc->albuffer);
         }
         return;
-    }
-
-    if (ch->alstreambuffers[0])
-    {
-        ALint iQueuedBuffers;
-        qalGetSourcei(ch->source, AL_BUFFERS_QUEUED, &iQueuedBuffers);
-
-        // If there are Buffers in the Source Queue then the Source was starved of audio
-        // data, so needs to be restarted (because there is more audio data to play)
-        if (iQueuedBuffers)
-        {
-            qalSourcePlay(ch->source);
-            return;
-        }
     }
 
     if (ch->isentence >= 0)
@@ -238,7 +195,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         sfx_t *sfx;
 
         //2015-12-12 fixed, stop the channel before free buffer
-        qalSourceStop(ch->source);
+        ch->source.stop();
 
         if (rgrgvoxword[ch->isentence][ch->iword].sfx && !rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
             S_FreeCache(rgrgvoxword[ch->isentence][ch->iword].sfx);
@@ -256,8 +213,8 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
                 ch->iword++;
 
                 VOX_TrimStartEndTimes(ch, sc);
-                qalSourcei(ch->source, AL_SAMPLE_OFFSET, ch->start);
-                qalSourcePlay(ch->source);
+                ch->source.setOffset(ch->start);
+                ch->source.play(sc->albuffer);
                 return;
             }
         }
@@ -271,8 +228,8 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
     if (!ch->sfx)
         return;
 
-    //invalid source
-    if (!qalIsSource(ch->source))
+    // invalid source
+    if (!ch->source)
         return;
 
     //apply effect
@@ -316,13 +273,14 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
                 }
             }
         }
-        qalSource3f(ch->source, AL_POSITION, AL_UnpackVector(ch->origin));
-        qalSourcei(ch->source, AL_SOURCE_RELATIVE, AL_FALSE);
+        ch->source.setPosition({ AL_UnpackVector(ch->origin) });
+        ch->source.setRelative(false);
     }
     else
     {
-        qalSource3f(ch->source, AL_POSITION, 0, 0, 0);
-        qalSourcei(ch->source, AL_SOURCE_RELATIVE, AL_TRUE);
+        alure::Vector3 pos = { 0, 0, 0 };
+        ch->source.setPosition(pos);
+        ch->source.setRelative(true);
     }
 
     float fvol = 1.0f;
@@ -335,13 +293,14 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
         fvol *= (*gAudEngine.g_SND_VoiceOverdrive);
     }
 
-    qalSourcef(ch->source, AL_GAIN, ch->volume * fvol);
-    qalSourcef(ch->source, AL_PITCH, ch->pitch * fpitch);
+    ch->source.setGain(ch->volume * fvol);
+    ch->source.setPitch(ch->pitch * fpitch);
 
     if (!init)
     {
         S_CheckWavEnd(ch, sc);
     }
+    al_context.update();
 }
 
 void S_Update(float *origin, float *forward, float *right, float *up)
@@ -374,20 +333,21 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     AL_CopyVector(forward, orientation);
     AL_CopyVector(up, orientation + 3);
 
-    if (opanal_mute)
+    alure::Listener al_listener = al_context.getListener();
+    if (openal_mute)
     {
-        qalListenerf(AL_GAIN, 0);
+        al_listener.setGain(0.0f);
     }
     else
     {
         if (volume)
-            qalListenerf(AL_GAIN, max(min(volume->value, 1), 0));
+            al_listener.setGain(max(min(volume->value, 1), 0));
         else
-            qalListenerf(AL_GAIN, 1);
+            al_listener.setGain(1.0f);
     }
 
-    qalListener3f(AL_POSITION, AL_UnpackVector(origin));
-    qalListenerfv(AL_ORIENTATION, orientation);
+    al_listener.setPosition({ AL_UnpackVector(origin) });
+    al_listener.setOrientation(orientation);
 
     for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
     {
@@ -409,29 +369,21 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
         gEngfuncs.Con_Printf("----(%i)----\n", total);
     }
+    al_context.update();
 }
 
 void S_FreeChannel(aud_channel_t *ch)
 {
-    if (qalIsSource(ch->source))
+    if (ch->source)
     {
-        // Stop the Source and reset the Buffer
-        qalSourceStop(ch->source);
-        qalSourcei(ch->source, AL_BUFFER, 0);
+        // Stop the Source and reset buffer
+        ch->source.stop();
+        ch->source.destroy();
+
     }
 
-    if (ch->alstreambuffers[0])
-    {
-        //free stream buffer for me
-        qalDeleteBuffers(4, ch->alstreambuffers);
-        ch->alstreambuffers[0] = 0;
-        ch->alstreambuffers[1] = 0;
-        ch->alstreambuffers[2] = 0;
-        ch->alstreambuffers[3] = 0;
-    }
-
-    if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
-        VoiceSE_NotifyFreeChannel(ch);
+    //if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+    //    VoiceSE_NotifyFreeChannel(ch);
 
     if (ch->isentence >= 0)
         rgrgvoxword[ch->isentence][0].sfx = NULL;
@@ -475,11 +427,11 @@ int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pit
                     S_FreeChannel(ch);
                 }
 
-                return TRUE;
+                return true;
             }
         }
         // channel not found
-        return FALSE;
+        return false;
     }
 
     for (ch_idx = 0; ch_idx < total_channels; ch_idx++)
@@ -532,7 +484,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
 
     float life_left = 99999;
     float life;
-    int state, played;
+    int played;
 
     aud_channel_t *ch;
     aud_sfxcache_t *sc;
@@ -541,10 +493,10 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
     {
         ch = &channels[ch_idx];
-        if (ch->entchannel == CHAN_STREAM && ch->alstreambuffers[0])
+        if (ch->entchannel == CHAN_STREAM && ch->source.isPlaying())
         {
             if (entchannel == CHAN_VOICE)
-                return NULL;
+                return nullptr;
 
             continue;
         }
@@ -559,7 +511,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
         if (ch->entnum == *gAudEngine.cl_viewentity && entnum != *gAudEngine.cl_viewentity && ch->sfx)
             continue;
 
-        if (!qalIsSource(ch->source))
+        if (!ch->source)
         {
             first_to_die = ch_idx;
             break;
@@ -571,8 +523,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
             break;
         }
 
-        qalGetSourcei(ch->source, AL_SOURCE_STATE, &state);
-        if (state == AL_STOPPED)
+        if (ch->source.isPlayingOrPending() == false)
         {
             first_to_die = ch_idx;
             break;
@@ -590,7 +541,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
                 break;
             }
 
-            qalGetSourcei(ch->source, AL_SAMPLE_OFFSET, &played);
+            played = ch->source.getSampleOffset();
             life = (float)(ch->end - played) / (float)sc->speed;
 
             if (life < life_left)
@@ -666,8 +617,6 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     if (!ch)
         return;
 
-    qalGetError();
-
     VectorCopy(origin, ch->origin);
     ch->attenuation = attenuation;
     ch->volume = fvol;
@@ -697,9 +646,9 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
         return;
     }
 
-    if (!qalIsSource(ch->source))
+    if (!ch->source)
     {
-        qalGenSources(1, &ch->source);
+        ch->source = al_context.createSource();
     }
 
     ch->start = 0;
@@ -712,45 +661,50 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
 
     SND_InitMouth(entnum, entchannel);
 
-    qalSourcef(ch->source, AL_ROLLOFF_FACTOR, ch->attenuation);
-    qalSourcei(ch->source, AL_SAMPLE_OFFSET, ch->start);
+    ch->source.setRolloffFactors(ch->attenuation);
+    ch->source.setOffset(ch->start);
 
-    if (ch->alstreambuffers[0])
-        qalSourceQueueBuffers(ch->source, 4, ch->alstreambuffers);
-    else
-        qalSourcei(ch->source, AL_BUFFER, sc->albuffer);
+    char buf[MAX_PATH];
+    GetFinalPathNameByHandleA(sc->file, buf, sizeof(buf), VOLUME_NAME_DOS);
 
-    SND_Spatialize(ch, true);
-
-    qalSourcePlay(ch->source);
-
-    int err;
-    if ((err = qalGetError()) != AL_NO_ERROR)
+    // Should also set source priority
+    if (ch->entchannel == CHAN_STREAM)
     {
-        gEngfuncs.Con_DPrintf("S_StartDynamicSound: got an error 0x%X on %s.\n", err, ch->sfx ? ch->sfx->name : "");
-        S_FreeChannel(ch);
+        alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(buf);
+        SND_Spatialize(ch, true);
+        ch->source.play(decoder, 12000, 4);
+    }
+    else
+    {
+        if (!sc->albuffer)
+        {
+            gEngfuncs.Con_Printf("Unable to load buffer: %s.", buf);
+            S_FreeChannel(ch);
+        }
+        else
+        {
+            SND_Spatialize(ch, true);
+            ch->source.play(sc->albuffer);
+        }
     }
 }
 
 aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
 {
     int i;
-    aud_channel_t *ch = NULL;
+    aud_channel_t *ch = nullptr;
 
     for (i = MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
     {
-        if (channels[i].sfx == NULL)
+        if (channels[i].sfx == nullptr)
             break;
 
         // This should allow channels to be reused, but won't work on some
         // bugged Creative drivers.
-        if (qalIsSource(channels[i].source))
+        if (channels[i].source)
         {
-            ALint state;
-            qalGetSourcei(channels[i].source, AL_SOURCE_STATE, &state);
-            if (state == AL_STOPPED)
+            if (channels[i].source.isPlayingOrPending() == false)
             {
-                qalSourcei(channels[i].source, AL_BUFFER, 0);
                 break;
             }
         }
@@ -766,7 +720,7 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
         if (total_channels == MAX_CHANNELS)
         {
             gEngfuncs.Con_DPrintf("total_channels == MAX_CHANNELS\n");
-            return NULL;
+            return nullptr;
         }
 
         // get a channel for the static sound
@@ -831,8 +785,6 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
     if (!ch)
         return;
 
-    qalGetError();
-
     VectorCopy(origin, ch->origin);
     ch->attenuation = attenuation;
     ch->volume = fvol;
@@ -862,36 +814,44 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
         return;
     }
 
-    if (!qalIsSource(ch->source))
+    if (!ch->source)
     {
-        qalGenSources(1, &ch->source);
+        ch->source = al_context.createSource();
     }
-
+        
     ch->start = 0;
     ch->end = sc->length;
 
     if (!fsentence && ch->pitch != 1)
-        VOX_MakeSingleWordSentence(ch, pitch);
+       VOX_MakeSingleWordSentence(ch, pitch);
 
     VOX_TrimStartEndTimes(ch, sc);
 
-    qalSourcef(ch->source, AL_ROLLOFF_FACTOR, ch->attenuation);
-    qalSourcei(ch->source, AL_SAMPLE_OFFSET, ch->start);
+    ch->source.setRolloffFactors(ch->attenuation);
+    ch->source.setOffset(ch->start);
 
-    if (ch->alstreambuffers[0])
-        qalSourceQueueBuffers(ch->source, 4, ch->alstreambuffers);
-    else
-        qalSourcei(ch->source, AL_BUFFER, sc->albuffer);
+    char buf[MAX_PATH];
+    GetFinalPathNameByHandleA(sc->file, buf, sizeof(buf), VOLUME_NAME_DOS);
 
-    SND_Spatialize(ch, true);
-
-    qalSourcePlay(ch->source);
-
-    int err;
-    if ((err = qalGetError()) != AL_NO_ERROR)
+    // Should also set source priority
+    if (ch->entchannel == CHAN_STREAM)
     {
-        gEngfuncs.Con_DPrintf("S_StartStaticSound: got an error 0x%X on %s.\n", err, ch->sfx ? ch->sfx->name : "");
-        S_FreeChannel(ch);
+        alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(buf);
+        SND_Spatialize(ch, true);
+        ch->source.play(decoder, 12000, 4);
+    }
+    else
+    {
+        if (!sc->albuffer)
+        {
+            gEngfuncs.Con_Printf("Unable to load buffer: %s.", buf);
+            S_FreeChannel(ch);
+        }
+        else
+        {
+            SND_Spatialize(ch, true);
+            ch->source.play(sc->albuffer);
+        }
     }
 }
 
@@ -921,7 +881,9 @@ void S_StopAllSounds(qboolean clear)
     for (int i = 0; i < MAX_CHANNELS; i++)
     {
         if (channels[i].sfx)
+        {
             S_FreeChannel(&channels[i]);
+        }
     }
 
     memset(channels, 0, MAX_CHANNELS * sizeof(aud_channel_t));
@@ -930,31 +892,25 @@ void S_StopAllSounds(qboolean clear)
 
 qboolean OpenAL_Init(void)
 {
-    ALCcontext *pContext = NULL;
-    ALCdevice *pDevice = NULL;
-
-    if (!qal_init)
-        return false;
-
-    pDevice = qalcOpenDevice(NULL);
-    if (pDevice)
+    try
     {
-        pContext = qalcCreateContext(pDevice, NULL);
-        if (pContext)
-        {
-            strcpy(al_device_name, qalcGetString(pDevice, ALC_DEVICE_SPECIFIER));
-            qalcGetIntegerv(pDevice, ALC_MAJOR_VERSION, 1, &al_device_majorversion);
-            qalcGetIntegerv(pDevice, ALC_MINOR_VERSION, 1, &al_device_minorversion);
-            qalcMakeContextCurrent(pContext);
-            return true;
-        }
-        else
-        {
-            qalcCloseDevice(pDevice);
-        }
-    }
+        al_dev_manager = alure::DeviceManager::getInstance();
+        al_device = al_dev_manager.openPlayback();
 
-    return false;
+        al_context = al_device.createContext();
+        strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
+
+        alure::Version ver = al_device.getALCVersion();
+        al_device_majorversion = ver.getMajor();
+        al_device_minorversion = ver.getMinor();
+
+        alure::Context::MakeCurrent(al_context);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
 }
 
 void S_Startup(void)
@@ -962,14 +918,12 @@ void S_Startup(void)
     gAudEngine.S_Startup();
 
     //stop mute me first
-    opanal_mute = false;
+    openal_mute = false;
 
     if (!openal_started)
     {
         if (OpenAL_Init())
         {
-            QAL_InitEFXExtension();
-
             openal_started = true;
             openal_enabled = (al_enable->value) ? true : false;
 
@@ -981,7 +935,7 @@ void S_Startup(void)
 void AL_Version_f(void)
 {
     if (openal_started)
-        gEngfuncs.Con_Printf("%s\n OpenAL Device: %s\n OpenAL Version: %d.%d\n EAX Extension: %s\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion, qal_efxinit ? "ok" : "no");
+        gEngfuncs.Con_Printf("%s\n OpenAL Device: %s\n OpenAL Version: %d.%d\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
     else
         gEngfuncs.Con_Printf("%s\n Failed to initalize OpenAL device.\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
 }
@@ -1014,15 +968,11 @@ void S_Init(void)
 
 void OpenAL_Shutdown(void)
 {
-    ALCcontext *pContext;
-    ALCdevice *pDevice;
+    // Should also clear all buffers and sources.
+    alure::Context::MakeCurrent(nullptr);
+    al_context.destroy();
 
-    pContext = qalcGetCurrentContext();
-    pDevice = qalcGetContextsDevice(pContext);
-
-    qalcMakeContextCurrent(NULL);
-    qalcDestroyContext(pContext);
-    qalcCloseDevice(pDevice);
+    al_device.close();
 }
 
 void S_ShutdownAL(void)
@@ -1039,7 +989,7 @@ void S_ShutdownAL(void)
 void S_Shutdown(void)
 {
     //shall we mute OpenAL sound when S_Shutdown?
-    opanal_mute = true;
+    openal_mute = true;
 
     gAudEngine.S_Shutdown();
 }

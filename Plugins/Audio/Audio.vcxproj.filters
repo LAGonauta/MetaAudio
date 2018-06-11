@@ -23,9 +23,6 @@
     <ClCompile Include="plugins.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="qal.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="snd_dma.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -41,16 +38,16 @@
     <ClCompile Include="snd_voice.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="snd_wav.cpp">
+    <ClCompile Include="..\..\common\interface.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\interface.cpp">
+    <ClCompile Include="snd_vox.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="zone.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="snd_vox.cpp">
+    <ClCompile Include="snd_wav.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,9 +65,6 @@
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="plugins.h">
-      <Filter>Header</Filter>
-    </ClInclude>
-    <ClInclude Include="qal.h">
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="snd_local.h">

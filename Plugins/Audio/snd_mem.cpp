@@ -4,51 +4,7 @@
 #include "exportfuncs.h"
 #include "snd_local.h"
 #include "zone.h"
-
-qboolean S_StreamLoadNextChunk( aud_channel_t *ch, aud_sfxcache_t *sc, ALuint alBuffer )
-{
-	char			namebuffer[256];
-	byte			*data;
-	int				expectsize;
-	int				loadsize;
-
-	//see if we are out of data
-	if(ch->lastposloaded >= sc->filesize)
-		return false;
-
-	if(!sc->file)
-	{
-		//in normal situation it should not go here
-		strcpy(namebuffer, "sound/");
-		strncat(namebuffer, &ch->sfx->name[1], sizeof(namebuffer) - strlen(namebuffer) - 1);
-		sc->file = g_pFileSystem->Open( namebuffer, "rb" );
-		//fail to load file, just quit
-		if(!sc->file)
-			return false;
-	}
-
-	expectsize = sc->filesize - ch->lastposloaded;
-	loadsize = min(expectsize, (sc->bitrate >> 1) );//load maximum to 500ms data
-	loadsize -= (loadsize % sc->blockalign);//block align
-
-	data = (byte *)Hunk_TempAlloc( loadsize + 1 );
-	data[loadsize] = 0;
-
-	g_pFileSystem->Seek(sc->file, ch->lastposloaded, FILESYSTEM_SEEK_HEAD);		
-	g_pFileSystem->Read(data, loadsize, sc->file);
-
-	ch->lastposloaded += loadsize;
-
-	qalBufferData(alBuffer, sc->alformat, data, loadsize, sc->speed);
-
-	//read all data, it's time to close file
-	if(loadsize == expectsize)
-	{
-		g_pFileSystem->Close(sc->file);
-		sc->file = nullptr;
-	}
-	return true;
-}
+#include "alure/AL/alure2.h"
 
 aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 {
@@ -137,41 +93,8 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 		sc->bitrate = info.bps;
 		sc->blockalign = info.align;//IMPORT: The OpenAL Buffer Size must be an exact multiple of the BlockAlignment ...
 
-		if(sc->channels == 1)
-			sc->alformat = (sc->width == 1) ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
-		else
-			sc->alformat = (sc->width == 1) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
-
 		//Not used
 		sc->datalen = 0;
-	}
-
-	//Devide the whole data into 4 buffers
-	size_t ulSampleSize = loadsize - sc->dataofs;
-	//Align the sample size
-	ulSampleSize -= (ulSampleSize % sc->blockalign);
-
-	//We have read there amount of data, skip next time
-	ch->lastposloaded = (ulSampleSize + sc->dataofs);
-
-	size_t ulBufferSize = ulSampleSize >> 2;
-	//Align again
-	ulBufferSize -= (ulBufferSize % sc->blockalign);
-
-	size_t ulSubmitSize = 0;
-
-	if(!ch->alstreambuffers[0])
-	{
-		qalGenBuffers(4, ch->alstreambuffers);
-	}
-
-	for(int i = 0; i < 4; ++i)
-	{
-		if(i == 3)
-			qalBufferData(ch->alstreambuffers[i], sc->alformat, data + sc->dataofs + ulSubmitSize, ulSampleSize - ulSubmitSize, sc->speed);
-		else
-			qalBufferData(ch->alstreambuffers[i], sc->alformat, data + sc->dataofs + ulSubmitSize, ulBufferSize, sc->speed);
-		ulSubmitSize += ulBufferSize;
 	}
 
 	return sc;
@@ -193,8 +116,8 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 	if (s->name[0] == '*')
 		return S_LoadStreamSound(s, ch);
 
-	if (s->name[0] == '?')
-		return VoiceSE_GetSFXCache(s, ch);
+    if (s->name[0] == '?')
+        return nullptr;// VoiceSE_GetSFXCache(s, ch);
 
 	sc = (aud_sfxcache_t *)Cache_Check(&s->cache);
 	if (sc)
@@ -208,6 +131,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 	data = nullptr;
 	hFile = g_pFileSystem->Open( namebuffer, "rb" );
 
+    // Normal cache
 	if ( hFile )
 	{
 		filesize = g_pFileSystem->Size( hFile );
@@ -284,14 +208,15 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 	sc->datalen = datalen - (datalen % sc->blockalign);
 	memcpy(sc->data, data + sc->dataofs, sc->datalen);
 
-	if(sc->channels == 1)
-		sc->alformat = (sc->width == 1) ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
-	else
-		sc->alformat = (sc->width == 1) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
+    // For OpenAL
+    char al_file_path[MAX_PATH];
+    g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
 
-	qalGenBuffers(1, &sc->albuffer);
-
-	qalBufferData(sc->albuffer, sc->alformat, (void *)sc->data, sc->datalen, sc->speed);
+    alure::Context al_ctx = alure::Context::GetCurrent();
+    if (al_file_path != nullptr && al_file_path != "\0")
+    {
+        sc->albuffer = al_ctx.getBuffer(al_file_path);
+    }
 
 	return sc;
 }

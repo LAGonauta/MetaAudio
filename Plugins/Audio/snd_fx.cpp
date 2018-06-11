@@ -3,17 +3,15 @@
 #include "FileSystem.h"
 #include "util.h"
 #include "snd_local.h"
-#include "zone.h"
 #include <math.h>
-#include "OpenAL/efx-presets.h"
+#include "alure/AL/efx-presets.h"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 
-ALuint alUnderWaterFilter;
-ALuint alReverbEffects[CSXROOM];
-ALuint alAuxEffectSlots;
+alure::Effect alReverbEffects[CSXROOM];
+alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
 EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_GENERIC,                    //  0
@@ -44,9 +42,9 @@ EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_PREFAB_SCHOOLROOM,          // 18
     EFX_REVERB_PRESET_PREFAB_PRACTISEROOM,        // 19
 	//SXROOM_OUTSIDE1
-    EFX_REVERB_PRESET_OUTDOORS_BACKYARD,                     // 20
-    EFX_REVERB_PRESET_OUTDOORS_DEEPCANYON,                      // 21
-    EFX_REVERB_PRESET_OUTDOORS_CREEK,                       // 22
+    EFX_REVERB_PRESET_OUTDOORS_BACKYARD,          // 20
+    EFX_REVERB_PRESET_OUTDOORS_DEEPCANYON,        // 21
+    EFX_REVERB_PRESET_OUTDOORS_CREEK,             // 22
 	//SXROOM_CAVERN_S
     EFX_REVERB_PRESET_CAVE,                       // 23
     EFX_REVERB_PRESET_CAVE,                       // 24
@@ -59,104 +57,55 @@ EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
 
 void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
 {
-    if (!qal_efxinit)
-        return;
-
     if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
     {
         if (underwater)
         {
-            qalAuxiliaryEffectSloti(alAuxEffectSlots, AL_EFFECTSLOT_EFFECT, alReverbEffects[14]);
-            qalSource3i(ch->source, AL_AUXILIARY_SEND_FILTER, alAuxEffectSlots, 0, alUnderWaterFilter);
-            qalSourcei(ch->source, AL_DIRECT_FILTER, alUnderWaterFilter);
+            alAuxEffectSlots.applyEffect(alReverbEffects[14]);
+            ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+            ch->source.setDirectFilter(alure::FilterParams{ 1.0f, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
         }
         else
         {
-            qalAuxiliaryEffectSloti(alAuxEffectSlots, AL_EFFECTSLOT_EFFECT, alReverbEffects[roomtype]);
-            qalSource3i(ch->source, AL_AUXILIARY_SEND_FILTER, alAuxEffectSlots, 0, 0);
-            qalSourcei(ch->source, AL_DIRECT_FILTER, 0);
+            alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
+            ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+            ch->source.setDirectFilter(alure::FilterParams{ 1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
         }
     }
     else
     {
-        qalSource3i(ch->source, AL_AUXILIARY_SEND_FILTER, 0, 0, 0);
+        alAuxEffectSlots.applyEffect(alReverbEffects[0]);
+        ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+
         if (underwater)
-            qalSourcei(ch->source, AL_DIRECT_FILTER, alUnderWaterFilter);
+            ch->source.setDirectFilter(alure::FilterParams{ 1.0f, 0.25, AL_HIGHPASS_DEFAULT_GAIN });
         else
-            qalSourcei(ch->source, AL_DIRECT_FILTER, 0);
+            ch->source.setDirectFilter(alure::FilterParams{ 1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     }
-}
-
-ALboolean SX_InitReverbEffect(EFXEAXREVERBPROPERTIES *RoomParam, ALuint uiEffect)
-{
-    ALboolean bReturn = AL_FALSE;
-
-    qalGetError();
-
-    qalEffecti(uiEffect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
-    qalEffectf(uiEffect, AL_EAXREVERB_DENSITY, RoomParam->flDensity);
-    qalEffectf(uiEffect, AL_EAXREVERB_DIFFUSION, RoomParam->flDiffusion);
-    qalEffectf(uiEffect, AL_EAXREVERB_GAIN, RoomParam->flGain);
-    qalEffectf(uiEffect, AL_EAXREVERB_GAINHF, RoomParam->flGainHF);
-    qalEffectf(uiEffect, AL_EAXREVERB_GAINLF, RoomParam->flGainLF);
-    qalEffectf(uiEffect, AL_EAXREVERB_DECAY_TIME, RoomParam->flDecayTime);
-    qalEffectf(uiEffect, AL_EAXREVERB_DECAY_HFRATIO, RoomParam->flDecayHFRatio);
-    qalEffectf(uiEffect, AL_EAXREVERB_DECAY_LFRATIO, RoomParam->flDecayLFRatio);
-    qalEffectf(uiEffect, AL_EAXREVERB_REFLECTIONS_GAIN, RoomParam->flReflectionsGain);
-    qalEffectf(uiEffect, AL_EAXREVERB_REFLECTIONS_DELAY, RoomParam->flReflectionsDelay);
-    qalEffectfv(uiEffect, AL_EAXREVERB_REFLECTIONS_PAN, RoomParam->flReflectionsPan);
-    qalEffectf(uiEffect, AL_EAXREVERB_LATE_REVERB_GAIN, RoomParam->flLateReverbGain);
-    qalEffectf(uiEffect, AL_EAXREVERB_LATE_REVERB_DELAY, RoomParam->flLateReverbDelay);
-    qalEffectfv(uiEffect, AL_EAXREVERB_LATE_REVERB_PAN, RoomParam->flLateReverbPan);
-    qalEffectf(uiEffect, AL_EAXREVERB_ECHO_TIME, RoomParam->flEchoTime);
-    qalEffectf(uiEffect, AL_EAXREVERB_ECHO_DEPTH, RoomParam->flEchoDepth);
-    qalEffectf(uiEffect, AL_EAXREVERB_MODULATION_TIME, RoomParam->flModulationTime);
-    qalEffectf(uiEffect, AL_EAXREVERB_MODULATION_DEPTH, RoomParam->flModulationDepth);
-    qalEffectf(uiEffect, AL_EAXREVERB_AIR_ABSORPTION_GAINHF, RoomParam->flAirAbsorptionGainHF);
-    qalEffectf(uiEffect, AL_EAXREVERB_HFREFERENCE, RoomParam->flHFReference);
-    qalEffectf(uiEffect, AL_EAXREVERB_LFREFERENCE, RoomParam->flLFReference);
-    qalEffectf(uiEffect, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, RoomParam->flRoomRolloffFactor);
-    qalEffecti(uiEffect, AL_EAXREVERB_DECAY_HFLIMIT, (RoomParam->iDecayHFLimit ? AL_TRUE : AL_FALSE));
-
-    if (qalGetError() == AL_NO_ERROR)
-    {
-        bReturn = AL_TRUE;
-    }
-
-    return bReturn;
 }
 
 void SX_Init(void)
 {
-    if (!qal_efxinit)
-        return;
-
-    //Init underwater filter
-    qalGenFilters(1, &alUnderWaterFilter);
-    qalFilteri(alUnderWaterFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
-    qalFilterf(alUnderWaterFilter, AL_LOWPASS_GAIN, AL_LOWPASS_DEFAULT_GAIN);
-    qalFilterf(alUnderWaterFilter, AL_LOWPASS_GAINHF, 0.25f);
-
-    //Init reverb effects
-    qalGenEffects(CSXROOM - 1, alReverbEffects);
-    qalGenAuxiliaryEffectSlots(1, &alAuxEffectSlots);
+    alure::Context al_context = alure::Context::GetCurrent();
 
     // Disable reverb when room_type = 0:
     presets_room[0].flGain = 0;
+
+    // Init each effect
     for (int i = 0; i < CSXROOM; ++i)
     {
-        SX_InitReverbEffect(&presets_room[i], alReverbEffects[i]);
+        alReverbEffects[i] = al_context.createEffect();
+        alReverbEffects[i].setReverbProperties(presets_room[i]);
     }
+
+    alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
 }
 
 void SX_Shutdown(void)
 {
-    if (!qal_efxinit)
-        return;
-
-    qalAuxiliaryEffectSloti(alAuxEffectSlots, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
-    qalDeleteEffects(CSXROOM - 1, alReverbEffects);
-    qalDeleteAuxiliaryEffectSlots(1, &alAuxEffectSlots);
-
-    qalDeleteFilters(1, &alUnderWaterFilter);
+    for (size_t i = 0; i < CSXROOM; ++i)
+    {
+        alReverbEffects[i].destroy();
+    }
+    alAuxEffectSlots.destroy();
 }

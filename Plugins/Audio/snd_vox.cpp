@@ -36,9 +36,6 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     if (sc->width != 1 || sc->channels != 1)
         return;
 
-    //stream sound not support
-    if (ch->alstreambuffers[0])
-        return;
 
     pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
     pvoxword->cbtrim = sc->length;
@@ -539,7 +536,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     if (!pent)
         return;
 
-    qalGetSourcei(ch->source, AL_SAMPLE_OFFSET, &iSamplePlayed);
+    iSamplePlayed = ch->source.getSampleOffset();
     count = sc->speed * (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
     count = min(count, sc->length - iSamplePlayed);
 

@@ -2,14 +2,14 @@
 
 #include "enginedef.h"
 #include "aud_int_internal.h"
-#include "qal.h"
+#include "alure/AL/alure2.h"
 
 //internal structures
 
 typedef struct
 {
 	sfx_t *sfx;
-	ALuint source;
+    alure::Source source;
 	float volume;
 	float pitch;
 	float attenuation;
@@ -21,9 +21,6 @@ typedef struct
 	//for sentence
 	int	isentence;
 	int	iword;
-	//for stream sound
-	int lastposloaded;
-	ALuint	alstreambuffers[4];
 	//for voice sound
 	sfxcache_t *voicecache;
 }aud_channel_t;
@@ -40,8 +37,9 @@ typedef struct
 	int		bitrate;
 	int		blockalign;
 	//for OpenAL buffer
-	ALint	alformat;
-	ALuint	albuffer;
+    bool alstreaming;
+	alure::Buffer	albuffer;
+    alure::SharedPtr<alure::Decoder>	aldecoder;
 	//for Stream sound
 	FileHandle_t file;
 	int		filesize;
