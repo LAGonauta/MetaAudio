@@ -275,9 +275,14 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
                 if (pent->model->type == mod_brush)
                 {
-                    ch->origin[0] = (pent->model->mins[0] + pent->model->maxs[0]) * 0.5;
-                    ch->origin[1] = (pent->model->mins[1] + pent->model->maxs[1]) * 0.5;
-                    ch->origin[2] = (pent->model->mins[2] + pent->model->maxs[2]) * 0.5;
+                    // Mobile brushes (such as trains and platforms) have the correct origin set,
+                    // but most other bushes do not. How to correctly detect them?
+                    if (pent->origin[0] == 0.0f || pent->origin[1] == 0.0f || pent->origin[2] == 0.0f)
+                    {
+                        ch->origin[0] = (pent->model->mins[0] + pent->model->maxs[0]) * 0.5;
+                        ch->origin[1] = (pent->model->mins[1] + pent->model->maxs[1]) * 0.5;
+                        ch->origin[2] = (pent->model->mins[2] + pent->model->maxs[2]) * 0.5;
+                    }
                 }
 
                 float ratio = (1 / std::chrono::duration<float, std::ratio<1, 1>>(t2 - t1).count());
