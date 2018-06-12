@@ -151,7 +151,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 
     qboolean fWaveEnd = false;
 
-    if (ch->source.isPlayingOrPending() == false)
+    if (!ch->source.isPlaying())
     {
         fWaveEnd = true;
     }
@@ -300,7 +300,6 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
     {
         S_CheckWavEnd(ch, sc);
     }
-    al_context.update();
 }
 
 void S_Update(float *origin, float *forward, float *right, float *up)
@@ -354,8 +353,8 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         SND_Spatialize(ch, false);
     }
 
-    if (snd_show && snd_show->value)
-    {
+    //if (snd_show && snd_show->value)
+    //{
         total = 0;
         ch = channels;
         for (i = 0; i < total_channels; i++, ch++)
@@ -368,7 +367,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         }
 
         gEngfuncs.Con_Printf("----(%i)----\n", total);
-    }
+    //}
     al_context.update();
 }
 
@@ -379,7 +378,13 @@ void S_FreeChannel(aud_channel_t *ch)
         // Stop the Source and reset buffer
         ch->source.stop();
         ch->source.destroy();
-
+        if (ch->buffer)
+        {
+            if (ch->buffer.getSourceCount() == 0)
+            {
+                //al_context.removeBuffer(ch->buffer);
+            }
+        }
     }
 
     //if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
@@ -487,7 +492,6 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     int played;
 
     aud_channel_t *ch;
-    aud_sfxcache_t *sc;
 
     // Check all channels and check if it is available for use
     for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
@@ -523,32 +527,19 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
             break;
         }
 
-        if (ch->source.isPlayingOrPending() == false)
+        if (!ch->source.isPlaying())
         {
             first_to_die = ch_idx;
             break;
         }
 
-        // Sometimes the cache_check crashes, lets comment it out for now
-        //sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
-        if (sfx->cache.data != nullptr)
+        played = ch->source.getSampleOffset();
+        life = (float)(ch->end - played) / (float)ch->buffer.getFrequency();
+
+        if (life < life_left)
         {
-            sc = (aud_sfxcache_t *)(sfx->cache.data);
-
-            if (sc == nullptr)
-            {
-                first_to_die = ch_idx;
-                break;
-            }
-
-            played = ch->source.getSampleOffset();
-            life = (float)(ch->end - played) / (float)sc->speed;
-
-            if (life < life_left)
-            {
-                life_left = life;
-                first_to_die = ch_idx;
-            }
+            life_left = life;
+            first_to_die = ch_idx;
         }
     }
 
@@ -569,6 +560,8 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     {
         return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
     }
+
+    return S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
 
     aud_channel_t *ch;
     aud_sfxcache_t *sc;
@@ -684,7 +677,8 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
         else
         {
             SND_Spatialize(ch, true);
-            ch->source.play(sc->albuffer);
+            ch->buffer = sc->albuffer;
+            ch->source.play(ch->buffer);
         }
     }
 }
@@ -703,7 +697,7 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
         // bugged Creative drivers.
         if (channels[i].source)
         {
-            if (channels[i].source.isPlayingOrPending() == false)
+            if (!channels[i].source.isPlaying())
             {
                 break;
             }
@@ -850,7 +844,8 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
         else
         {
             SND_Spatialize(ch, true);
-            ch->source.play(sc->albuffer);
+            ch->buffer = sc->albuffer;
+            ch->source.play(ch->buffer);
         }
     }
 }

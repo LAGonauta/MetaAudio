@@ -9,6 +9,7 @@
 typedef struct
 {
 	sfx_t *sfx;
+    alure::Buffer buffer;
     alure::Source source;
 	float volume;
 	float pitch;
