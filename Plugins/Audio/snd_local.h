@@ -39,8 +39,7 @@ typedef struct
 	int		blockalign;
 	//for OpenAL buffer
     bool alstreaming;
-	alure::Buffer	albuffer;
-    alure::SharedPtr<alure::Decoder>	aldecoder;
+    char alpath[MAX_PATH];
 	//for Stream sound
 	FileHandle_t file;
 	int		filesize;

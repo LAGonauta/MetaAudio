@@ -389,6 +389,7 @@ void VOX_MakeSingleWordSentence(aud_channel_t *ch, int pitch)
     ch->isentence = k;
     ch->iword = 0;
     ch->pitch = pitch / 100.0f;
+    ch->source.setPitch(ch->pitch);
 }
 
 aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)

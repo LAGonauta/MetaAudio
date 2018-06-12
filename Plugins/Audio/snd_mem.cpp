@@ -212,10 +212,9 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     char al_file_path[MAX_PATH];
     g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
 
-    alure::Context al_ctx = alure::Context::GetCurrent();
     if (al_file_path != nullptr && al_file_path != "\0")
     {
-        sc->albuffer = al_ctx.getBuffer(al_file_path);
+        strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
     }
 
 	return sc;

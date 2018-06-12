@@ -55,10 +55,10 @@ void S_FreeCache(sfx_t *sfx)
 
     if (openal_enabled)
     {
-        if (sc->albuffer)
+        if (sc->alpath)
         {
-            al_context.removeBuffer(sc->albuffer);
-            sc->albuffer = nullptr;
+            //al_context.removeBuffer(sc->alpath);
+            strcpy(sc->alpath, "\0");
         }
 
         if (sc->file)
@@ -185,7 +185,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         if (sc->loopstart < ch->end)
         {
             ch->source.setOffset(sc->loopstart);
-            ch->source.play(sc->albuffer);
+            ch->source.play(ch->buffer);
         }
         return;
     }
@@ -214,9 +214,14 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 
                 VOX_TrimStartEndTimes(ch, sc);
                 ch->source.setOffset(ch->start);
-                ch->source.play(sc->albuffer);
+                ch->buffer = al_context.getBuffer(sc->alpath);
+                ch->source.play(ch->buffer);
                 return;
             }
+        }
+        else
+        {
+
         }
 
         S_FreeChannel(ch);
@@ -353,8 +358,8 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         SND_Spatialize(ch, false);
     }
 
-    //if (snd_show && snd_show->value)
-    //{
+    if (snd_show && snd_show->value)
+    {
         total = 0;
         ch = channels;
         for (i = 0; i < total_channels; i++, ch++)
@@ -367,7 +372,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         }
 
         gEngfuncs.Con_Printf("----(%i)----\n", total);
-    //}
+    }
     al_context.update();
 }
 
@@ -382,7 +387,14 @@ void S_FreeChannel(aud_channel_t *ch)
         {
             if (ch->buffer.getSourceCount() == 0)
             {
-                //al_context.removeBuffer(ch->buffer);
+                try
+                {
+                    //al_context.removeBuffer(ch->buffer);
+                }
+                catch (...)
+                {
+
+                }
             }
         }
     }
@@ -391,7 +403,12 @@ void S_FreeChannel(aud_channel_t *ch)
     //    VoiceSE_NotifyFreeChannel(ch);
 
     if (ch->isentence >= 0)
-        rgrgvoxword[ch->isentence][0].sfx = NULL;
+    {
+        for (size_t i = 0; i < CVOXWORDMAX; ++i)
+        {
+            rgrgvoxword[ch->isentence][i].sfx = NULL;
+        }
+    }
 
     ch->isentence = -1;
     ch->sfx = NULL;
@@ -420,12 +437,17 @@ int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pit
                 && ch->sfx != NULL
                 && ch->isentence >= 0)
             {
-
                 if (flags & SND_CHANGE_PITCH)
+                {
                     ch->pitch = pitch;
+                    ch->source.setPitch(ch->pitch);
+                }                    
 
                 if (flags & SND_CHANGE_VOL)
+                {
                     ch->volume = fvol;
+                    ch->source.setGain(ch->volume);
+                }
 
                 if (flags & SND_STOP)
                 {
@@ -447,21 +469,27 @@ int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pit
             && ch->sfx == sfx)
         {
             if (flags & SND_CHANGE_PITCH)
+            {
                 ch->pitch = pitch;
+                ch->source.setPitch(ch->pitch);
+            }
 
             if (flags & SND_CHANGE_VOL)
+            {
                 ch->volume = fvol;
+                ch->source.setGain(ch->volume);
+            }
 
             if (flags & SND_STOP)
             {
                 S_FreeChannel(ch);
             }
 
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }
 
 qboolean SND_IsPlaying(sfx_t *sfx)
@@ -527,6 +555,13 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
             break;
         }
 
+        aud_sfxcache_t *sc = (aud_sfxcache_t *)(sfx->cache.data);
+        if (sc == nullptr)
+        {
+            first_to_die = ch_idx;
+            break;
+        }
+
         if (!ch->source.isPlaying())
         {
             first_to_die = ch_idx;
@@ -561,7 +596,7 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
         return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
     }
 
-    return S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
+    //return S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
 
     aud_channel_t *ch;
     aud_sfxcache_t *sc;
@@ -657,27 +692,19 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     ch->source.setRolloffFactors(ch->attenuation);
     ch->source.setOffset(ch->start);
 
-    char buf[MAX_PATH];
-    GetFinalPathNameByHandleA(sc->file, buf, sizeof(buf), VOLUME_NAME_DOS);
-
     // Should also set source priority
-    if (ch->entchannel == CHAN_STREAM)
+    if (sc->alpath != "\0")
     {
-        alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(buf);
-        SND_Spatialize(ch, true);
-        ch->source.play(decoder, 12000, 4);
-    }
-    else
-    {
-        if (!sc->albuffer)
+        if (ch->entchannel == CHAN_STREAM)
         {
-            gEngfuncs.Con_Printf("Unable to load buffer: %s.", buf);
-            S_FreeChannel(ch);
+            alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
+            SND_Spatialize(ch, true);
+            ch->source.play(decoder, 12000, 4);
         }
         else
         {
+            ch->buffer = al_context.getBuffer(sc->alpath);
             SND_Spatialize(ch, true);
-            ch->buffer = sc->albuffer;
             ch->source.play(ch->buffer);
         }
     }
@@ -824,27 +851,19 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
     ch->source.setRolloffFactors(ch->attenuation);
     ch->source.setOffset(ch->start);
 
-    char buf[MAX_PATH];
-    GetFinalPathNameByHandleA(sc->file, buf, sizeof(buf), VOLUME_NAME_DOS);
-
     // Should also set source priority
-    if (ch->entchannel == CHAN_STREAM)
+    if (sc->alpath != "\0")
     {
-        alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(buf);
-        SND_Spatialize(ch, true);
-        ch->source.play(decoder, 12000, 4);
-    }
-    else
-    {
-        if (!sc->albuffer)
+        if (ch->entchannel == CHAN_STREAM)
         {
-            gEngfuncs.Con_Printf("Unable to load buffer: %s.", buf);
-            S_FreeChannel(ch);
+            alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
+            SND_Spatialize(ch, true);
+            ch->source.play(decoder, 12000, 4);
         }
         else
         {
+            ch->buffer = al_context.getBuffer(sc->alpath);
             SND_Spatialize(ch, true);
-            ch->buffer = sc->albuffer;
             ch->source.play(ch->buffer);
         }
     }
