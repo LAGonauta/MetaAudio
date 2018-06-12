@@ -29,6 +29,9 @@ qboolean openal_enabled = false;
 qboolean openal_mute = false;
 
 //other cvars
+// for velocity calculation (native velocity seems to not be working)
+auto t1 = std::chrono::steady_clock::now();
+auto t2 = std::chrono::steady_clock::now();
 
 //OpenAL device
 static alure::DeviceManager al_dev_manager;
@@ -276,6 +279,13 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
                     ch->origin[1] = (pent->model->mins[1] + pent->model->maxs[1]) * 0.5;
                     ch->origin[2] = (pent->model->mins[2] + pent->model->maxs[2]) * 0.5;
                 }
+
+                float ratio = (1 / std::chrono::duration<float, std::ratio<1, 1>>(t2 - t1).count());
+                vec3_t pent_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
+                    (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
+                    (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
+
+                ch->source.setVelocity({ AL_UnpackVector(pent_velocity) });
             }
         }
         ch->source.setPosition({ AL_UnpackVector(ch->origin) });
@@ -309,6 +319,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
 void S_Update(float *origin, float *forward, float *right, float *up)
 {
+    t2 = std::chrono::steady_clock::now();
     int i, total;
     vec_t orientation[6];
     aud_channel_t *ch;
@@ -352,6 +363,16 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
     al_listener.setPosition({ AL_UnpackVector(origin) });
     al_listener.setOrientation(orientation);
+    cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
+    if (pent != nullptr)
+    {
+        float ratio = (1 / std::chrono::duration<float, std::ratio<1, 1>>(t2 - t1).count());
+        vec3_t view_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
+            (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
+            (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
+
+        al_listener.setVelocity({ AL_UnpackVector(view_velocity) });
+    }    
 
     for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
     {
@@ -374,6 +395,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         gEngfuncs.Con_Printf("----(%i)----\n", total);
     }
     al_context.update();
+    t1 = std::chrono::steady_clock::now();
 }
 
 void S_FreeChannel(aud_channel_t *ch)
