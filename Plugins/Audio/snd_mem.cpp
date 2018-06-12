@@ -212,7 +212,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     char al_file_path[MAX_PATH];
     g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
 
-    if (al_file_path != nullptr && al_file_path != "\0")
+    if (al_file_path != nullptr && strcmp(al_file_path, "\0") != 0)
     {
         strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
     }

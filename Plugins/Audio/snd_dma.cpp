@@ -692,8 +692,8 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     ch->source.setRolloffFactors(ch->attenuation);
     ch->source.setOffset(ch->start);
 
-    // Should also set source priority
-    if (sc->alpath != "\0")
+    // Should also set source priority    
+    if (strcmp(sc->alpath, "\0") != 0)
     {
         if (ch->entchannel == CHAN_STREAM)
         {
@@ -852,7 +852,7 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
     ch->source.setOffset(ch->start);
 
     // Should also set source priority
-    if (sc->alpath != "\0")
+    if (strcmp(sc->alpath, "\0") != 0)
     {
         if (ch->entchannel == CHAN_STREAM)
         {
