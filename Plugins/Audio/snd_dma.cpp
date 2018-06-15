@@ -936,7 +936,9 @@ qboolean OpenAL_Init(void)
     try
     {
         al_dev_manager = alure::DeviceManager::getInstance();
-        al_device = al_dev_manager.openPlayback();
+
+		auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
+        al_device = al_dev_manager.openPlayback(default_device);
 
         al_context = al_device.createContext();
         strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
