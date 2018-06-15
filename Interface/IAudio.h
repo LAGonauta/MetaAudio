@@ -6,15 +6,15 @@
 #endif
 
 #ifndef AUDIO_EXPORTS
-	#include "aud_int.h"
+#include "aud_int.h"
 #else
-	#include "aud_int_internal.h"
+#include "aud_int_internal.h"
 #endif
 
 class IAudio : public IBaseInterface
 {
 public:
-	virtual void GetInterface(aud_export_t *pAudExports, const char *version);
+  virtual void GetInterface(aud_export_t *pAudExports, const char *version);
 };
 
 #define AUDIO_API_VERSION "AUDIO_API_VERSION001"

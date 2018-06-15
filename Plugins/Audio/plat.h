@@ -3,27 +3,27 @@
 typedef unsigned int uint;
 
 template <typename T>
-inline T WordSwapC( T w )
+inline T WordSwapC(T w)
 {
-   uint16 temp;
+  uint16 temp;
 
-   temp  = ((*((uint16 *)&w) & 0xff00) >> 8);
-   temp |= ((*((uint16 *)&w) & 0x00ff) << 8);
+  temp = ((*((uint16 *)&w) & 0xff00) >> 8);
+  temp |= ((*((uint16 *)&w) & 0x00ff) << 8);
 
-   return *((T*)&temp);
+  return *((T*)&temp);
 }
 
 template <typename T>
-inline T DWordSwapC( T dw )
+inline T DWordSwapC(T dw)
 {
-   uint32 temp;
+  uint32 temp;
 
-   temp  =   *((uint32 *)&dw) 				>> 24;
-   temp |= ((*((uint32 *)&dw) & 0x00FF0000) >> 8);
-   temp |= ((*((uint32 *)&dw) & 0x0000FF00) << 8);
-   temp |= ((*((uint32 *)&dw) & 0x000000FF) << 24);
+  temp = *((uint32 *)&dw) >> 24;
+  temp |= ((*((uint32 *)&dw) & 0x00FF0000) >> 8);
+  temp |= ((*((uint32 *)&dw) & 0x0000FF00) << 8);
+  temp |= ((*((uint32 *)&dw) & 0x000000FF) << 24);
 
-   return *((T*)&temp);
+  return *((T*)&temp);
 }
 
 //-------------------------------------
@@ -36,19 +36,19 @@ inline T DWordSwapC( T dw )
 #define DWordSwap DWordSwap360Intr
 
 template <typename T>
-inline T WordSwap360Intr( T w )
+inline T WordSwap360Intr(T w)
 {
-	T output;
-	__storeshortbytereverse( w, 0, &output );
-	return output;
+  T output;
+  __storeshortbytereverse(w, 0, &output);
+  return output;
 }
 
 template <typename T>
-inline T DWordSwap360Intr( T dw )
+inline T DWordSwap360Intr(T dw)
 {
-	T output;
-	__storewordbytereverse( dw, 0, &output );
-	return output;
+  T output;
+  __storewordbytereverse(dw, 0, &output);
+  return output;
 }
 
 #elif defined( _MSC_VER )
@@ -60,23 +60,23 @@ inline T DWordSwap360Intr( T dw )
 #pragma warning (disable:4035) // no return value
 
 template <typename T>
-inline T WordSwapAsm( T w )
+inline T WordSwapAsm(T w)
 {
-   __asm
-   {
-      mov ax, w
-      xchg al, ah
-   }
+  __asm
+  {
+    mov ax, w
+    xchg al, ah
+  }
 }
 
 template <typename T>
-inline T DWordSwapAsm( T dw )
+inline T DWordSwapAsm(T dw)
 {
-   __asm
-   {
-      mov eax, dw
-      bswap eax
-   }
+  __asm
+  {
+    mov eax, dw
+    bswap eax
+  }
 }
 
 #pragma warning(pop)
@@ -149,22 +149,22 @@ inline T DWordSwapAsm( T dw )
 // @Note (toml 05-02-02): this technique expects the compiler to
 // optimize the expression and eliminate the other path. On any new
 // platform/compiler this should be tested.
-inline short BigShort( short val )		{ int test = 1; return ( *(char *)&test == 1 ) ? WordSwap( val )  : val; }
-inline uint16 BigWord( uint16 val )		{ int test = 1; return ( *(char *)&test == 1 ) ? WordSwap( val )  : val; }
-inline long BigLong( long val )			{ int test = 1; return ( *(char *)&test == 1 ) ? DWordSwap( val ) : val; }
-inline uint32 BigDWord( uint32 val )	{ int test = 1; return ( *(char *)&test == 1 ) ? DWordSwap( val ) : val; }
-inline short LittleShort( short val )	{ int test = 1; return ( *(char *)&test == 1 ) ? val : WordSwap( val ); }
-inline uint16 LittleWord( uint16 val )	{ int test = 1; return ( *(char *)&test == 1 ) ? val : WordSwap( val ); }
-inline long LittleLong( long val )		{ int test = 1; return ( *(char *)&test == 1 ) ? val : DWordSwap( val ); }
-inline uint32 LittleDWord( uint32 val )	{ int test = 1; return ( *(char *)&test == 1 ) ? val : DWordSwap( val ); }
-inline short SwapShort( short val )					{ return WordSwap( val ); }
-inline uint16 SwapWord( uint16 val )				{ return WordSwap( val ); }
-inline long SwapLong( long val )					{ return DWordSwap( val ); }
-inline uint32 SwapDWord( uint32 val )				{ return DWordSwap( val ); }
+inline short BigShort(short val) { int test = 1; return (*(char *)&test == 1) ? WordSwap(val) : val; }
+inline uint16 BigWord(uint16 val) { int test = 1; return (*(char *)&test == 1) ? WordSwap(val) : val; }
+inline long BigLong(long val) { int test = 1; return (*(char *)&test == 1) ? DWordSwap(val) : val; }
+inline uint32 BigDWord(uint32 val) { int test = 1; return (*(char *)&test == 1) ? DWordSwap(val) : val; }
+inline short LittleShort(short val) { int test = 1; return (*(char *)&test == 1) ? val : WordSwap(val); }
+inline uint16 LittleWord(uint16 val) { int test = 1; return (*(char *)&test == 1) ? val : WordSwap(val); }
+inline long LittleLong(long val) { int test = 1; return (*(char *)&test == 1) ? val : DWordSwap(val); }
+inline uint32 LittleDWord(uint32 val) { int test = 1; return (*(char *)&test == 1) ? val : DWordSwap(val); }
+inline short SwapShort(short val) { return WordSwap(val); }
+inline uint16 SwapWord(uint16 val) { return WordSwap(val); }
+inline long SwapLong(long val) { return DWordSwap(val); }
+inline uint32 SwapDWord(uint32 val) { return DWordSwap(val); }
 
 // Pass floats by pointer for swapping to avoid truncation in the fpu
-inline void BigFloat( float *pOut, const float *pIn )		{ int test = 1; ( *(char *)&test == 1 ) ? SafeSwapFloat( pOut, pIn ) : ( *pOut = *pIn ); }
-inline void LittleFloat( float *pOut, const float *pIn )	{ int test = 1; ( *(char *)&test == 1 ) ? ( *pOut = *pIn ) : SafeSwapFloat( pOut, pIn ); }
-inline void SwapFloat( float *pOut, const float *pIn )		{ SafeSwapFloat( pOut, pIn ); }
+inline void BigFloat(float *pOut, const float *pIn) { int test = 1; (*(char *)&test == 1) ? SafeSwapFloat(pOut, pIn) : (*pOut = *pIn); }
+inline void LittleFloat(float *pOut, const float *pIn) { int test = 1; (*(char *)&test == 1) ? (*pOut = *pIn) : SafeSwapFloat(pOut, pIn); }
+inline void SwapFloat(float *pOut, const float *pIn) { SafeSwapFloat(pOut, pIn); }
 
 #endif

@@ -8,92 +8,92 @@
 
 typedef struct
 {
-	sfx_t *sfx;
-    alure::Buffer buffer;
-    alure::Source source;
-	float volume;
-	float pitch;
-	float attenuation;
-	int entnum;
-	int entchannel;
-	vec3_t origin;
-	int start;
-	int end;
-	//for sentence
-	int	isentence;
-	int	iword;
-	//for voice sound
-	sfxcache_t *voicecache;
+  sfx_t *sfx;
+  alure::Buffer buffer;
+  alure::Source source;
+  float volume;
+  float pitch;
+  float attenuation;
+  int entnum;
+  int entchannel;
+  vec3_t origin;
+  int start;
+  int end;
+  //for sentence
+  int	isentence;
+  int	iword;
+  //for voice sound
+  sfxcache_t *voicecache;
 }aud_channel_t;
 
 typedef struct
 {
-	//wave info
-	int 	length;
-	int 	loopstart;
-	int 	speed;
-	int 	width;
-	int 	channels;
-	int		dataofs;
-	int		bitrate;
-	int		blockalign;
-	//for OpenAL buffer
-    bool alstreaming;
-    char alpath[MAX_PATH];
-	//for Stream sound
-	FileHandle_t file;
-	int		filesize;
-	//data chunk so we could do some magic change on the raw sound data
-	int		datalen;
-	byte	data[1];
+  //wave info
+  int 	length;
+  int 	loopstart;
+  int 	speed;
+  int 	width;
+  int 	channels;
+  int		dataofs;
+  int		bitrate;
+  int		blockalign;
+  //for OpenAL buffer
+  bool alstreaming;
+  char alpath[MAX_PATH];
+  //for Stream sound
+  FileHandle_t file;
+  int		filesize;
+  //data chunk so we could do some magic change on the raw sound data
+  int		datalen;
+  byte	data[1];
 }aud_sfxcache_t;
 
 typedef struct
 {
-	int *cl_servercount;
-	int *cl_parsecount;
-	int *cl_viewentity;
-	int *cl_num_entities;
-	int *cl_waterlevel;
+  int *cl_servercount;
+  int *cl_parsecount;
+  int *cl_viewentity;
+  int *cl_num_entities;
+  int *cl_waterlevel;
 
-	double *cl_time;
-	double *cl_oldtime;
+  double *cl_time;
+  double *cl_oldtime;
 
-	float *g_SND_VoiceOverdrive;
+  float *g_SND_VoiceOverdrive;
 
-	char *(*rgpszrawsentence)[CVOXFILESENTENCEMAX];
-	int *cszrawsentences;
+  char *(*rgpszrawsentence)[CVOXFILESENTENCEMAX];
+  int *cszrawsentences;
 
-	//s_dma.c
-	void (*S_Startup)(void);//hooked
-	void (*S_Init)(void);//hooked
-	void (*S_Shutdown)(void);//hooked	
-	sfx_t *(*S_FindName)(char *name, int *pfInCache);//hooked
-	sfx_t *(*S_PrecacheSound)(char *name);//hooked
-	void (*SND_Spatialize)(aud_channel_t *ch);
-	void (*S_Update)(float *origin, float *forward, float *right, float *up);//hooked
-	void (*S_StartDynamicSound)(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);//hooked
-	void (*S_StartStaticSound)(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);//hooked
-	void (*S_StopSound)(int entnum, int entchannel);//hooked
-	void (*S_StopAllSounds)(qboolean clear);//hooked
+  //s_dma.c
+  void(*S_Startup)(void);//hooked
+  void(*S_Init)(void);//hooked
+  void(*S_Shutdown)(void);//hooked	
+  sfx_t *(*S_FindName)(char *name, int *pfInCache);//hooked
+  sfx_t *(*S_PrecacheSound)(char *name);//hooked
+  void(*SND_Spatialize)(aud_channel_t *ch);
+  void(*S_Update)(float *origin, float *forward, float *right, float *up);//hooked
+  void(*S_StartDynamicSound)(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);//hooked
+  void(*S_StartStaticSound)(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);//hooked
+  void(*S_StopSound)(int entnum, int entchannel);//hooked
+  void(*S_StopAllSounds)(qboolean clear);//hooked
 
-	//s_mem.c
-	aud_sfxcache_t *(*S_LoadSound)(sfx_t *s, aud_channel_t *ch);//hooked
+  //s_mem.c
+  aud_sfxcache_t *(*S_LoadSound)(sfx_t *s, aud_channel_t *ch);//hooked
 
-	//s_mix.c
-	void (*VOX_Shutdown)(void);
-	void (*S_FreeChannel)(channel_t *ch);
+  //s_mix.c
+  void(*VOX_Shutdown)(void);
+  void(*S_FreeChannel)(channel_t *ch);
 
-	//voice_sound_engine_interface.cpp
-	void (*VoiceSE_NotifyFreeChannel)(int iChannel);
-	void (*VoiceSE_Idle)(float frametime);
+  //voice_sound_engine_interface.cpp
+  void(*VoiceSE_NotifyFreeChannel)(int iChannel);
+  void(*VoiceSE_Idle)(float frametime);
 
-	//sequence.c
-	sentenceEntry_s*(*SequenceGetSentenceByIndex)( unsigned int index );
+  //sequence.c
+  sentenceEntry_s*(*SequenceGetSentenceByIndex)(unsigned int index);
 
-	//sys_dll.c
+  //sys_dll.c
 #ifdef _DEBUG
-	void (*Sys_Error)(char *fmt, ...);
+  void(*Sys_Error)(char *fmt, ...);
 #endif
 }aud_engine_t;
 
@@ -131,11 +131,11 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin);
 void VOX_MakeSingleWordSentence(aud_channel_t *ch, int pitch);
 void SND_InitMouth(int entnum, int entchannel);
 void SND_CloseMouth(aud_channel_t *ch);
-void SND_MoveMouth( aud_channel_t *ch, aud_sfxcache_t *sc );
+void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc);
 
 //snd_mem.cpp
 aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch);
-qboolean S_StreamLoadNextChunk( aud_channel_t *ch, aud_sfxcache_t *sc, ALuint alBuffer );
+qboolean S_StreamLoadNextChunk(aud_channel_t *ch, aud_sfxcache_t *sc, ALuint alBuffer);
 
 //snd_voice.cpp
 void VoiceSE_QueueBuffers(aud_channel_t *ch);

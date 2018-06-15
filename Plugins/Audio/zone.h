@@ -16,7 +16,7 @@ void *Hunk_TempAlloc(int size);
 #define CACHE_USER
 typedef struct cache_user_s
 {
-	void *data;
+  void *data;
 }
 cache_user_t;
 #endif

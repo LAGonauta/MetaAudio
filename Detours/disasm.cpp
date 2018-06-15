@@ -94,42 +94,42 @@
 
 class CDetourDis
 {
-  public:
-    CDetourDis(PBYTE *ppbTarget, LONG *plExtra);
+public:
+  CDetourDis(PBYTE *ppbTarget, LONG *plExtra);
 
-    PBYTE   CopyInstruction(PBYTE pbDst, PBYTE pbSrc);
-    static BOOL SanityCheckSystem();
+  PBYTE   CopyInstruction(PBYTE pbDst, PBYTE pbSrc);
+  static BOOL SanityCheckSystem();
 
-  public:
-    struct COPYENTRY;
-    typedef const COPYENTRY * REFCOPYENTRY;
+public:
+  struct COPYENTRY;
+  typedef const COPYENTRY * REFCOPYENTRY;
 
-    typedef PBYTE (CDetourDis::* COPYFUNC)(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  typedef PBYTE(CDetourDis::* COPYFUNC)(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
 
-    enum {
-        DYNAMIC     = 0x1u,
-        ADDRESS     = 0x2u,
-        NOENLARGE   = 0x4u,
-        RAX         = 0x8u,
+  enum {
+    DYNAMIC = 0x1u,
+    ADDRESS = 0x2u,
+    NOENLARGE = 0x4u,
+    RAX = 0x8u,
 
-        SIB         = 0x10u,
-        RIP         = 0x20u,
-        NOTSIB      = 0x0fu,
-    };
-    struct COPYENTRY
-    {
-        ULONG       nOpcode         : 8;    // Opcode
-        ULONG       nFixedSize      : 4;    // Fixed size of opcode
-        ULONG       nFixedSize16    : 4;    // Fixed size when 16 bit operand
-        ULONG       nModOffset      : 4;    // Offset to mod/rm byte (0=none)
-        LONG        nRelOffset      : 4;    // Offset to relative target.
-        LONG        nTargetBack     : 4;    // Offset back to absolute or rip target
-        ULONG       nFlagBits       : 4;    // Flags for DYNAMIC, etc.
-        COPYFUNC    pfCopy;                 // Function pointer.
-    };
+    SIB = 0x10u,
+    RIP = 0x20u,
+    NOTSIB = 0x0fu,
+  };
+  struct COPYENTRY
+  {
+    ULONG       nOpcode : 8;    // Opcode
+    ULONG       nFixedSize : 4;    // Fixed size of opcode
+    ULONG       nFixedSize16 : 4;    // Fixed size when 16 bit operand
+    ULONG       nModOffset : 4;    // Offset to mod/rm byte (0=none)
+    LONG        nRelOffset : 4;    // Offset to relative target.
+    LONG        nTargetBack : 4;    // Offset back to absolute or rip target
+    ULONG       nFlagBits : 4;    // Flags for DYNAMIC, etc.
+    COPYFUNC    pfCopy;                 // Function pointer.
+  };
 
-  protected:
-    // These macros define common uses of nFixedSize..pfCopy.
+protected:
+  // These macros define common uses of nFixedSize..pfCopy.
 #define ENTRY_CopyBytes1            1, 1, 0, 0, 0, 0, &CDetourDis::CopyBytes
 #define ENTRY_CopyBytes1Dynamic     1, 1, 0, 0, 0, DYNAMIC, &CDetourDis::CopyBytes
 #define ENTRY_CopyBytes2            2, 2, 0, 0, 0, 0, &CDetourDis::CopyBytes
@@ -161,85 +161,85 @@ class CDetourDis
 #define ENTRY_Invalid               1, 1, 0, 0, 0, 0, &CDetourDis::Invalid
 #define ENTRY_End                   0, 0, 0, 0, 0, 0, NULL
 
-    PBYTE CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyBytesRax(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyBytesRax(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
 
-    PBYTE Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
 
-    PBYTE AdjustTarget(PBYTE pbDst, PBYTE pbSrc, LONG cbOp,
-                       LONG cbTargetOffset, LONG cbTargetSize);
+  PBYTE AdjustTarget(PBYTE pbDst, PBYTE pbSrc, LONG cbOp,
+    LONG cbTargetOffset, LONG cbTargetSize);
 
-  protected:
-    PBYTE Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE Copy66(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE Copy67(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
-    PBYTE CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+protected:
+  PBYTE Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE Copy66(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE Copy67(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
+  PBYTE CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc);
 
-  protected:
-    static const COPYENTRY  s_rceCopyTable[257];
-    static const COPYENTRY  s_rceCopyTable0F[257];
-    static const BYTE       s_rbModRm[256];
+protected:
+  static const COPYENTRY  s_rceCopyTable[257];
+  static const COPYENTRY  s_rceCopyTable0F[257];
+  static const BYTE       s_rbModRm[256];
 
-  protected:
-    BOOL                m_bOperandOverride;
-    BOOL                m_bAddressOverride;
-    BOOL                m_bRaxOverride;
+protected:
+  BOOL                m_bOperandOverride;
+  BOOL                m_bAddressOverride;
+  BOOL                m_bRaxOverride;
 
-    PBYTE *             m_ppbTarget;
-    LONG *              m_plExtra;
+  PBYTE *             m_ppbTarget;
+  LONG *              m_plExtra;
 
-    LONG                m_lScratchExtra;
-    PBYTE               m_pbScratchTarget;
-    BYTE                m_rbScratchDst[64];
+  LONG                m_lScratchExtra;
+  PBYTE               m_pbScratchTarget;
+  BYTE                m_rbScratchDst[64];
 };
 
 PVOID WINAPI DetourCopyInstruction(PVOID pDst,
-                                   PVOID *ppDstPool,
-                                   PVOID pSrc,
-                                   PVOID *ppTarget,
-                                   LONG *plExtra)
+  PVOID *ppDstPool,
+  PVOID pSrc,
+  PVOID *ppTarget,
+  LONG *plExtra)
 {
-    (void)ppDstPool; // x86 & x64 don't use a constant pool.
-    CDetourDis oDetourDisasm((PBYTE*)ppTarget, plExtra);
-    return oDetourDisasm.CopyInstruction((PBYTE)pDst, (PBYTE)pSrc);
+  (void)ppDstPool; // x86 & x64 don't use a constant pool.
+  CDetourDis oDetourDisasm((PBYTE*)ppTarget, plExtra);
+  return oDetourDisasm.CopyInstruction((PBYTE)pDst, (PBYTE)pSrc);
 }
 
 /////////////////////////////////////////////////////////// Disassembler Code.
 //
 CDetourDis::CDetourDis(PBYTE *ppbTarget, LONG *plExtra)
 {
-    m_bOperandOverride = FALSE;
-    m_bAddressOverride = FALSE;
-    m_bRaxOverride = FALSE;
+  m_bOperandOverride = FALSE;
+  m_bAddressOverride = FALSE;
+  m_bRaxOverride = FALSE;
 
-    m_ppbTarget = ppbTarget ? ppbTarget : &m_pbScratchTarget;
-    m_plExtra = plExtra ? plExtra : &m_lScratchExtra;
+  m_ppbTarget = ppbTarget ? ppbTarget : &m_pbScratchTarget;
+  m_plExtra = plExtra ? plExtra : &m_lScratchExtra;
 
-    *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_NONE;
-    *m_plExtra = 0;
+  *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_NONE;
+  *m_plExtra = 0;
 }
 
 PBYTE CDetourDis::CopyInstruction(PBYTE pbDst, PBYTE pbSrc)
 {
-    // Configure scratch areas if real areas are not available.
-    if (NULL == pbDst) {
-        pbDst = m_rbScratchDst;
-    }
-    if (NULL == pbSrc) {
-        // We can't copy a non-existent instruction.
-        SetLastError(ERROR_INVALID_DATA);
-        return NULL;
-    }
+  // Configure scratch areas if real areas are not available.
+  if (NULL == pbDst) {
+    pbDst = m_rbScratchDst;
+  }
+  if (NULL == pbSrc) {
+    // We can't copy a non-existent instruction.
+    SetLastError(ERROR_INVALID_DATA);
+    return NULL;
+  }
 
-    // Figure out how big the instruction is, do the appropriate copy,
-    // and figure out what the target of the instruction is if any.
-    //
-    REFCOPYENTRY pEntry = &s_rceCopyTable[pbSrc[0]];
-    return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
+  // Figure out how big the instruction is, do the appropriate copy,
+  // and figure out what the target of the instruction is if any.
+  //
+  REFCOPYENTRY pEntry = &s_rceCopyTable[pbSrc[0]];
+  return (this->*pEntry->pfCopy)(pEntry, pbDst, pbSrc);
 }
 
 PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
@@ -251,240 +251,240 @@ PBYTE CDetourDis::CopyBytes(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 
 
 #else
-    LONG nBytesFixed = (pEntry->nFlagBits & ADDRESS)
-        ? (m_bAddressOverride ? pEntry->nFixedSize16 : pEntry->nFixedSize)
-        : (m_bOperandOverride ? pEntry->nFixedSize16 : pEntry->nFixedSize);
+  LONG nBytesFixed = (pEntry->nFlagBits & ADDRESS)
+    ? (m_bAddressOverride ? pEntry->nFixedSize16 : pEntry->nFixedSize)
+    : (m_bOperandOverride ? pEntry->nFixedSize16 : pEntry->nFixedSize);
 #endif
 
-    LONG nBytes = nBytesFixed;
-    LONG nRelOffset = pEntry->nRelOffset;
-    LONG cbTarget = nBytes - nRelOffset;
-    if (pEntry->nModOffset > 0) {
-        BYTE bModRm = pbSrc[pEntry->nModOffset];
-        BYTE bFlags = s_rbModRm[bModRm];
+  LONG nBytes = nBytesFixed;
+  LONG nRelOffset = pEntry->nRelOffset;
+  LONG cbTarget = nBytes - nRelOffset;
+  if (pEntry->nModOffset > 0) {
+    BYTE bModRm = pbSrc[pEntry->nModOffset];
+    BYTE bFlags = s_rbModRm[bModRm];
 
-        nBytes += bFlags & NOTSIB;
+    nBytes += bFlags & NOTSIB;
 
-        if (bFlags & SIB) {
-            BYTE bSib = pbSrc[pEntry->nModOffset + 1];
+    if (bFlags & SIB) {
+      BYTE bSib = pbSrc[pEntry->nModOffset + 1];
 
-            if ((bSib & 0x07) == 0x05) {
-                if ((bModRm & 0xc0) == 0x00) {
-                    nBytes += 4;
-                }
-                else if ((bModRm & 0xc0) == 0x40) {
-                    nBytes += 1;
-                }
-                else if ((bModRm & 0xc0) == 0x80) {
-                    nBytes += 4;
-                }
-            }
-            cbTarget = nBytes - nRelOffset;
+      if ((bSib & 0x07) == 0x05) {
+        if ((bModRm & 0xc0) == 0x00) {
+          nBytes += 4;
         }
-        else if (bFlags & RIP) {
+        else if ((bModRm & 0xc0) == 0x40) {
+          nBytes += 1;
+        }
+        else if ((bModRm & 0xc0) == 0x80) {
+          nBytes += 4;
+        }
+      }
+      cbTarget = nBytes - nRelOffset;
+    }
+    else if (bFlags & RIP) {
 #ifdef DETOURS_X64
 #error Feature not supported in this release.
 
 
 #endif
-        }
     }
-    CopyMemory(pbDst, pbSrc, nBytes);
+  }
+  CopyMemory(pbDst, pbSrc, nBytes);
 
-    if (nRelOffset) {
-        *m_ppbTarget = AdjustTarget(pbDst, pbSrc, nBytesFixed, nRelOffset, cbTarget);
+  if (nRelOffset) {
+    *m_ppbTarget = AdjustTarget(pbDst, pbSrc, nBytesFixed, nRelOffset, cbTarget);
 #ifdef DETOURS_X64
 #error Feature not supported in this release.
 
 
 
 #endif
-    }
-    if (pEntry->nFlagBits & NOENLARGE) {
-        *m_plExtra = -*m_plExtra;
-    }
-    if (pEntry->nFlagBits & DYNAMIC) {
-        *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_DYNAMIC;
-    }
-    return pbSrc + nBytes;
+  }
+  if (pEntry->nFlagBits & NOENLARGE) {
+    *m_plExtra = -*m_plExtra;
+  }
+  if (pEntry->nFlagBits & DYNAMIC) {
+    *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_DYNAMIC;
+  }
+  return pbSrc + nBytes;
 }
 
 PBYTE CDetourDis::CopyBytesPrefix(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    CopyBytes(pEntry, pbDst, pbSrc);
+  CopyBytes(pEntry, pbDst, pbSrc);
 
-    pEntry = &s_rceCopyTable[pbSrc[1]];
-    return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
+  pEntry = &s_rceCopyTable[pbSrc[1]];
+  return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
 PBYTE CDetourDis::CopyBytesRax(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    CopyBytes(pEntry, pbDst, pbSrc);
+  CopyBytes(pEntry, pbDst, pbSrc);
 
-    if (*pbSrc & 0x8) {
-        m_bRaxOverride = TRUE;
-    }
+  if (*pbSrc & 0x8) {
+    m_bRaxOverride = TRUE;
+  }
 
-    pEntry = &s_rceCopyTable[pbSrc[1]];
-    return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
+  pEntry = &s_rceCopyTable[pbSrc[1]];
+  return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
 PBYTE CDetourDis::CopyBytesJump(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    (void)pEntry;
+  (void)pEntry;
 
-    PVOID pvSrcAddr = &pbSrc[1];
-    PVOID pvDstAddr = NULL;
-    LONG_PTR nOldOffset = (LONG_PTR)*(CHAR*&)pvSrcAddr;
-    LONG_PTR nNewOffset = 0;
+  PVOID pvSrcAddr = &pbSrc[1];
+  PVOID pvDstAddr = NULL;
+  LONG_PTR nOldOffset = (LONG_PTR)*(CHAR*&)pvSrcAddr;
+  LONG_PTR nNewOffset = 0;
 
-    *m_ppbTarget = pbSrc + 2 + nOldOffset;
+  *m_ppbTarget = pbSrc + 2 + nOldOffset;
 
-    if (pbSrc[0] == 0xeb) {
-        pbDst[0] = 0xe9;
-        pvDstAddr = &pbDst[1];
-        nNewOffset = nOldOffset - ((pbDst - pbSrc) + 3);
-        *(LONG*&)pvDstAddr = (LONG)nNewOffset;
-
-        *m_plExtra = 3;
-        return pbSrc + 2;
-    }
-
-    ASSERT(pbSrc[0] >= 0x70 && pbSrc[0] <= 0x7f);
-
-    pbDst[0] = 0x0f;
-    pbDst[1] = 0x80 | (pbSrc[0] & 0xf);
-    pvDstAddr = &pbDst[2];
-    nNewOffset = nOldOffset - ((pbDst - pbSrc) + 4);
+  if (pbSrc[0] == 0xeb) {
+    pbDst[0] = 0xe9;
+    pvDstAddr = &pbDst[1];
+    nNewOffset = nOldOffset - ((pbDst - pbSrc) + 3);
     *(LONG*&)pvDstAddr = (LONG)nNewOffset;
 
-    *m_plExtra = 4;
+    *m_plExtra = 3;
     return pbSrc + 2;
+  }
+
+  ASSERT(pbSrc[0] >= 0x70 && pbSrc[0] <= 0x7f);
+
+  pbDst[0] = 0x0f;
+  pbDst[1] = 0x80 | (pbSrc[0] & 0xf);
+  pvDstAddr = &pbDst[2];
+  nNewOffset = nOldOffset - ((pbDst - pbSrc) + 4);
+  *(LONG*&)pvDstAddr = (LONG)nNewOffset;
+
+  *m_plExtra = 4;
+  return pbSrc + 2;
 }
 
 PBYTE CDetourDis::AdjustTarget(PBYTE pbDst, PBYTE pbSrc, LONG cbOp,
-                               LONG cbTargetOffset, LONG cbTargetSize)
+  LONG cbTargetOffset, LONG cbTargetSize)
 {
-    PBYTE pbTarget = NULL;
-    PVOID pvTargetAddr = &pbDst[cbTargetOffset];
-    LONG_PTR nOldOffset = 0;
+  PBYTE pbTarget = NULL;
+  PVOID pvTargetAddr = &pbDst[cbTargetOffset];
+  LONG_PTR nOldOffset = 0;
 
-    switch (cbTargetSize) {
-      case 1:
-        nOldOffset = (LONG_PTR)*(CHAR*&)pvTargetAddr;
-        break;
-      case 2:
-        nOldOffset = (LONG_PTR)*(SHORT*&)pvTargetAddr;
-        break;
-      case 4:
-        nOldOffset = (LONG_PTR)*(LONG*&)pvTargetAddr;
-        break;
-      case 8:
-        nOldOffset = (LONG_PTR)*(LONG_PTR*&)pvTargetAddr;
-        break;
-      default:
-        ASSERT(!"cbTargetSize is invalid.");
-        break;
+  switch (cbTargetSize) {
+  case 1:
+    nOldOffset = (LONG_PTR)*(CHAR*&)pvTargetAddr;
+    break;
+  case 2:
+    nOldOffset = (LONG_PTR)*(SHORT*&)pvTargetAddr;
+    break;
+  case 4:
+    nOldOffset = (LONG_PTR)*(LONG*&)pvTargetAddr;
+    break;
+  case 8:
+    nOldOffset = (LONG_PTR)*(LONG_PTR*&)pvTargetAddr;
+    break;
+  default:
+    ASSERT(!"cbTargetSize is invalid.");
+    break;
+  }
+
+  pbTarget = pbSrc + cbOp + nOldOffset;
+  LONG_PTR nNewOffset = nOldOffset - (pbDst - pbSrc);
+
+  switch (cbTargetSize) {
+  case 1:
+    *(CHAR*&)pvTargetAddr = (CHAR)nNewOffset;
+    if (nNewOffset < SCHAR_MIN || nNewOffset > SCHAR_MAX) {
+      *m_plExtra = sizeof(ULONG) - 1;
     }
-
-    pbTarget = pbSrc + cbOp + nOldOffset;
-    LONG_PTR nNewOffset = nOldOffset - (pbDst - pbSrc);
-
-    switch (cbTargetSize) {
-      case 1:
-        *(CHAR*&)pvTargetAddr = (CHAR)nNewOffset;
-        if (nNewOffset < SCHAR_MIN || nNewOffset > SCHAR_MAX) {
-            *m_plExtra = sizeof(ULONG) - 1;
-        }
-        break;
-      case 2:
-        *(SHORT*&)pvTargetAddr = (SHORT)nNewOffset;
-        if (nNewOffset < SHRT_MIN || nNewOffset > SHRT_MAX) {
-            *m_plExtra = sizeof(ULONG) - 2;
-        }
-        break;
-      case 4:
-        *(LONG*&)pvTargetAddr = (LONG)nNewOffset;
-        if (nNewOffset < LONG_MIN || nNewOffset > LONG_MAX) {
-            *m_plExtra = sizeof(ULONG) - 4;
-        }
-        break;
-      case 8:
-        *(LONG_PTR*&)pvTargetAddr = (LONG_PTR)nNewOffset;
-        break;
+    break;
+  case 2:
+    *(SHORT*&)pvTargetAddr = (SHORT)nNewOffset;
+    if (nNewOffset < SHRT_MIN || nNewOffset > SHRT_MAX) {
+      *m_plExtra = sizeof(ULONG) - 2;
     }
-    ASSERT(pbDst + cbOp + nNewOffset == pbTarget);
-    return pbTarget;
+    break;
+  case 4:
+    *(LONG*&)pvTargetAddr = (LONG)nNewOffset;
+    if (nNewOffset < LONG_MIN || nNewOffset > LONG_MAX) {
+      *m_plExtra = sizeof(ULONG) - 4;
+    }
+    break;
+  case 8:
+    *(LONG_PTR*&)pvTargetAddr = (LONG_PTR)nNewOffset;
+    break;
+  }
+  ASSERT(pbDst + cbOp + nNewOffset == pbTarget);
+  return pbTarget;
 }
 
 PBYTE CDetourDis::Invalid(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    (void)pbDst;
-    (void)pEntry;
-    ASSERT(!"Invalid Instruction");
-    return pbSrc + 1;
+  (void)pbDst;
+  (void)pEntry;
+  ASSERT(!"Invalid Instruction");
+  return pbSrc + 1;
 }
 
 ////////////////////////////////////////////////////// Individual Bytes Codes.
 //
 PBYTE CDetourDis::Copy0F(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    CopyBytes(pEntry, pbDst, pbSrc);
+  CopyBytes(pEntry, pbDst, pbSrc);
 
-    pEntry = &s_rceCopyTable0F[pbSrc[1]];
-    return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
+  pEntry = &s_rceCopyTable0F[pbSrc[1]];
+  return (this->*pEntry->pfCopy)(pEntry, pbDst + 1, pbSrc + 1);
 }
 
 PBYTE CDetourDis::Copy66(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Operand-size override prefix
-    m_bOperandOverride = TRUE;
-    return CopyBytesPrefix(pEntry, pbDst, pbSrc);
+  m_bOperandOverride = TRUE;
+  return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
 PBYTE CDetourDis::Copy67(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {   // Address size override prefix
-    m_bAddressOverride = TRUE;
-    return CopyBytesPrefix(pEntry, pbDst, pbSrc);
+  m_bAddressOverride = TRUE;
+  return CopyBytesPrefix(pEntry, pbDst, pbSrc);
 }
 
 PBYTE CDetourDis::CopyF6(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    (void)pEntry;
+  (void)pEntry;
 
-    // TEST BYTE /0
-    if (0x00 == (0x38 & pbSrc[1])) {    // reg(bits 543) of ModR/M == 0
-        const COPYENTRY ce = { 0xf6, ENTRY_CopyBytes2Mod1 };
-        return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
-    }
-    // DIV /6
-    // IDIV /7
-    // IMUL /5
-    // MUL /4
-    // NEG /3
-    // NOT /2
-
-    const COPYENTRY ce = { 0xf6, ENTRY_CopyBytes2Mod };
+  // TEST BYTE /0
+  if (0x00 == (0x38 & pbSrc[1])) {    // reg(bits 543) of ModR/M == 0
+    const COPYENTRY ce = { 0xf6, ENTRY_CopyBytes2Mod1 };
     return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
+  }
+  // DIV /6
+  // IDIV /7
+  // IMUL /5
+  // MUL /4
+  // NEG /3
+  // NOT /2
+
+  const COPYENTRY ce = { 0xf6, ENTRY_CopyBytes2Mod };
+  return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
 PBYTE CDetourDis::CopyF7(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
 {
-    (void)pEntry;
+  (void)pEntry;
 
-    // TEST WORD /0
-    if (0x00 == (0x38 & pbSrc[1])) {    // reg(bits 543) of ModR/M == 0
-        const COPYENTRY ce = { 0xf7, ENTRY_CopyBytes2ModOperand };
-        return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
-    }
-
-    // DIV /6
-    // IDIV /7
-    // IMUL /5
-    // MUL /4
-    // NEG /3
-    // NOT /2
-    const COPYENTRY ce = { 0xf7, ENTRY_CopyBytes2Mod };
+  // TEST WORD /0
+  if (0x00 == (0x38 & pbSrc[1])) {    // reg(bits 543) of ModR/M == 0
+    const COPYENTRY ce = { 0xf7, ENTRY_CopyBytes2ModOperand };
     return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
+  }
+
+  // DIV /6
+  // IDIV /7
+  // IMUL /5
+  // MUL /4
+  // NEG /3
+  // NOT /2
+  const COPYENTRY ce = { 0xf7, ENTRY_CopyBytes2Mod };
+  return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
 PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
@@ -494,36 +494,36 @@ PBYTE CDetourDis::CopyFF(REFCOPYENTRY pEntry, PBYTE pbDst, PBYTE pbSrc)
     // JMP /4
     // JMP /5
     // PUSH /6
-    (void)pEntry;
+  (void)pEntry;
 
-    if (0x15 == pbSrc[1] || 0x25 == pbSrc[1]) {         // CALL [], JMP []
+  if (0x15 == pbSrc[1] || 0x25 == pbSrc[1]) {         // CALL [], JMP []
 #ifdef DETOURS_X64
 #error Feature not supported in this release.
 
 
 #else
-        PBYTE *ppbTarget = *(PBYTE**)&pbSrc[2];
-        *m_ppbTarget = *ppbTarget;
+    PBYTE *ppbTarget = *(PBYTE**)&pbSrc[2];
+    *m_ppbTarget = *ppbTarget;
 #endif
-    }
-    else if (0x10 == (0x38 & pbSrc[1]) || // CALL /2 --> reg(bits 543) of ModR/M == 010
-             0x18 == (0x38 & pbSrc[1]) || // CALL /3 --> reg(bits 543) of ModR/M == 011
-             0x20 == (0x38 & pbSrc[1]) || // JMP /4 --> reg(bits 543) of ModR/M == 100
-             0x28 == (0x38 & pbSrc[1])    // JMP /5 --> reg(bits 543) of ModR/M == 101
-            ) {
-        *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_DYNAMIC;
-    }
-    const COPYENTRY ce = { 0xff, ENTRY_CopyBytes2Mod };
-    return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
+  }
+  else if (0x10 == (0x38 & pbSrc[1]) || // CALL /2 --> reg(bits 543) of ModR/M == 010
+    0x18 == (0x38 & pbSrc[1]) || // CALL /3 --> reg(bits 543) of ModR/M == 011
+    0x20 == (0x38 & pbSrc[1]) || // JMP /4 --> reg(bits 543) of ModR/M == 100
+    0x28 == (0x38 & pbSrc[1])    // JMP /5 --> reg(bits 543) of ModR/M == 101
+    ) {
+    *m_ppbTarget = (PBYTE)DETOUR_INSTRUCTION_TARGET_DYNAMIC;
+  }
+  const COPYENTRY ce = { 0xff, ENTRY_CopyBytes2Mod };
+  return (this->*ce.pfCopy)(&ce, pbDst, pbSrc);
 }
 
 ///////////////////////////////////////////////////////// Disassembler Tables.
 //
 const BYTE CDetourDis::s_rbModRm[256] = {
-    0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 0x
-    0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 1x
-    0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 2x
-    0,0,0,0, SIB|1,RIP|4,0,0, 0,0,0,0, SIB|1,RIP|4,0,0, // 3x
+    0,0,0,0, SIB | 1,RIP | 4,0,0, 0,0,0,0, SIB | 1,RIP | 4,0,0, // 0x
+    0,0,0,0, SIB | 1,RIP | 4,0,0, 0,0,0,0, SIB | 1,RIP | 4,0,0, // 1x
+    0,0,0,0, SIB | 1,RIP | 4,0,0, 0,0,0,0, SIB | 1,RIP | 4,0,0, // 2x
+    0,0,0,0, SIB | 1,RIP | 4,0,0, 0,0,0,0, SIB | 1,RIP | 4,0,0, // 3x
     1,1,1,1, 2,1,1,1, 1,1,1,1, 2,1,1,1,                 // 4x
     1,1,1,1, 2,1,1,1, 1,1,1,1, 2,1,1,1,                 // 5x
     1,1,1,1, 2,1,1,1, 1,1,1,1, 2,1,1,1,                 // 6x
@@ -1081,34 +1081,34 @@ const CDetourDis::COPYENTRY CDetourDis::s_rceCopyTable0F[257] =
 
 BOOL CDetourDis::SanityCheckSystem()
 {
-    ULONG n = 0;
-    for (; n < 256; n++) {
-        REFCOPYENTRY pEntry = &s_rceCopyTable[n];
+  ULONG n = 0;
+  for (; n < 256; n++) {
+    REFCOPYENTRY pEntry = &s_rceCopyTable[n];
 
-        if (n != pEntry->nOpcode) {
-            ASSERT(n == pEntry->nOpcode);
-            return FALSE;
-        }
+    if (n != pEntry->nOpcode) {
+      ASSERT(n == pEntry->nOpcode);
+      return FALSE;
     }
-    if (s_rceCopyTable[256].pfCopy != NULL) {
-        ASSERT(!"Missing end marker.");
-        return FALSE;
-    }
+  }
+  if (s_rceCopyTable[256].pfCopy != NULL) {
+    ASSERT(!"Missing end marker.");
+    return FALSE;
+  }
 
-    for (n = 0; n < 256; n++) {
-        REFCOPYENTRY pEntry = &s_rceCopyTable0F[n];
+  for (n = 0; n < 256; n++) {
+    REFCOPYENTRY pEntry = &s_rceCopyTable0F[n];
 
-        if (n != pEntry->nOpcode) {
-            ASSERT(n == pEntry->nOpcode);
-            return FALSE;
-        }
+    if (n != pEntry->nOpcode) {
+      ASSERT(n == pEntry->nOpcode);
+      return FALSE;
     }
-    if (s_rceCopyTable0F[256].pfCopy != NULL) {
-        ASSERT(!"Missing end marker.");
-        return FALSE;
-    }
+  }
+  if (s_rceCopyTable0F[256].pfCopy != NULL) {
+    ASSERT(!"Missing end marker.");
+    return FALSE;
+  }
 
-    return TRUE;
+  return TRUE;
 }
 #endif // defined(DETOURS_X64) || defined(DETOURS_X86)
 
