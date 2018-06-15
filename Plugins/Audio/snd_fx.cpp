@@ -94,6 +94,7 @@ void SX_Init(void)
     // Init each effect
     for (int i = 0; i < CSXROOM; ++i)
     {
+		presets_room[i].flRoomRolloffFactor = 1.0f;
         alReverbEffects[i] = al_context.createEffect();
         alReverbEffects[i].setReverbProperties(presets_room[i]);
     }
