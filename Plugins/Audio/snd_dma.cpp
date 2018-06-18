@@ -265,6 +265,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 	//update position
 	if (ch->entnum != *gAudEngine.cl_viewentity)
 	{
+    ch->source.setRelative(false);
 		if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)
 		{
 			cl_entity_t *pent = gEngfuncs.GetEntityByIndex(ch->entnum);
@@ -291,16 +292,16 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 					(pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
 
 				ch->source.setVelocity({ AL_UnpackVector(pent_velocity) });
+        ch->source.setRadius(pent->model->radius * 0.001f);
 			}
-		}
+		}    
 		ch->source.setPosition({ AL_UnpackVector(ch->origin) });
-		ch->source.setRelative(false);
 	}
 	else
 	{
-		alure::Vector3 pos = { 0, 0, 0 };
+    ch->source.setRelative(true);
+		alure::Vector3 pos = { 0, 0, 0 };    
 		ch->source.setPosition(pos);
-		ch->source.setRelative(true);
 	}
 
 	float fvol = 1.0f;
