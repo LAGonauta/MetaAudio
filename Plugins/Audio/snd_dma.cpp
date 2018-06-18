@@ -277,11 +277,11 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 				{
 					// Mobile brushes (such as trains and platforms) have the correct origin set,
 					// but most other bushes do not. How to correctly detect them?
-					if (pent->origin[0] == 0.0f || pent->origin[1] == 0.0f || pent->origin[2] == 0.0f)
+					if (pent->baseline.origin[0] == 0.0f || pent->baseline.origin[1] == 0.0f || pent->baseline.origin[2] == 0.0f)
 					{
-						ch->origin[0] = (pent->model->mins[0] + pent->model->maxs[0]) * 0.5;
-						ch->origin[1] = (pent->model->mins[1] + pent->model->maxs[1]) * 0.5;
-						ch->origin[2] = (pent->model->mins[2] + pent->model->maxs[2]) * 0.5;
+						ch->origin[0] = (pent->curstate.mins[0] + pent->curstate.maxs[0]) * 0.5 + pent->curstate.origin[0];
+						ch->origin[1] = (pent->curstate.mins[1] + pent->curstate.maxs[1]) * 0.5 + pent->curstate.origin[1];
+						ch->origin[2] = (pent->curstate.mins[2] + pent->curstate.maxs[2]) * 0.5 + pent->curstate.origin[2];
 					}
 				}
 
@@ -941,7 +941,7 @@ qboolean OpenAL_Init(void)
 		al_device = al_dev_manager.openPlayback(default_device);
 
 		al_context = al_device.createContext();
-		strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
+    strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
 
 		alure::Version ver = al_device.getALCVersion();
 		al_device_majorversion = ver.getMajor();
