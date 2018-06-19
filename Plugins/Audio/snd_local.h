@@ -45,7 +45,7 @@ typedef struct
   int		filesize;
   //data chunk so we could do some magic change on the raw sound data
   int		datalen;
-  byte	data[1];
+  std::vector<byte>	data;
 }aud_sfxcache_t;
 
 typedef struct

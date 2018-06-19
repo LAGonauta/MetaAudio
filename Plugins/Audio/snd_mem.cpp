@@ -97,6 +97,15 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
     sc->datalen = 0;
   }
 
+  // For OpenAL
+  char al_file_path[MAX_PATH];
+  g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
+
+  if (al_file_path != nullptr && strcmp(al_file_path, "\0") != 0)
+  {
+    strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+  }
+
   return sc;
 }
 
@@ -206,7 +215,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   //For VOX_ usage
   sc->datalen = datalen - (datalen % sc->blockalign);
-  memcpy(sc->data, data + sc->dataofs, sc->datalen);
+  sc->data = std::vector<byte>(data + sc->dataofs, data + sc->dataofs + sc->datalen);
 
   // For OpenAL
   char al_file_path[MAX_PATH];

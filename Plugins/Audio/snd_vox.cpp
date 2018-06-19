@@ -26,7 +26,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   int srcsample;
   int skiplen;
   voxword_t *pvoxword;
-  signed char *pdata;
+  byte *pdata;
 
   if (ch->isentence < 0)
     return;
@@ -35,14 +35,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   if (sc->width != 1 || sc->channels != 1)
     return;
 
-
   pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
   pvoxword->cbtrim = sc->length;
 
   sstart = pvoxword->start;
   send = pvoxword->end;
   length = sc->length;
-  pdata = (signed char *)sc->data;
+  pdata = (byte *)sc->data.data();
 
   if (sstart > send)
     return;
@@ -60,7 +59,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         if (srcsample >= length)
           break;
 
-        if (pdata[srcsample] >= -2 && pdata[srcsample] <= 2)
+        if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
         {
           ch->start += i;
           ch->end -= skiplen + i;
@@ -89,7 +88,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         if (srcsample <= ch->start)
           break;
 
-        if (pdata[srcsample] >= -2 && pdata[srcsample] <= 2)
+        if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
         {
           ch->end -= i;
           pvoxword->cbtrim -= skiplen + i;
@@ -538,7 +537,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   iSamplesPlayed = ch->source.getSampleOffset();
   availableSamples = ch->buffer.getLength() - iSamplesPlayed;
 
-  signed char	*pdata = (signed char *)sc->data + iSamplesPlayed;
+  byte	*pdata = (byte *)sc->data.data() + iSamplesPlayed;
   if (pdata == nullptr)
   {
     return;
@@ -550,8 +549,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
 
   while (i < availableSamples && scount < CAVGSAMPLES)
   {
-    data = pdata[i];
-    savg += data;
+    data = pdata[i] + SCHAR_MIN;
+    savg += abs(data);
 
     i += 80 + ((byte)data & 0x1F);
     scount++;
@@ -562,7 +561,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
 
   if (pent->mouth.sndcount >= CAVGSAMPLES)
   {
-    pent->mouth.mouthopen = abs(pent->mouth.sndavg) / CAVGSAMPLES;
+    pent->mouth.mouthopen = pent->mouth.sndavg / CAVGSAMPLES;
     pent->mouth.sndavg = 0;
     pent->mouth.sndcount = 0;
   }
