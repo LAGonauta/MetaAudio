@@ -24,6 +24,7 @@ cvar_t *snd_show = NULL;
 
 //active control
 cvar_t *al_enable = NULL;
+cvar_t *al_doppler = NULL;
 qboolean openal_started = false;
 qboolean openal_enabled = false;
 qboolean openal_mute = false;
@@ -43,7 +44,7 @@ int al_device_minorversion = 0;
 
 // translates from AL coordinate system to quake
 // HL seems to use centimeters, convert to meters.
-#define AL_UnpackVector(v) -v[1] * 0.01f, v[2] * 0.01f, -v[0] * 0.01f
+#define AL_UnpackVector(v) -v[1] * 0.0254f, v[2] * 0.0254f, -v[0] * 0.0254f
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 
 void S_FreeCache(sfx_t *sfx)
@@ -367,6 +368,10 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 			al_listener.setGain(1.0f);
 	}
 
+  if (al_doppler->value >= 0.0f && al_doppler->value <= 1.0f)
+  {
+    al_context.setDopplerFactor(al_doppler->value);
+  }
 	al_listener.setPosition({ AL_UnpackVector(origin) });
 	al_listener.setOrientation(orientation);
 	cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
@@ -987,6 +992,7 @@ void AL_Version_f(void)
 void S_Init(void)
 {
 	al_enable = gEngfuncs.pfnRegisterVariable("al_enable", "1", 0);
+  al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", 0);
 	gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
 
 	gAudEngine.S_Init();
