@@ -30,9 +30,6 @@ qboolean openal_enabled = false;
 qboolean openal_mute = false;
 
 //other cvars
-// for velocity calculation (native velocity seems to not be working)
-auto t1 = std::chrono::steady_clock::now();
-auto t2 = std::chrono::steady_clock::now();
 
 //OpenAL device
 static alure::DeviceManager al_dev_manager;
@@ -288,7 +285,12 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
           }
         }
 
-        float ratio = (1 / std::chrono::duration<float, std::ratio<1, 1>>(t2 - t1).count());
+        float ratio = 0;
+        if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
+        {
+          ratio = 1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+        }
+        
         vec3_t pent_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
           (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
           (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
@@ -327,7 +329,6 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
 void S_Update(float *origin, float *forward, float *right, float *up)
 {
-  t2 = std::chrono::steady_clock::now();
   int i, total;
   vec_t orientation[6];
   aud_channel_t *ch;
@@ -378,7 +379,12 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   if (pent != nullptr)
   {
-    float ratio = (1 / std::chrono::duration<float, std::ratio<1, 1>>(t2 - t1).count());
+    float ratio = 0;
+    if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
+    {
+      ratio = 1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+    }
+
     vec3_t view_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
       (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
       (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
@@ -407,7 +413,6 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     gEngfuncs.Con_Printf("----(%i)----\n", total);
   }
   al_context.update();
-  t1 = std::chrono::steady_clock::now();
 }
 
 void S_FreeChannel(aud_channel_t *ch)
