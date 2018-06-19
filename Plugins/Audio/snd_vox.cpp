@@ -4,7 +4,6 @@
 #include "util.h"
 #include "snd_local.h"
 #include "zone.h"
-#include <deque>
 
 voxword_t rgrgvoxword[CVOXSENTENCEMAX][CVOXWORDMAX];
 
@@ -522,14 +521,13 @@ void SND_CloseMouth(aud_channel_t *ch)
     SND_ForceCloseMouth(ch->entnum);
 }
 
-static std::deque<int> mouth_damper;
 void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   int 	data;
   int		i;
   int		savg;
-  int		count, scount;
-  int		iSamplePlayed;
+  int		availableSamples, scount;
+  int		iSamplesPlayed;
   cl_entity_t *pent;
 
   pent = gEngfuncs.GetEntityByIndex(ch->entnum);
@@ -537,44 +535,35 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   if (!pent)
     return;
 
-  iSamplePlayed = ch->source.getSampleOffset();
-  count = sc->speed * (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
-  count = min(count, sc->length - iSamplePlayed);
+  iSamplesPlayed = ch->source.getSampleOffset();
+  availableSamples = ch->buffer.getLength() - iSamplesPlayed;
 
-  signed char	*pdata = (signed char *)sc->data + iSamplePlayed;
+  signed char	*pdata = (signed char *)sc->data + iSamplesPlayed;
+  if (pdata == nullptr)
+  {
+    return;
+  }
+
   i = 0;
-  scount = 0;
+  scount = pent->mouth.sndcount;
   savg = 0;
 
-  constexpr int samples_average = CAVGSAMPLES;
-  while (i < count && scount < samples_average)
+  while (i < availableSamples && scount < CAVGSAMPLES)
   {
     data = pdata[i];
-    savg += pdata[i];
+    savg += data;
+
     i += 80 + ((byte)data & 0x1F);
     scount++;
   }
 
-  pent->mouth.sndavg = abs(savg) / samples_average;
+  pent->mouth.sndavg += savg;
   pent->mouth.sndcount = (byte)scount;
 
-  if (pent->mouth.sndcount >= samples_average)
+  if (pent->mouth.sndcount >= CAVGSAMPLES)
   {
-    mouth_damper.push_back(pent->mouth.sndavg);
-    if (mouth_damper.size() > samples_average / 2)
-    {
-      mouth_damper.pop_front();
-    }
-
-    int sum = 0;
-    for (size_t k = 0; k < mouth_damper.size(); ++k)
-    {
-      sum += mouth_damper[k];
-    }
-    pent->mouth.mouthopen = sum / mouth_damper.size();
-  }
-  else
-  {
-    pent->mouth.mouthopen = 0;
+    pent->mouth.mouthopen = abs(pent->mouth.sndavg) / CAVGSAMPLES;
+    pent->mouth.sndavg = 0;
+    pent->mouth.sndcount = 0;
   }
 }
