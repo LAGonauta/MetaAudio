@@ -43,8 +43,9 @@ int al_device_majorversion = 0;
 int al_device_minorversion = 0;
 
 // translates from AL coordinate system to quake
-// HL seems to use centimeters, convert to meters.
-#define AL_UnpackVector(v) -v[1] * 0.0254f, v[2] * 0.0254f, -v[0] * 0.0254f
+// HL seems to use inches, convert to meters.
+#define AL_UnitToMeters 0.0254f
+#define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 
 void S_FreeCache(sfx_t *sfx)
@@ -629,8 +630,6 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
     return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
   }
 
-  //return S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-
   aud_channel_t *ch;
   aud_sfxcache_t *sc;
   qboolean fsentence;
@@ -722,8 +721,9 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
 
   SND_InitMouth(entnum, entchannel);
 
-  ch->source.setRolloffFactors(ch->attenuation);
+  ch->source.setRolloffFactors(ch->attenuation / AL_UnitToMeters);
   ch->source.setOffset(ch->start);
+  ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
 
   // Should also set source priority    
   if (strcmp(sc->alpath, "\0") != 0)
@@ -881,8 +881,9 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
   VOX_TrimStartEndTimes(ch, sc);
 
-  ch->source.setRolloffFactors(ch->attenuation);
+  ch->source.setRolloffFactors(ch->attenuation / AL_UnitToMeters);
   ch->source.setOffset(ch->start);
+  ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
 
   // Should also set source priority
   if (strcmp(sc->alpath, "\0") != 0)
@@ -954,6 +955,7 @@ qboolean OpenAL_Init(void)
     al_device_minorversion = ver.getMinor();
 
     alure::Context::MakeCurrent(al_context);
+    al_context.setDistanceModel(alure::DistanceModel::Linear);
     return true;
   }
   catch (...)
