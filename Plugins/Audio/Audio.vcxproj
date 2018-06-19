@@ -86,7 +86,7 @@
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
-</Command>
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,11 +97,11 @@
       <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <AdditionalIncludeDirectories>..\..;..\..\Interface;..\..\HLSDK\cl_dll;..\..\HLSDK\common;..\..\HLSDK\engine;..\..\HLSDK\pm_shared;..\..\HLSDK\public;..\..\common;.\;..\..\src\Interface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;AUDIO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat />
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4244;4267;4305;4311;4312;4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -117,7 +117,8 @@
       <AdditionalDependencies>alure\alure2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"</Command>
+      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
