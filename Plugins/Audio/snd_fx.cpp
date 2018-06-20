@@ -13,6 +13,11 @@ extern cvar_t *sxroom_type;
 alure::Effect alReverbEffects[CSXROOM];
 alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
+// HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
+// with no adjustment of reverb intensity with distance.
+// Reverb adjustment with distance is disabled per-source.
+static constexpr float reverbmix = 0.38f;
+
 EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_GENERIC,                    //  0
   //SXROOM_GENERIC
@@ -57,6 +62,8 @@ EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
 
 void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
 {
+  // Disable reverb adjustment with distance.
+  ch->source.setGainAuto(true, false, false);
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
   {
     if (underwater)
@@ -215,6 +222,7 @@ void SX_Init(void)
   }
 
   alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
+  alAuxEffectSlots.setGain(reverbmix);
 }
 
 void SX_Shutdown(void)
