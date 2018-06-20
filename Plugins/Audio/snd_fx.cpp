@@ -10,15 +10,16 @@ extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 
-alure::Effect alReverbEffects[CSXROOM];
-alure::AuxiliaryEffectSlot alAuxEffectSlots;
+static alure::Effect alReverbEffects[CSXROOM];
+static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
 // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
 // with no adjustment of reverb intensity with distance.
 // Reverb adjustment with distance is disabled per-source.
 static constexpr float reverbmix = 0.38f;
+static constexpr float al_max_distance_inches = 1000.0f;
 
-EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
+static EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_GENERIC,                    //  0
   //SXROOM_GENERIC
     EFX_REVERB_PRESET_ROOM,                       //  1
@@ -61,9 +62,23 @@ EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
 };
 
 void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
-{
-  // Disable reverb adjustment with distance.
-  ch->source.setGainAuto(true, false, false);
+{  
+  // Disable reverb adjustment with distance, but enable it
+  // if source is farther than "al_max_distance_inches".
+  cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
+  if (pent != nullptr)
+  {
+    if (alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
+      alure::Vector3(pent->curstate.origin[0], pent->curstate.origin[1], pent->curstate.origin[2])) > al_max_distance_inches)
+    {
+      ch->source.setGainAuto(true, true, true);
+    }
+    else
+    {
+      ch->source.setGainAuto(true, false, false);
+    }
+  }  
+
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
   {
     if (underwater)
