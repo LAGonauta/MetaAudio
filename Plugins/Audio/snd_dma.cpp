@@ -59,7 +59,6 @@ void S_FreeCache(sfx_t *sfx)
   {
     if (sc->alpath)
     {
-      //al_context.removeBuffer(sc->alpath);
       strcpy(sc->alpath, "\0");
     }
 
@@ -422,20 +421,6 @@ void S_FreeChannel(aud_channel_t *ch)
     // Stop the Source and reset buffer
     ch->source.stop();
     ch->source.destroy();
-    if (ch->buffer)
-    {
-      if (ch->buffer.getSourceCount() == 0)
-      {
-        try
-        {
-          //al_context.removeBuffer(ch->buffer);
-        }
-        catch (...)
-        {
-
-        }
-      }
-    }
   }
 
   //if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
@@ -726,24 +711,38 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, 
 
   SND_InitMouth(entnum, entchannel);
 
-  ch->source.setRolloffFactors(ch->attenuation / AL_UnitToMeters);
+  ch->source.setRolloffFactors(ch->attenuation);
   ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
 
-  // Should also set source priority    
+  // Should also set source priority
   if (strcmp(sc->alpath, "\0") != 0)
   {
     if (ch->entchannel == CHAN_STREAM)
     {
       alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
       SND_Spatialize(ch, true);
-      ch->source.play(decoder, 12000, 4);
+      try
+      {
+        ch->source.play(decoder, 12000, 4);
+      }
+      catch (const std::runtime_error& error)
+      {
+        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
+      }      
     }
     else
     {
       ch->buffer = al_context.getBuffer(sc->alpath);
       SND_Spatialize(ch, true);
-      ch->source.play(ch->buffer);
+      try
+      {
+        ch->source.play(ch->buffer);
+      }
+      catch (const std::runtime_error& error)
+      {
+        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
+      }
     }
   }
 }
@@ -886,7 +885,7 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
   VOX_TrimStartEndTimes(ch, sc);
 
-  ch->source.setRolloffFactors(ch->attenuation / AL_UnitToMeters);
+  ch->source.setRolloffFactors(ch->attenuation);
   ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
 
@@ -897,13 +896,27 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
     {
       alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
       SND_Spatialize(ch, true);
-      ch->source.play(decoder, 12000, 4);
+      try
+      {
+        ch->source.play(decoder, 12000, 4);
+      }
+      catch (const std::runtime_error& error)
+      {
+        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
+      }      
     }
     else
     {
       ch->buffer = al_context.getBuffer(sc->alpath);
       SND_Spatialize(ch, true);
-      ch->source.play(ch->buffer);
+      try
+      {
+        ch->source.play(ch->buffer);
+      }
+      catch (const std::runtime_error& error)
+      {
+        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
+      }
     }
   }
 }
