@@ -53,7 +53,9 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (sc->file)
   {
     sc->filesize = g_pFileSystem->Size(sc->file);
-    loadsize = min(sc->filesize, MAX_WAVSTREAM_SIZE);
+    // load little data from file to be sure it exists,
+    // and get wav information
+    loadsize = min(sc->filesize, 256);
 
     data = (byte *)Hunk_TempAlloc(loadsize + 1);
     data[loadsize] = 0;
@@ -61,15 +63,9 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
     g_pFileSystem->Seek(sc->file, 0, FILESYSTEM_SEEK_HEAD);
     g_pFileSystem->Read(data, loadsize, sc->file);
 
-    //save last load position since we could load next chunk later
-    //ch->lastposloaded += loadsize;
-
-    //we have read all data, close it
-    if (sc->filesize == loadsize)
-    {
-      g_pFileSystem->Close(sc->file);
-      sc->file = nullptr;
-    }
+    // always close file
+    g_pFileSystem->Close(sc->file);
+    sc->file = nullptr;
   }
 
   if (data == nullptr)
@@ -98,12 +94,14 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   }
 
   // For OpenAL
-  char al_file_path[MAX_PATH];
-  g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
-
-  if (al_file_path != nullptr && strcmp(al_file_path, "\0") != 0)
+  if (sc->alpath[0] == 0)
   {
-    strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+    char al_file_path[MAX_PATH];
+    g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
+    if (al_file_path != nullptr && al_file_path[0] != 0)
+    {
+      strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+    }
   }
 
   return sc;
@@ -218,12 +216,14 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->data = std::vector<byte>(data + sc->dataofs, data + sc->dataofs + sc->datalen);
 
   // For OpenAL
-  char al_file_path[MAX_PATH];
-  g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
-
-  if (al_file_path != nullptr && strcmp(al_file_path, "\0") != 0)
+  if (sc->alpath[0] == 0)
   {
-    strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+    char al_file_path[MAX_PATH];
+    g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
+    if (al_file_path != nullptr && al_file_path[0] != 0)
+    {
+      strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+    }
   }
 
   return sc;
