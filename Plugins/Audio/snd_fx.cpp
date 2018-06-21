@@ -194,16 +194,17 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
   cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
   if (pent != nullptr && sent != nullptr)
   {
+    auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
+      alure::Vector3(pent->curstate.origin[0], pent->curstate.origin[1], pent->curstate.origin[2]));
     // Detect collisions and reduce gain on occlusion
-    if (al_occlusion->value)
+    if (al_occlusion->value && distance > 10)
     {
       direct_gain = SX_GetGainObscured(ch, pent, sent);
     }
 
     // Disable reverb adjustment with distance, but enable it
     // if source is farther than "al_max_distance_inches".
-    if (alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
-      alure::Vector3(pent->curstate.origin[0], pent->curstate.origin[1], pent->curstate.origin[2])) > al_max_distance_inches)
+    if (distance > al_max_distance_inches)
     {
       ch->source.setGainAuto(true, true, true);
     }
