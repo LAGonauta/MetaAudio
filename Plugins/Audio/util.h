@@ -35,6 +35,11 @@ inline void VectorScale(float *a, float b)
   a[2] = b * a[2];
 }
 
+inline void VectorScale(const vec3_t& in, vec_t scale, vec3_t& result)
+{
+  VectorMultiply(in, scale, result);
+}
+
 inline float VectorLength(float *a)
 {
   return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
@@ -46,6 +51,30 @@ inline void VectorNormalize(float *a)
   a[0] = a[0] / flLength;
   a[1] = a[1] / flLength;
   a[2] = a[2] / flLength;
+}
+
+inline void VectorVectors(const vec3_t &forward, vec3_t &right, vec3_t &up)
+{
+  vec3_t tmp;
+
+  if (forward[0] == 0 && forward[1] == 0)
+  {
+    // pitch 90 degrees up/down from identity
+    right[0] = 0;
+    right[1] = -1;
+    right[2] = 0;
+    up[0] = -forward[2];
+    up[1] = 0;
+    up[2] = 0;
+  }
+  else
+  {
+    tmp[0] = 0; tmp[1] = 0; tmp[2] = 1.0;
+    CrossProduct(forward, tmp, right);
+    VectorNormalize(right);
+    CrossProduct(right, forward, up);
+    VectorNormalize(up);
+  }
 }
 
 inline float VectorAngle(vec3_t a, vec3_t b)

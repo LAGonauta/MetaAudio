@@ -9,6 +9,13 @@
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
+static cvar_t *al_occlusion = nullptr;
+
+static constexpr int PM_NORMAL = 0x00000000;
+static constexpr int  PM_STUDIO_IGNORE = 0x00000001;     // Skip studio models
+static constexpr int  PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-complex studio models (even in traceline)
+static constexpr int  PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
+static constexpr int  PM_WORLD_ONLY = 0x00000008;        // Only trace against the world
 
 static alure::Effect alReverbEffects[CSXROOM];
 static alure::AuxiliaryEffectSlot alAuxEffectSlots;
@@ -61,13 +68,140 @@ static EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_DIZZY                       // 28
 };
 
-void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
-{  
-  // Disable reverb adjustment with distance, but enable it
-  // if source is farther than "al_max_distance_inches".
-  cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
-  if (pent != nullptr)
+struct pmplane_t
+{
+  vec3_t	normal;
+  float	dist;
+};
+
+struct pmtrace_s
+{
+  qboolean	allsolid;		       // if true, plane is not valid
+  qboolean	startsolid;	       // if true, the initial point was in a solid area
+  qboolean	inopen, inwater;   // End point is in empty space or in water
+  float	fraction;              // time completed, 1.0 = didn't hit anything
+  vec3_t	endpos;              // final position
+  pmplane_t	plane;             // surface normal at impact
+  int	ent;                     // entity at impact
+  vec3_t	deltavelocity;       // Change in player's velocity caused by impact.  
+                               // Only run on server.
+  int	hitgroup;
+};
+
+pmtrace_s *CL_TraceLine(vec3_t start, vec3_t end, int flags)
+{
+  pmtrace_s *tr = gEngfuncs.PM_TraceLine(start, end, flags, 2, -1);
+  return tr;
+}
+
+float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
+{
+  // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
+  // they get stuck.
+  float	gain = 1.0f - std::numeric_limits<float>::epsilon();
+  vec3_t	endpoint;
+  int	count = 1;
+  pmtrace_s	*tr;
+
+  // set up traceline from player eyes to sound emitting entity origin
+  VectorCopy(ch->origin, endpoint);
+
+  tr = CL_TraceLine(pent->origin, endpoint, PM_STUDIO_IGNORE);
+
+  if ((tr->fraction < 1.0f || tr->allsolid || tr->startsolid) && tr->fraction < 0.99f)
   {
+    // can't see center of sound source:
+    // build extents based on dB sndlvl of source,
+    // test to see how many extents are visible,
+    // drop gain by g_snd_obscured_loss_db per extent hidden
+    vec3_t	endpoints[4];
+    int	i;
+    vec3_t	vecl, vecr, vecl2, vecr2;
+    vec3_t	vsrc_forward;
+    vec3_t	vsrc_right;
+    vec3_t	vsrc_up;
+    float	radius = 0;
+
+    // get radius
+    if (sent->model != nullptr)
+    {
+      radius = radius = sent->model->radius;
+    }      
+    else
+    {
+      if (ch->attenuation)
+      {
+        radius = (20 * log10(pow(10, 3) / (ch->attenuation * 36))); // sndlvl
+        radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius
+      }
+    }      
+
+    // set up extent endpoints - on upward or downward diagonals, facing player
+    for (i = 0; i < 4; i++)
+      VectorCopy(endpoint, endpoints[i]);
+
+    // vsrc_forward is normalized vector from sound source to listener
+    VectorSubtract(pent->origin, endpoint, vsrc_forward);
+    VectorNormalize(vsrc_forward);
+    VectorVectors(vsrc_forward, vsrc_right, vsrc_up);
+
+    VectorAdd(vsrc_up, vsrc_right, vecl);
+
+    // if src above listener, force 'up' vector to point down - create diagonals up & down
+    if (endpoint[2] > pent->origin[2] + (10 * 12))
+      vsrc_up[2] = -vsrc_up[2];
+
+    VectorSubtract(vsrc_up, vsrc_right, vecr);
+    VectorNormalize(vecl);
+    VectorNormalize(vecr);
+
+    // get diagonal vectors from sound source 
+    VectorScale(vecl, radius, vecl2);
+    VectorScale(vecr, radius, vecr2);
+    VectorScale(vecl, (radius / 2.0f), vecl);
+    VectorScale(vecr, (radius / 2.0f), vecr);
+
+    // endpoints from diagonal vectors
+    VectorAdd(endpoints[0], vecl, endpoints[0]);
+    VectorAdd(endpoints[1], vecr, endpoints[1]);
+    VectorAdd(endpoints[2], vecl2, endpoints[2]);
+    VectorAdd(endpoints[3], vecr2, endpoints[3]);
+
+    // drop gain for each point on radius diagonal that is obscured
+    for (count = 0, i = 0; i < 4; i++)
+    {
+      // UNDONE: some endpoints are in walls - in this case, trace from the wall hit location
+      tr = CL_TraceLine(pent->origin, endpoints[i], PM_STUDIO_IGNORE);
+
+      if ((tr->fraction < 1.0f || tr->allsolid || tr->startsolid) && tr->fraction < 0.99f && !tr->startsolid)
+      {
+        // skip first obscured point: at least 2 points + center should be obscured to hear db loss
+        if (++count > 1)
+          gain = gain * pow(10, -2.70f / 20.0f);
+      }
+    }
+  }
+
+  return gain;
+}
+
+void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
+{
+  // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
+  // they get stuck.
+  float direct_gain = 1.0f - std::numeric_limits<float>::epsilon();
+  cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
+  cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
+  if (pent != nullptr && sent != nullptr)
+  {
+    // Detect collisions and reduce gain on occlusion
+    if (al_occlusion->value)
+    {
+      direct_gain = SX_GetGainObscured(ch, pent, sent);
+    }
+
+    // Disable reverb adjustment with distance, but enable it
+    // if source is farther than "al_max_distance_inches".
     if (alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
       alure::Vector3(pent->curstate.origin[0], pent->curstate.origin[1], pent->curstate.origin[2])) > al_max_distance_inches)
     {
@@ -77,7 +211,7 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     {
       ch->source.setGainAuto(true, false, false);
     }
-  }  
+  }
 
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
   {
@@ -85,13 +219,13 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     {
       alAuxEffectSlots.applyEffect(alReverbEffects[14]);
       ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
-      ch->source.setDirectFilter(alure::FilterParams{ 1.0f, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
     }
     else
     {
       alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
       ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
-      ch->source.setDirectFilter(alure::FilterParams{ 1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     }
   }
   else
@@ -100,15 +234,16 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
 
     if (underwater)
-      ch->source.setDirectFilter(alure::FilterParams{ 1.0f, 0.25, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
     else
-      ch->source.setDirectFilter(alure::FilterParams{ 1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
   }
 }
 
 void SX_Init(void)
 {
   alure::Context al_context = alure::Context::GetCurrent();
+  al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", 0);
 
   // Disable reverb when room_type = 0:
   presets_room[0].flGain = 0;
