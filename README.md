@@ -10,11 +10,10 @@ Tested mods:
 - Natural-selection
 
 # Known bugs
-- Mouth movements can be buggy.
 - Some sounds are too quiet.
 
 # TODO
-- Possibly integrate Steam Audio (for occlusion and reflections).
+- Possibly integrate Steam Audio (for reflections/reverb instead of OpenAL's native effects).
 - Fix bugs (obviously)
 - Add support for voice communication.
 
