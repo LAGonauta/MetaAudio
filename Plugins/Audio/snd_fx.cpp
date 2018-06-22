@@ -125,7 +125,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     // get radius
     if (sent->model != nullptr)
     {
-      radius = radius = sent->model->radius;
+      radius = sent->model->radius;
     }      
     else
     {
@@ -195,9 +195,9 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
   if (pent != nullptr && sent != nullptr)
   {
     auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
-      alure::Vector3(pent->curstate.origin[0], pent->curstate.origin[1], pent->curstate.origin[2]));
+      alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
     // Detect collisions and reduce gain on occlusion
-    if (al_occlusion->value && distance > 10)
+    if (al_occlusion->value && distance > 1)
     {
       direct_gain = SX_GetGainObscured(ch, pent, sent);
     }
