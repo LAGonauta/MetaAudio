@@ -962,11 +962,27 @@ qboolean OpenAL_Init(void)
   {
     al_dev_manager = alure::DeviceManager::getInstance();
 
-    auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
-    al_device = al_dev_manager.openPlayback(default_device);
+    const char *_al_set_device;
+    const char *device_set = CommandLine()->CheckParm("-al_device", &_al_set_device);
 
-    al_context = al_device.createContext();
+    al_device = al_dev_manager.openPlayback(_al_set_device, std::nothrow);
+    if (!al_device)
+    {
+#ifdef _DEBUG
+      al_device = al_dev_manager.openPlayback("");
+#else
+      auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
+      al_device = al_dev_manager.openPlayback(default_device);
+#endif
+    }
+
+#ifndef _DEBUG
     strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
+#else
+    strncpy(al_device_name, "Unable to get name in debug mode.", sizeof(al_device_name));
+#endif
+    
+    al_context = al_device.createContext();
 
     alure::Version ver = al_device.getALCVersion();
     al_device_majorversion = ver.getMajor();
