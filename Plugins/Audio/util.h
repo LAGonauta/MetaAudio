@@ -88,6 +88,19 @@ inline float VectorAngle(vec3_t a, vec3_t b)
     return (double)(acos(DotProduct(a, b) / lab) * (180 / M_PI));
 }
 
+inline float ApproachVal(float target, float value, float speed)
+{
+  float	delta = target - value;
+
+  if (delta > speed)
+    value += speed;
+  else if (delta < -speed)
+    value -= speed;
+  else value = target;
+
+  return value;
+}
+
 wchar_t *UTF8ToUnicode(const char* str);
 wchar_t *ANSIToUnicode(const char* str);
 char *UnicodeToANSI(const wchar_t* str);

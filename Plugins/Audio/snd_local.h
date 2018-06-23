@@ -9,8 +9,6 @@
 typedef struct
 {
   sfx_t *sfx;
-  alure::Buffer buffer;
-  alure::Source source;
   float volume;
   float pitch;
   float attenuation;
@@ -24,6 +22,20 @@ typedef struct
   int	iword;
   //for voice sound
   sfxcache_t *voicecache;
+
+  // For OpenAL
+  alure::Buffer buffer;
+  alure::Source source;
+  // For OpenAL EFX
+  bool firstpass;            // true if this is first time sound is spatialized
+  float ob_gain;             // gain drop if sound source obscured from listener
+  float ob_gain_target;      // target gain while crossfading between ob_gain & ob_gain_target
+  float ob_gain_inc;         // crossfade increment
+
+  bool firstpass_send;       // true if this is first time EFX is spatialized
+  float ob_send_gain;        // EFX gain drop if sound source obscured from listener
+  float ob_send_gain_target; // target EFX gain while crossfading between ob_send_gain & ob_send_gain_target
+  float ob_send_gain_inc;    // crossfade increment
 }aud_channel_t;
 
 typedef struct

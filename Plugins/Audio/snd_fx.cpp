@@ -23,8 +23,15 @@ static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
 // with no adjustment of reverb intensity with distance.
 // Reverb adjustment with distance is disabled per-source.
-static constexpr float reverbmix = 0.38f;
-static constexpr float al_max_distance_inches = 1000.0f;
+static constexpr float AL_REVERBMIX = 0.38f;
+static constexpr float AL_MAX_DISTANCE_INCHES = 1000.0f;
+static constexpr float AL_SND_GAIN_FADE_TIME = 0.25f;
+
+static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
+
+// Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
+// they get stuck.
+static constexpr float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
 
 static EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_GENERIC,                    //  0
@@ -94,11 +101,103 @@ pmtrace_s *CL_TraceLine(vec3_t start, vec3_t end, int flags)
   return tr;
 }
 
+float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
+{
+  float	speed, frametime;
+  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
+  if (frametime == 0.0f)
+  {
+    return ch->ob_gain;
+  }
+
+  if (gain_new == -1.0)
+  {
+    // if -1 passed in, just keep fading to existing target
+    gain_new = ch->ob_gain_target;
+  }
+
+  // if first time updating, store new gain into gain & target, return
+  // if gain_new is close to existing gain, store new gain into gain & target, return
+  if (ch->firstpass || (fabs(gain_new - ch->ob_gain) < 0.01f))
+  {
+    ch->ob_gain = gain_new;
+    ch->ob_gain_target = gain_new;
+    ch->ob_gain_inc = 0.0f;
+    return gain_new;
+  }
+
+  // set up new increment to new target
+  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (gain_new - ch->ob_gain);
+
+  ch->ob_gain_inc = fabs(speed);
+
+  // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
+  ch->ob_gain_target = gain_new;
+
+  // if not hit target, keep approaching
+  if (fabs(ch->ob_gain - ch->ob_gain_target) > 0.01f)
+  {
+    ch->ob_gain = ApproachVal(ch->ob_gain_target, ch->ob_gain, ch->ob_gain_inc);
+  }
+  else
+  {
+    // close enough, set gain = target
+    ch->ob_gain = ch->ob_gain_target;
+  }
+
+  return ch->ob_gain;
+}
+
+float SND_FadeToNewSendGain(aud_channel_t *ch, float send_gain_new)
+{
+  float	speed, frametime;
+  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
+  if (frametime == 0.0f)
+  {
+    return ch->ob_send_gain;
+  }
+
+  if (send_gain_new == -1.0)
+  {
+    // if -1 passed in, just keep fading to existing target
+    send_gain_new = ch->ob_send_gain_target;
+  }
+
+  // if first time updating, store new gain into gain & target, return
+  // if gain_new is close to existing gain, store new gain into gain & target, return
+  if (ch->firstpass_send || (fabs(send_gain_new - ch->ob_send_gain) < 0.01f))
+  {
+    ch->ob_send_gain = send_gain_new;
+    ch->ob_send_gain_target = send_gain_new;
+    ch->ob_send_gain_inc = 0.0f;
+    return send_gain_new;
+  }
+
+  // set up new increment to new target
+  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (send_gain_new - ch->ob_send_gain);
+
+  ch->ob_send_gain_inc = fabs(speed);
+
+  // ch->ob_send_gain_inc = fabs( gain_new - ch->ob_send_gain ) / 10.0f;
+  ch->ob_send_gain_target = send_gain_new;
+
+  // if not hit target, keep approaching
+  if (fabs(ch->ob_send_gain - ch->ob_send_gain_target) > 0.01f)
+  {
+    ch->ob_send_gain = ApproachVal(ch->ob_send_gain_target, ch->ob_send_gain, ch->ob_send_gain_inc);
+  }
+  else
+  {
+    // close enough, set gain = target
+    ch->ob_send_gain = ch->ob_send_gain_target;
+  }
+
+  return ch->ob_send_gain;
+}
+
 float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
-  // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
-  // they get stuck.
-  float	gain = 1.0f - std::numeric_limits<float>::epsilon();
+  float	gain = gain_epsilon;
   vec3_t	endpoint;
   int	count = 1;
   pmtrace_s	*tr;
@@ -182,36 +281,31 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     }
   }
 
+  gain = SND_FadeToNewGain(ch, gain);
+
   return gain;
 }
 
 void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
 {
-  // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
-  // they get stuck.
-  float direct_gain = 1.0f - std::numeric_limits<float>::epsilon();
+  float direct_gain = gain_epsilon;
+  float send_gain = gain_epsilon;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
   if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
   {
-    auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
-      alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
     // Detect collisions and reduce gain on occlusion
-    if (al_occlusion->value && distance > 1)
+    if (al_occlusion->value)
     {
       direct_gain = SX_GetGainObscured(ch, pent, sent);
     }
 
-    // Disable reverb adjustment with distance, but enable it
-    // if source is farther than "al_max_distance_inches".
-    if (distance > al_max_distance_inches)
-    {
-      ch->source.setGainAuto(true, true, true);
-    }
-    else
-    {
-      ch->source.setGainAuto(true, false, false);
-    }
+    // Manually do reverb gain adjustment as the distance model only affects
+    // the source gain.
+    auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
+      alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
+    send_gain = max(min(1.0f - distance * ch->attenuation / AL_MAX_DISTANCE_INCHES, gain_epsilon), 0.0f);
+    send_gain = SND_FadeToNewSendGain(ch, send_gain);
   }
 
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
@@ -219,23 +313,22 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     if (underwater)
     {
       alAuxEffectSlots.applyEffect(alReverbEffects[14]);
-      ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     }
     else
     {
       alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
-      ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
       ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     }
+    ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ send_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
   }
   else
   {
     alAuxEffectSlots.applyEffect(alReverbEffects[0]);
-    ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+    ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ send_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
 
     if (underwater)
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, 0.25f, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     else
       ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
   }
@@ -373,7 +466,7 @@ void SX_Init(void)
   }
 
   alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
-  alAuxEffectSlots.setGain(reverbmix);
+  alAuxEffectSlots.setGain(AL_REVERBMIX);
 }
 
 void SX_Shutdown(void)
