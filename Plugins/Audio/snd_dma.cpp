@@ -266,6 +266,14 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
         ch->source.setRadius(sent->model->radius * 0.001f);
       }
     }
+    else
+    {
+      // It seems that not only sounds from the view entity can be source relative...
+      if (ch->origin[0] == 0.0f && ch->origin[1] == 0.0f && ch->origin[2] == 0.0f)
+      {
+        ch->source.setRelative(true);
+      }
+    }
     alure_position = { AL_UnpackVector(ch->origin) };
   }
   else
@@ -780,13 +788,16 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       if (sc->loopstart != -1)
       {
         ch->source.setLooping(true);
-        try
+        if (sc->loopstart > 0)
         {
-          ch->buffer.setLoopPoints(sc->loopstart, ch->buffer.getLength());
-        }
-        catch (...)
-        {
-          // Try to set loop points. Don't care if it did not work.
+          try
+          {
+            ch->buffer.setLoopPoints(sc->loopstart, ch->buffer.getLength());
+          }
+          catch (...)
+          {
+            // Try to set loop points. Don't care if it did not work.
+          }
         }
       }
       SND_Spatialize(ch, true);
