@@ -638,18 +638,6 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
 
 void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch, bool is_static)
 {
-  if (!openal_enabled)
-  {
-    if (is_static)
-    {
-      return gAudEngine.S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-    }
-    else
-    {
-      return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-    }
-  }
-
   std::string _function_name;
   if (is_static)
   {
