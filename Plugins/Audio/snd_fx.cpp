@@ -192,7 +192,7 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
   float direct_gain = 1.0f - std::numeric_limits<float>::epsilon();
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
-  if (pent != nullptr && sent != nullptr)
+  if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
   {
     auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
       alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
