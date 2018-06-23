@@ -261,26 +261,27 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   }
 
   //update position
+  alure::Vector3 alure_position(0, 0, 0);
   if (ch->entnum != *gAudEngine.cl_viewentity)
   {
     ch->source.setRelative(false);
     if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)
     {
-      cl_entity_t *pent = gEngfuncs.GetEntityByIndex(ch->entnum);
+      cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
 
-      if (pent && pent->model && pent->curstate.messagenum == *gAudEngine.cl_parsecount)
+      if (sent && sent->model && sent->curstate.messagenum == *gAudEngine.cl_parsecount)
       {
-        VectorCopy(pent->origin, ch->origin);
+        VectorCopy(sent->origin, ch->origin);
 
-        if (pent->model->type == mod_brush)
+        if (sent->model->type == mod_brush)
         {
           // Mobile brushes (such as trains and platforms) have the correct origin set,
           // but most other bushes do not. How to correctly detect them?
-          if (pent->baseline.origin[0] == 0.0f || pent->baseline.origin[1] == 0.0f || pent->baseline.origin[2] == 0.0f)
+          if (sent->baseline.origin[0] == 0.0f || sent->baseline.origin[1] == 0.0f || sent->baseline.origin[2] == 0.0f)
           {
-            ch->origin[0] = (pent->curstate.mins[0] + pent->curstate.maxs[0]) * 0.5 + pent->curstate.origin[0];
-            ch->origin[1] = (pent->curstate.mins[1] + pent->curstate.maxs[1]) * 0.5 + pent->curstate.origin[1];
-            ch->origin[2] = (pent->curstate.mins[2] + pent->curstate.maxs[2]) * 0.5 + pent->curstate.origin[2];
+            ch->origin[0] = (sent->curstate.mins[0] + sent->curstate.maxs[0]) * 0.5 + sent->curstate.origin[0];
+            ch->origin[1] = (sent->curstate.mins[1] + sent->curstate.maxs[1]) * 0.5 + sent->curstate.origin[1];
+            ch->origin[2] = (sent->curstate.mins[2] + sent->curstate.maxs[2]) * 0.5 + sent->curstate.origin[2];
           }
         }
 
@@ -290,22 +291,21 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
           ratio = 1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
         }
         
-        vec3_t pent_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
-          (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
-          (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
+        vec3_t sent_velocity = { (sent->curstate.origin[0] - sent->prevstate.origin[0]) * ratio,
+          (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
+          (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
-        ch->source.setVelocity({ AL_UnpackVector(pent_velocity) });
-        ch->source.setRadius(pent->model->radius * 0.001f);
+        ch->source.setVelocity({ AL_UnpackVector(sent_velocity) });
+        ch->source.setRadius(sent->model->radius * 0.001f);
       }
     }
-    ch->source.setPosition({ AL_UnpackVector(ch->origin) });
+    alure_position = { AL_UnpackVector(ch->origin) };
   }
   else
   {
-    ch->source.setRelative(true);
-    alure::Vector3 pos = { 0, 0, 0 };
-    ch->source.setPosition(pos);
+    ch->source.setRelative(true);    
   }
+  ch->source.setPosition(alure_position);
 
   float fvol = 1.0f;
   float fpitch = 1.0f;
@@ -373,8 +373,22 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   {
     al_context.setDopplerFactor(al_doppler->value);
   }
-  al_listener.setPosition({ AL_UnpackVector(origin) });
-  al_listener.setOrientation(orientation);
+
+  std::pair<alure::Vector3, alure::Vector3> alure_orientation(
+    alure::Vector3(orientation[0], orientation[1], orientation[2]),
+    alure::Vector3(orientation[3], orientation[4], orientation[5])
+  );
+
+  // Force unit vector if all zeros (Rapture3D workaround).
+  if (orientation[0] == 0.0f && orientation[1] == 0.0f && orientation[2] == 0.0f)
+  {
+    alure_orientation.first[0] = 1;
+  }
+  if (orientation[3] == 0.0f && orientation[4] == 0.0f && orientation[5] == 0.0f)
+  {
+    alure_orientation.second[0] = 1;
+  }
+
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   if (pent != nullptr)
   {
@@ -390,6 +404,8 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
     al_listener.setVelocity({ AL_UnpackVector(view_velocity) });
   }
+  al_listener.setPosition({ AL_UnpackVector(origin) });
+  al_listener.setOrientation(alure_orientation);
 
   for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
   {
