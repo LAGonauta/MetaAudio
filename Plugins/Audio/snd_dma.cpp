@@ -594,152 +594,6 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   return &channels[first_to_die];
 }
 
-void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
-{
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-  }
-
-  aud_channel_t *ch;
-  aud_sfxcache_t *sc;
-  qboolean fsentence;
-  float fpitch;
-
-  if (!sfx)
-    return;
-
-  if (nosound && nosound->value)
-    return;
-
-  if (sfx->name[0] == '*')
-    entchannel = CHAN_STREAM;
-
-  if (entchannel == CHAN_STREAM && pitch != 100)
-  {
-    gEngfuncs.Con_DPrintf("Warning: pitch shift ignored on stream sound %s\n", sfx->name);
-    pitch = 100;
-  }
-
-  if (fvol > 1.0f)
-  {
-    gEngfuncs.Con_DPrintf("S_StartDynamicSound: %s fvolume > 1.0", sfx->name);
-  }
-
-  fpitch = pitch / 100.0f;
-
-  if (flags & (SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH))
-  {
-    if (S_AlterChannel(entnum, entchannel, sfx, fvol, fpitch, flags))
-      return;
-
-    if (flags & SND_STOP)
-      return;
-  }
-
-  if (pitch == 0)
-  {
-    gEngfuncs.Con_DPrintf("Warning: S_StartDynamicSound Ignored, called with pitch 0");
-    return;
-  }
-
-  ch = SND_PickDynamicChannel(entnum, entchannel, sfx);
-
-  if (!ch)
-    return;
-
-  VectorCopy(origin, ch->origin);
-  ch->attenuation = attenuation;
-  ch->volume = fvol;
-  ch->entnum = entnum;
-  ch->entchannel = entchannel;
-  ch->pitch = fpitch;
-  ch->isentence = -1;
-
-  if (sfx->name[0] == '!' || sfx->name[0] == '#')
-  {
-    char name[MAX_QPATH];
-    strncpy(name, sfx->name + 1, sizeof(name) - 1);
-    name[sizeof(name) - 1] = 0;
-    sc = VOX_LoadSound(ch, name);
-    fsentence = true;
-  }
-  else
-  {
-    sc = S_LoadSound(sfx, ch);
-    ch->sfx = sfx;
-    fsentence = false;
-  }
-
-  if (!sc)
-  {
-    ch->sfx = NULL;
-    return;
-  }
-
-  if (!ch->source)
-  {
-    ch->source = al_context.createSource();
-  }
-
-  ch->start = 0;
-  ch->end = sc->length;
-
-  if (!fsentence && ch->pitch != 1)
-    VOX_MakeSingleWordSentence(ch, pitch);
-
-  VOX_TrimStartEndTimes(ch, sc);
-
-  SND_InitMouth(entnum, entchannel);
-
-  ch->source.setRolloffFactors(ch->attenuation);
-  ch->source.setOffset(ch->start);
-  ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
-
-  // Should also set source priority
-  if (strcmp(sc->alpath, "\0") != 0)
-  {
-    if (ch->entchannel == CHAN_STREAM)
-    {
-      alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
-      SND_Spatialize(ch, true);
-      try
-      {
-        ch->source.play(decoder, 12000, 4);
-      }
-      catch (const std::runtime_error& error)
-      {
-        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
-      }      
-    }
-    else
-    {
-      ch->buffer = al_context.getBuffer(sc->alpath);
-      if (sc->loopstart != -1)
-      {
-        ch->source.setLooping(true);
-        try
-        {
-          ch->buffer.setLoopPoints(sc->loopstart, ch->buffer.getLength());
-        }
-        catch (...)
-        {
-          // Try to set loop points. Don't care if it did not work.
-        }
-      }
-      SND_Spatialize(ch, true);
-      try
-      {
-        ch->source.play(ch->buffer);
-      }
-      catch (const std::runtime_error& error)
-      {
-        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
-      }
-    }
-  }
-}
-
 aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
 {
   int i;
@@ -782,17 +636,34 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
   return ch;
 }
 
-void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
+void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch, bool is_static)
 {
+  if (!openal_enabled)
+  {
+    if (is_static)
+    {
+      return gAudEngine.S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
+    }
+    else
+    {
+      return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
+    }
+  }
+
+  std::string _function_name;
+  if (is_static)
+  {
+    _function_name = "S_StartStaticSound";
+  }
+  else
+  {
+    _function_name = "S_StartDynamicSound";
+  }
+
   aud_channel_t *ch;
   aud_sfxcache_t *sc;
   qboolean fsentence;
   float fpitch;
-
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-  }
 
   if (!sfx)
     return;
@@ -811,7 +682,7 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
   if (fvol > 1.0f)
   {
-    gEngfuncs.Con_DPrintf("S_StartStaticSound: %s fvolume > 1.0", sfx->name);
+    gEngfuncs.Con_DPrintf("%s: %s fvolume > 1.0", _function_name, sfx->name);
   }
 
   fpitch = pitch / 100.0f;
@@ -827,11 +698,18 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
   if (pitch == 0)
   {
-    gEngfuncs.Con_DPrintf("Warning: S_StartStaticSound Ignored, called with pitch 0");
+    gEngfuncs.Con_DPrintf("Warning: %s Ignored, called with pitch 0", _function_name);
     return;
   }
 
-  ch = SND_PickStaticChannel(entnum, entchannel, sfx);
+  if (is_static)
+  {
+    ch = SND_PickStaticChannel(entnum, entchannel, sfx);
+  }
+  else
+  {
+    ch = SND_PickDynamicChannel(entnum, entchannel, sfx);
+  }
 
   if (!ch)
     return;
@@ -878,6 +756,11 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
 
   VOX_TrimStartEndTimes(ch, sc);
 
+  if (!is_static)
+  {
+    SND_InitMouth(entnum, entchannel);
+  }
+
   ch->source.setRolloffFactors(ch->attenuation);
   ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0, 1000 * AL_UnitToMeters);
@@ -895,8 +778,8 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
       }
       catch (const std::runtime_error& error)
       {
-        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
-      }      
+        gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
+      }
     }
     else
     {
@@ -912,7 +795,7 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
         {
           // Try to set loop points. Don't care if it did not work.
         }
-      }      
+      }
       SND_Spatialize(ch, true);
       try
       {
@@ -920,10 +803,30 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, f
       }
       catch (const std::runtime_error& error)
       {
-        gEngfuncs.Con_Printf("S_StartDynamicSound: %s\n", error.what());
+        gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
       }
     }
   }
+}
+
+void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
+{
+  if (!openal_enabled)
+  {
+    return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
+  }
+
+  S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, false);
+}
+
+void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
+{
+  if (!openal_enabled)
+  {
+    return gAudEngine.S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
+  }
+
+  S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, true);
 }
 
 void S_StopSound(int entnum, int entchannel)
