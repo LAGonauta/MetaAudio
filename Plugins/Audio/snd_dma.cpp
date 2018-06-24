@@ -156,6 +156,15 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
     fWaveEnd = true;
   }
+  else if (ch->entchannel != CHAN_STREAM)
+  {
+    ALint iSamplesPlayed = ch->source.getSampleOffset();
+
+    if (sc->loopstart == -1 && iSamplesPlayed >= ch->end)
+    {
+      fWaveEnd = true;
+    }
+  }
 
   if (!fWaveEnd)
     return;
