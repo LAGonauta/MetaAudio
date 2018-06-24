@@ -11,7 +11,7 @@ extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 static cvar_t *al_occlusion = nullptr;
 
-static constexpr int PM_NORMAL = 0x00000000;
+static constexpr int  PM_NORMAL = 0x00000000;
 static constexpr int  PM_STUDIO_IGNORE = 0x00000001;     // Skip studio models
 static constexpr int  PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-complex studio models (even in traceline)
 static constexpr int  PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
@@ -24,7 +24,6 @@ static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 // with no adjustment of reverb intensity with distance.
 // Reverb adjustment with distance is disabled per-source.
 static constexpr float AL_REVERBMIX = 0.38f;
-static constexpr float AL_MAX_DISTANCE_INCHES = 1000.0f;
 static constexpr float AL_SND_GAIN_FADE_TIME = 0.25f;
 
 static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
@@ -148,53 +147,6 @@ float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
   return ch->ob_gain;
 }
 
-float SND_FadeToNewSendGain(aud_channel_t *ch, float send_gain_new)
-{
-  float	speed, frametime;
-  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
-  if (frametime == 0.0f)
-  {
-    return ch->ob_send_gain;
-  }
-
-  if (send_gain_new == -1.0)
-  {
-    // if -1 passed in, just keep fading to existing target
-    send_gain_new = ch->ob_send_gain_target;
-  }
-
-  // if first time updating, store new gain into gain & target, return
-  // if gain_new is close to existing gain, store new gain into gain & target, return
-  if (ch->firstpass_send || (fabs(send_gain_new - ch->ob_send_gain) < 0.01f))
-  {
-    ch->ob_send_gain = send_gain_new;
-    ch->ob_send_gain_target = send_gain_new;
-    ch->ob_send_gain_inc = 0.0f;
-    return send_gain_new;
-  }
-
-  // set up new increment to new target
-  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (send_gain_new - ch->ob_send_gain);
-
-  ch->ob_send_gain_inc = fabs(speed);
-
-  // ch->ob_send_gain_inc = fabs( gain_new - ch->ob_send_gain ) / 10.0f;
-  ch->ob_send_gain_target = send_gain_new;
-
-  // if not hit target, keep approaching
-  if (fabs(ch->ob_send_gain - ch->ob_send_gain_target) > 0.01f)
-  {
-    ch->ob_send_gain = ApproachVal(ch->ob_send_gain_target, ch->ob_send_gain, ch->ob_send_gain_inc);
-  }
-  else
-  {
-    // close enough, set gain = target
-    ch->ob_send_gain = ch->ob_send_gain_target;
-  }
-
-  return ch->ob_send_gain;
-}
-
 float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
   float	gain = gain_epsilon;
@@ -289,7 +241,6 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
 void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
 {
   float direct_gain = gain_epsilon;
-  float send_gain = gain_epsilon;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
   if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
@@ -299,13 +250,6 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     {
       direct_gain = SX_GetGainObscured(ch, pent, sent);
     }
-
-    // Manually do reverb gain adjustment as the distance model only affects
-    // the source gain.
-    auto distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistance(
-      alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
-    send_gain = max(min(1.0f - distance * ch->attenuation / AL_MAX_DISTANCE_INCHES, gain_epsilon), 0.0f);
-    send_gain = SND_FadeToNewSendGain(ch, send_gain);
   }
 
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
@@ -320,17 +264,20 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
       alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
       ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
     }
-    ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ send_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
   }
   else
   {
     alAuxEffectSlots.applyEffect(alReverbEffects[0]);
-    ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ send_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
-
     if (underwater)
+    {
       ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    }
     else
+    {
       ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    }
+    ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
   }
 }
 

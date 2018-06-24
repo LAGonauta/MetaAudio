@@ -197,7 +197,6 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 void SND_Spatialize(aud_channel_t *ch, qboolean init)
 {
   ch->firstpass = init;
-  ch->firstpass_send = init;
   if (!ch->sfx)
     return;
 
@@ -759,12 +758,9 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     SND_InitMouth(entnum, entchannel);
   }
 
-  ch->source.setRolloffFactors(ch->attenuation);
+  ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0, 1000);
-
-  // Disable send (EFX) gain adjustment with distance.
-  ch->source.setGainAuto(true, false, false);
 
   // Should also set source priority
   if (strcmp(sc->alpath, "\0") != 0)
