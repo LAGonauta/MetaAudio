@@ -254,31 +254,22 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
 
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
   {
-    if (underwater)
-    {
-      alAuxEffectSlots.applyEffect(alReverbEffects[14]);
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
-    }
-    else
-    {
-      alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
-    }
-    ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+    alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
   }
   else
   {
     alAuxEffectSlots.applyEffect(alReverbEffects[0]);
-    if (underwater)
-    {
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
-    }
-    else
-    {
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
-    }
-    ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
   }
+
+  if (underwater)
+  {
+    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+  }
+  else
+  {
+    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+  }
+  ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
 }
 
 void SX_Init(void)
