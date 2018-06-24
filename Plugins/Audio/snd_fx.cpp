@@ -1,10 +1,11 @@
+#include <math.h>
 #include <metahook.h>
 #include "exportfuncs.h"
 #include "FileSystem.h"
 #include "util.h"
 #include "snd_local.h"
-#include <math.h>
 #include "alure/AL/efx-presets.h"
+#include "efx-util.h"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
@@ -17,7 +18,6 @@ static constexpr int  PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-co
 static constexpr int  PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
 static constexpr int  PM_WORLD_ONLY = 0x00000008;        // Only trace against the world
 
-static alure::Effect alReverbEffects[CSXROOM];
 static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
 // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
@@ -31,6 +31,15 @@ static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
 // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
 // they get stuck.
 static constexpr float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
+
+// Temporary effect for interpolation
+static struct
+{
+  EFXEAXREVERBPROPERTIES ob_effect;        // Effect change if listener changes environment
+  EFXEAXREVERBPROPERTIES ob_effect_target; // Target effect while crossfading between ob_effect and ob_effect_target
+  EFXEAXREVERBPROPERTIES ob_effect_inc;    // crossfade increment
+  alure::Effect generated_effect;                // Generated effect from crossfade
+} interpl_effect;
 
 static EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
     EFX_REVERB_PRESET_GENERIC,                    //  0
@@ -146,6 +155,40 @@ float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
 
   return ch->ob_gain;
 }
+EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
+{
+  EFXEAXREVERBPROPERTIES change_speed;
+  float	frametime;
+  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
+  if (frametime == 0.0f)
+  {
+    return interpl_effect.ob_effect;
+  }
+  
+  // if first time updating, store new gain into gain & target, return
+  // if gain_new is close to existing gain, store new gain into gain & target, return
+  if (SX_CompareEffectDiffToValue(effect_new, interpl_effect.ob_effect, 0.01f))
+  {
+    SX_CopyEffect(interpl_effect.ob_effect, effect_new);
+    SX_CopyEffect(interpl_effect.ob_effect_target, effect_new);
+    SX_SetEffect(interpl_effect.ob_effect_inc, 0.0f);
+    return effect_new;
+  }
+
+  // set up new increment to new target
+  change_speed = SX_SubtractEffect(effect_new, interpl_effect.ob_effect);
+  SX_MultiplyEffect(change_speed, frametime / AL_SND_GAIN_FADE_TIME);
+  SX_fabs(change_speed);
+
+  SX_CopyEffect(interpl_effect.ob_effect_inc, change_speed);
+
+  // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
+  SX_CopyEffect(interpl_effect.ob_effect_target, effect_new);
+
+  SX_ApproachEffect(interpl_effect.ob_effect, interpl_effect.ob_effect_target, interpl_effect.ob_effect_inc, 0.01f);
+
+  return interpl_effect.ob_effect;
+}
 
 float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
@@ -228,7 +271,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
       {
         // skip first obscured point: at least 2 points + center should be obscured to hear db loss
         if (++count > 1)
-          gain = gain * pow(10, -2.70f / 20.0f);
+          gain = gain * alure::dBToLinear(-2.70f);
       }
     }
   }
@@ -238,7 +281,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
   return gain;
 }
 
-void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
+void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool efx_interpl_firstpass)
 {
   float direct_gain = gain_epsilon;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
@@ -252,13 +295,18 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater)
     }
   }
 
+  EFXEAXREVERBPROPERTIES desired = presets_room[0];
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
   {
-    alAuxEffectSlots.applyEffect(alReverbEffects[roomtype]);
+    desired = presets_room[roomtype];
   }
-  else
+
+  // Interpolate effect
+  if (efx_interpl_firstpass)
   {
-    alAuxEffectSlots.applyEffect(alReverbEffects[0]);
+    desired = SX_FadeToNewEffect(desired);
+    interpl_effect.generated_effect.setReverbProperties(desired);
+    alAuxEffectSlots.applyEffect(interpl_effect.generated_effect);
   }
 
   if (underwater)
@@ -396,12 +444,8 @@ void SX_Init(void)
   presets_room[28].flDecayTime = 17.234f;
   presets_room[28].flDecayHFRatio = static_cast<float>(2 / 3);
 
-  // Init each effect
-  for (int i = 0; i < CSXROOM; ++i)
-  {
-    alReverbEffects[i] = al_context.createEffect();
-    alReverbEffects[i].setReverbProperties(presets_room[i]);
-  }
+  // Init interpolated effect
+  interpl_effect.generated_effect = al_context.createEffect();
 
   alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
   alAuxEffectSlots.setGain(AL_REVERBMIX);
@@ -409,9 +453,6 @@ void SX_Init(void)
 
 void SX_Shutdown(void)
 {
-  for (size_t i = 0; i < CSXROOM; ++i)
-  {
-    alReverbEffects[i].destroy();
-  }
   alAuxEffectSlots.destroy();
+  interpl_effect.generated_effect.destroy();
 }

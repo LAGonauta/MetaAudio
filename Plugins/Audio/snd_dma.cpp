@@ -203,7 +203,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
 }
 
-void SND_Spatialize(aud_channel_t *ch, qboolean init)
+void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass = false)
 {
   ch->firstpass = init;
   if (!ch->sfx)
@@ -221,7 +221,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   {
     roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
   }
-  SX_ApplyEffect(ch, roomtype, underwater);
+  SX_ApplyEffect(ch, roomtype, underwater, efx_interpl_firstpass);
 
   //for later usage
   aud_sfxcache_t *sc = (aud_sfxcache_t *)Cache_Check(&ch->sfx->cache);
@@ -390,9 +390,11 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   al_listener.setPosition({ AL_UnpackVector(origin) });
   al_listener.setOrientation(alure_orientation);
 
+  bool efx_first_pass = true;
   for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
   {
-    SND_Spatialize(ch, false);
+    SND_Spatialize(ch, false, efx_first_pass);
+    efx_first_pass = false;
   }
 
   if (snd_show && snd_show->value)
