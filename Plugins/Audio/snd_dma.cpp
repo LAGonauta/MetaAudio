@@ -271,7 +271,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass
           (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
         ch->source.setVelocity({ AL_UnpackVector(sent_velocity) });
-        ch->source.setRadius(sent->model->radius * 0.001f);
+        ch->source.setRadius(sent->model->radius);
       }
     }
     else
@@ -771,7 +771,8 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setOffset(ch->start);
-  ch->source.setDistanceRange(0, 1000);
+  ch->source.setDistanceRange(0.0f, 1000.0f);
+  ch->source.setAirAbsorptionFactor(1.0f);
 
   // Should also set source priority
   if (strcmp(sc->alpath, "\0") != 0)
@@ -908,7 +909,7 @@ qboolean OpenAL_Init(void)
     al_device_minorversion = ver.getMinor();
 
     alure::Context::MakeCurrent(al_context);
-    al_context.setDistanceModel(alure::DistanceModel::Linear);
+    al_context.setDistanceModel(alure::DistanceModel::LinearClamped);
     al_context.setSpeedOfSound(343.3 / AL_UnitToMeters);
 
     alure::Listener al_listener = al_context.getListener();
