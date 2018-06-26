@@ -3,30 +3,6 @@
 #include "util.h"
 #include "alure/AL/efx-presets.h"
 
-inline void SX_CopyEffect(EFXEAXREVERBPROPERTIES& dest, EFXEAXREVERBPROPERTIES& source)
-{
-  dest.flDensity = source.flDensity;
-  dest.flDiffusion = source.flDiffusion;
-  dest.flGain = source.flGain;
-  dest.flGainHF = source.flGainHF;
-  dest.flGainLF = source.flGainLF;
-  dest.flDecayTime = source.flDecayTime;
-  dest.flDecayHFRatio = source.flDecayHFRatio;
-  dest.flDecayLFRatio = source.flDecayLFRatio;
-  dest.flReflectionsGain = source.flReflectionsGain;
-  dest.flReflectionsDelay = source.flReflectionsDelay;
-  dest.flLateReverbGain = source.flLateReverbGain;
-  dest.flLateReverbDelay = source.flLateReverbDelay;
-  dest.flEchoTime = source.flEchoTime;
-  dest.flEchoDepth = source.flEchoDepth;
-  dest.flModulationTime = source.flModulationTime;
-  dest.flModulationDepth = source.flModulationDepth;
-  dest.flAirAbsorptionGainHF = source.flAirAbsorptionGainHF;
-  dest.flHFReference = source.flHFReference;
-  dest.flLFReference = source.flLFReference;
-  dest.flRoomRolloffFactor = source.flRoomRolloffFactor;
-}
-
 inline void SX_fabs(EFXEAXREVERBPROPERTIES& effect)
 {
   effect.flDensity = fabs(effect.flDensity);

@@ -169,8 +169,8 @@ EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
   // if gain_new is close to existing gain, store new gain into gain & target, return
   if (SX_CompareEffectDiffToValue(effect_new, interpl_effect.ob_effect, 0.01f))
   {
-    SX_CopyEffect(interpl_effect.ob_effect, effect_new);
-    SX_CopyEffect(interpl_effect.ob_effect_target, effect_new);
+    interpl_effect.ob_effect = effect_new;
+    interpl_effect.ob_effect_target = effect_new;
     SX_SetEffect(interpl_effect.ob_effect_inc, 0.0f);
     return effect_new;
   }
@@ -180,10 +180,10 @@ EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
   SX_MultiplyEffect(change_speed, frametime / AL_SND_GAIN_FADE_TIME);
   SX_fabs(change_speed);
 
-  SX_CopyEffect(interpl_effect.ob_effect_inc, change_speed);
+  interpl_effect.ob_effect_inc = change_speed;
 
   // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
-  SX_CopyEffect(interpl_effect.ob_effect_target, effect_new);
+  interpl_effect.ob_effect_target = effect_new;
 
   SX_ApproachEffect(interpl_effect.ob_effect, interpl_effect.ob_effect_target, interpl_effect.ob_effect_inc, 0.01f);
 
