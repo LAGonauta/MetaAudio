@@ -352,7 +352,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
       al_listener.setGain(1.0f);
   }
 
-  if (al_doppler->value >= 0.0f && al_doppler->value <= 1.0f)
+  if (al_doppler->value >= 0.0f && al_doppler->value <= 10.0f)
   {
     al_context.setDopplerFactor(al_doppler->value);
   }

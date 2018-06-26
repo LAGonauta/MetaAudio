@@ -12,11 +12,11 @@ extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 static cvar_t *al_occlusion = nullptr;
 
-static constexpr int  PM_NORMAL = 0x00000000;
-static constexpr int  PM_STUDIO_IGNORE = 0x00000001;     // Skip studio models
-static constexpr int  PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-complex studio models (even in traceline)
-static constexpr int  PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
-static constexpr int  PM_WORLD_ONLY = 0x00000008;        // Only trace against the world
+static constexpr int PM_NORMAL = 0x00000000;
+static constexpr int PM_STUDIO_IGNORE = 0x00000001;     // Skip studio models
+static constexpr int PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-complex studio models (even in traceline)
+static constexpr int PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
+static constexpr int PM_WORLD_ONLY = 0x00000008;        // Only trace against the world
 
 static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
@@ -27,6 +27,7 @@ static constexpr float AL_REVERBMIX = 0.38f;
 static constexpr float AL_SND_GAIN_FADE_TIME = 0.25f;
 
 static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
+static constexpr float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
 
 // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
 // they get stuck.
@@ -312,10 +313,12 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool e
   if (underwater)
   {
     ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setDopplerFactor(AL_UNDERWATER_DOPPLER_FACTOR_RATIO);
   }
   else
   {
     ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setDopplerFactor(1.0f);
   }
   ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
 }
