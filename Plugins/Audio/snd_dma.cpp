@@ -42,7 +42,7 @@ int al_device_minorversion = 0;
 // translates from AL coordinate system to quake
 // HL seems to use inches, convert to meters.
 #define AL_UnitToMeters 0.0254f
-#define AL_UnpackVector(v) -v[1], v[2], -v[0]
+#define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 
 void S_FreeCache(sfx_t *sfx)
@@ -271,7 +271,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass
           (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
         ch->source.setVelocity({ AL_UnpackVector(sent_velocity) });
-        ch->source.setRadius(sent->model->radius);
+        ch->source.setRadius(sent->model->radius * AL_UnitToMeters);
       }
     }
     else
@@ -771,7 +771,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setOffset(ch->start);
-  ch->source.setDistanceRange(0.0f, 1000.0f);
+  ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
   ch->source.setAirAbsorptionFactor(1.0f);
 
   // Should also set source priority
@@ -910,10 +910,6 @@ qboolean OpenAL_Init(void)
 
     alure::Context::MakeCurrent(al_context);
     al_context.setDistanceModel(alure::DistanceModel::Linear);
-    al_context.setSpeedOfSound(343.3 / AL_UnitToMeters);
-
-    alure::Listener al_listener = al_context.getListener();
-    al_listener.setMetersPerUnit(AL_UnitToMeters);
     return true;
   }
   catch (...)
