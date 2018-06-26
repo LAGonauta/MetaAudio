@@ -909,7 +909,7 @@ qboolean OpenAL_Init(void)
     al_device_minorversion = ver.getMinor();
 
     alure::Context::MakeCurrent(al_context);
-    al_context.setDistanceModel(alure::DistanceModel::LinearClamped);
+    al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_context.setSpeedOfSound(343.3 / AL_UnitToMeters);
 
     alure::Listener al_listener = al_context.getListener();
