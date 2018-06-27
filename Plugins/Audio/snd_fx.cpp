@@ -1,6 +1,7 @@
 #include <math.h>
 #include <metahook.h>
 #include "exportfuncs.h"
+#include "event_api.h"
 #include "FileSystem.h"
 #include "util.h"
 #include "snd_local.h"
@@ -104,10 +105,11 @@ struct pmtrace_s
   int	hitgroup;
 };
 
-pmtrace_s *CL_TraceLine(vec3_t start, vec3_t end, int flags)
+void SX_PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
 {
-  pmtrace_s *tr = gEngfuncs.PM_TraceLine(start, end, flags, 2, -1);
-  return tr;
+  // 0 = regular player hull, 1 = ducked player hull, 2 = point hull
+  gEngfuncs.pEventAPI->EV_SetTraceHull(2);
+  gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
 }
 
 float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
@@ -156,6 +158,7 @@ float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
 
   return ch->ob_gain;
 }
+
 EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
 {
   EFXEAXREVERBPROPERTIES change_speed;
@@ -196,14 +199,14 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
   float	gain = gain_epsilon;
   vec3_t	endpoint;
   int	count = 1;
-  pmtrace_s	*tr;
+  pmtrace_s tr;
 
   // set up traceline from player eyes to sound emitting entity origin
   VectorCopy(ch->origin, endpoint);
 
-  tr = CL_TraceLine(pent->origin, endpoint, PM_STUDIO_IGNORE);
+  SX_PlayerTrace(pent->origin, endpoint, PM_STUDIO_IGNORE, tr);
 
-  if ((tr->fraction < 1.0f || tr->allsolid || tr->startsolid) && tr->fraction < 0.99f)
+  if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
   {
     // can't see center of sound source:
     // build extents based on dB sndlvl of source,
@@ -268,9 +271,9 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     for (count = 0, i = 0; i < 4; i++)
     {
       // UNDONE: some endpoints are in walls - in this case, trace from the wall hit location
-      tr = CL_TraceLine(pent->origin, endpoints[i], PM_STUDIO_IGNORE);
+      SX_PlayerTrace(pent->origin, endpoints[i], PM_STUDIO_IGNORE, tr);
 
-      if ((tr->fraction < 1.0f || tr->allsolid || tr->startsolid) && tr->fraction < 0.99f && !tr->startsolid)
+      if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
       {
         // skip first obscured point: at least 2 points + center should be obscured to hear db loss
         if (++count > 1)
