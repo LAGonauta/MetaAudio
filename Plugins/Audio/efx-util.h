@@ -27,7 +27,7 @@ inline void SX_fabs(EFXEAXREVERBPROPERTIES& effect)
   effect.flRoomRolloffFactor = fabs(effect.flRoomRolloffFactor);
 }
 
-inline EFXEAXREVERBPROPERTIES SX_SubtractEffect(EFXEAXREVERBPROPERTIES& effect1, EFXEAXREVERBPROPERTIES& effect2)
+inline EFXEAXREVERBPROPERTIES SX_SubtractEffect(const EFXEAXREVERBPROPERTIES& effect1, const EFXEAXREVERBPROPERTIES& effect2)
 {
   EFXEAXREVERBPROPERTIES output;
   output.flDensity = effect1.flDensity - effect2.flDensity;
@@ -53,7 +53,7 @@ inline EFXEAXREVERBPROPERTIES SX_SubtractEffect(EFXEAXREVERBPROPERTIES& effect1,
   return output;
 }
 
-inline void SX_SetEffect(EFXEAXREVERBPROPERTIES& dest, float value)
+inline void SX_SetEffect(EFXEAXREVERBPROPERTIES& dest, const float& value)
 {
   dest.flDensity = value;
   dest.flDiffusion = value;
@@ -77,7 +77,7 @@ inline void SX_SetEffect(EFXEAXREVERBPROPERTIES& dest, float value)
   dest.flRoomRolloffFactor = value;
 }
 
-inline void SX_MultiplyEffect(EFXEAXREVERBPROPERTIES& dest, float value)
+inline void SX_MultiplyEffect(EFXEAXREVERBPROPERTIES& dest, const float& value)
 {
   dest.flDensity *= value;
   dest.flDiffusion *= value;
@@ -101,7 +101,7 @@ inline void SX_MultiplyEffect(EFXEAXREVERBPROPERTIES& dest, float value)
   dest.flRoomRolloffFactor *= value;
 }
 
-inline bool SX_CompareEffectDiffToValue(EFXEAXREVERBPROPERTIES& effect1, EFXEAXREVERBPROPERTIES& effect2, float value)
+inline bool SX_CompareEffectDiffToValue(const EFXEAXREVERBPROPERTIES& effect1, const EFXEAXREVERBPROPERTIES& effect2, const float& value)
 {
   return (fabs(effect1.flDensity - effect2.flDensity) < value &&
     fabs(effect1.flDiffusion - effect2.flDiffusion) < value &&
@@ -125,7 +125,7 @@ inline bool SX_CompareEffectDiffToValue(EFXEAXREVERBPROPERTIES& effect1, EFXEAXR
     fabs(effect1.flRoomRolloffFactor - effect2.flRoomRolloffFactor) < value);
 }
 
-inline void SX_Approach(float& ob_gain, float& ob_gain_target, float& ob_gain_inc, float& value)
+inline void SX_Approach(float& ob_gain, const float& ob_gain_target, const float& ob_gain_inc, const float& value)
 {
   // if not hit target, keep approaching
   if (fabs(ob_gain - ob_gain_target) > value)
@@ -139,7 +139,7 @@ inline void SX_Approach(float& ob_gain, float& ob_gain_target, float& ob_gain_in
   }
 }
 
-inline void SX_ApproachEffect(EFXEAXREVERBPROPERTIES& ob_gain, EFXEAXREVERBPROPERTIES& ob_gain_target, EFXEAXREVERBPROPERTIES& ob_gain_inc, float value)
+inline void SX_ApproachEffect(EFXEAXREVERBPROPERTIES& ob_gain, const EFXEAXREVERBPROPERTIES& ob_gain_target, const  EFXEAXREVERBPROPERTIES& ob_gain_inc, const float& value)
 {
   SX_Approach(ob_gain.flDensity, ob_gain_target.flDensity, ob_gain_inc.flDensity, value);
   SX_Approach(ob_gain.flDiffusion, ob_gain_target.flDiffusion, ob_gain_inc.flDiffusion, value);
