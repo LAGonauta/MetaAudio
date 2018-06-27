@@ -215,21 +215,23 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     vec3_t	vsrc_forward;
     vec3_t	vsrc_right;
     vec3_t	vsrc_up;
-    float	radius = 0;
 
     // get radius
+    float	radius = 0;
     if (sent->model != nullptr)
     {
-      radius = sent->model->radius;
-    }      
-    else
-    {
-      if (ch->attenuation)
+      if (sent->model->radius > 0)
       {
-        radius = (20 * log10(pow(10, 3) / (ch->attenuation * 36))); // sndlvl
-        radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius
+        radius = sent->model->radius;
       }
-    }      
+    }
+
+    // Calculate radius based on attenuation
+    if (ch->attenuation && radius == 0)
+    {
+      radius = (20 * log10(pow(10, 3) / (ch->attenuation * 36 / 1000))); // sndlvl from dist_mul
+      radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius from min and max sndlvl
+    }  
 
     // set up extent endpoints - on upward or downward diagonals, facing player
     for (i = 0; i < 4; i++)
