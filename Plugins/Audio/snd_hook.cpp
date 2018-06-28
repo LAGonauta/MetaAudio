@@ -1,6 +1,7 @@
 #include <metahook.h>
-#include "plugins.h"
+
 #include "exportfuncs.h"
+#include "plugins.h"
 #include "snd_local.h"
 
 aud_engine_t gAudEngine;

@@ -1,8 +1,9 @@
 #include <metahook.h>
+
 #include "exportfuncs.h"
 #include "FileSystem.h"
-#include "util.h"
 #include "snd_local.h"
+#include "util.h"
 #include "zone.h"
 
 voxword_t rgrgvoxword[CVOXSENTENCEMAX][CVOXWORDMAX];

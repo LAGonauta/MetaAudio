@@ -1,6 +1,7 @@
 #include <metahook.h>
-#include "plugins.h"
+
 #include "exportfuncs.h"
+#include "plugins.h"
 #include "zone.h"
 
 #define DYNAMIC_SIZE 0x200000

@@ -1,10 +1,11 @@
 #include <metahook.h>
+
+#include "alure/AL/alure2.h"
 #include "FileSystem.h"
 #include "util.h"
 #include "exportfuncs.h"
 #include "snd_local.h"
 #include "zone.h"
-#include "alure/AL/alure2.h"
 
 aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 {

@@ -3,9 +3,9 @@
 #include "plugins.h"
 #include "exportfuncs.h"
 #include "enginedef.h"
+#include "plat.h"
 #include "snd_local.h"
 #include "zone.h"
-#include "plat.h"
 
 byte	*data_p;
 byte 	*iff_end;

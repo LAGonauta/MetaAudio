@@ -1,8 +1,9 @@
 #include <metahook.h>
+#include <IAudio.h>
+
 #include "exportfuncs.h"
 #include "snd_local.h"
 #include "zone.h"
-#include <IAudio.h>
 
 cl_exportfuncs_t gExportfuncs;
 mh_interface_t *g_pInterface;

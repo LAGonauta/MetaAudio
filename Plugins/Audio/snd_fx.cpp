@@ -1,23 +1,16 @@
-#include <math.h>
 #include <metahook.h>
-#include "exportfuncs.h"
-#include "event_api.h"
-#include "FileSystem.h"
-#include "util.h"
-#include "snd_local.h"
+
 #include "alure/AL/efx-presets.h"
 #include "efx-util.h"
+#include "event_api.h"
+#include "exportfuncs.h"
+#include "pm_defs.h"
+#include "snd_local.h"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 static cvar_t *al_occlusion = nullptr;
-
-static constexpr int PM_NORMAL = 0x00000000;
-static constexpr int PM_STUDIO_IGNORE = 0x00000001;     // Skip studio models
-static constexpr int PM_STUDIO_BOX = 0x00000002;        // Use boxes for non-complex studio models (even in traceline)
-static constexpr int PM_GLASS_IGNORE = 0x00000004;      // Ignore entities with non-normal rendermode
-static constexpr int PM_WORLD_ONLY = 0x00000008;        // Only trace against the world
 
 static alure::AuxiliaryEffectSlot alAuxEffectSlots;
 

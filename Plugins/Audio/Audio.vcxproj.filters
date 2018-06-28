@@ -82,5 +82,8 @@
     <ClInclude Include="zone.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="efx-util.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
