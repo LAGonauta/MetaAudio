@@ -801,11 +801,12 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
         {
           try
           {
-            ch->buffer.setLoopPoints(sc->loopstart, ch->buffer.getLength());
+            ch->buffer.setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer.getLength());
           }
-          catch (...)
+          catch (const std::exception& error)
           {
-            // Try to set loop points. Don't care if it did not work.
+            // Try to set loop points. Tell user if it did not work.
+            gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s.\n", ch->sfx->name, error.what());
           }
         }
       }

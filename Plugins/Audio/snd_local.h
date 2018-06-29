@@ -38,6 +38,7 @@ typedef struct
   //wave info
   int 	length;
   int 	loopstart;
+  int 	loopend;
   int 	speed;
   int 	width;
   int 	channels;

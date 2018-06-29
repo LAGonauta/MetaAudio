@@ -60,6 +60,7 @@ typedef struct wavinfo_s
   int		width;
   int		channels;
   int		loopstart;
+  int		loopend;
   int		samples;
   int		dataofs;		// chunk starts this many bytes from file start
 } wavinfo_t;
@@ -94,8 +95,8 @@ typedef struct sx_preset_s
 #define SND_SPAWNING	(1<<8)
 
 #define	NUM_AMBIENTS			4		// automatic ambient sounds
-#define	MAX_DYNAMIC_CHANNELS	8
-#define MAX_CHANNELS			128
+#define	MAX_DYNAMIC_CHANNELS	128
+#define MAX_CHANNELS			256
 
 #define MAX_WAVSTREAM_SIZE	(32*1024)
 

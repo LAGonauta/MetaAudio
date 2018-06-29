@@ -120,9 +120,24 @@ qboolean GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength)
   FindChunk("cue ");
   if (data_p)
   {
-    data_p += 32;
-    info->loopstart = GetLittleLong();
-    //		Con_Printf("loopstart=%d\n", sfx->loopstart);
+    data_p += 8; // skip id and data size
+    int num_cue_pts = GetLittleLong();
+    std::vector<int> loop_pts;
+    for (int i = 0; i < num_cue_pts; ++i)
+    {
+      data_p += 20; // useless data for us
+      loop_pts.push_back(GetLittleLong());
+    }
+
+    // We only support the first two looping points
+    if (num_cue_pts > 0)
+    {
+      info->loopstart = loop_pts[0];
+      if (num_cue_pts > 1)
+      {
+        info->loopend = loop_pts[1];
+      }
+    }
 
     // if the next chunk is a LIST chunk, look for a cue length marker
     FindNextChunk("LIST");
@@ -137,7 +152,10 @@ qboolean GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength)
     }
   }
   else
+  {
     info->loopstart = -1;
+  }
+    
 
   // find data chunk
   FindChunk("data");

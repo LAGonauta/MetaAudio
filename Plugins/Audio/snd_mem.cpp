@@ -83,6 +83,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 
     sc->length = info.samples;
     sc->loopstart = info.loopstart;
+    sc->loopend = info.loopend;
     sc->speed = info.rate;
     sc->width = info.width;
     sc->channels = info.channels;
@@ -205,6 +206,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   sc->length = info.samples;//number of samples ( include channels )
   sc->loopstart = info.loopstart;//-1 or loop start position
+  sc->loopend = info.loopend;
   sc->speed = info.rate;//sample rate = 11025 / 22050 / 44100
   sc->width = info.width;//bits = 8 / 16
   sc->channels = info.channels;//channels = mono(1) / stereo(2)
