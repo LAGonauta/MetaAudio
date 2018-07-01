@@ -114,12 +114,6 @@ float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
     return ch->ob_gain;
   }
 
-  if (gain_new == -1.0)
-  {
-    // if -1 passed in, just keep fading to existing target
-    gain_new = ch->ob_gain_target;
-  }
-
   // if first time updating, store new gain into gain & target, return
   // if gain_new is close to existing gain, store new gain into gain & target, return
   if (ch->firstpass || (fabs(gain_new - ch->ob_gain) < 0.01f))
@@ -275,8 +269,6 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     }
   }
 
-  gain = SND_FadeToNewGain(ch, gain);
-
   return gain;
 }
 
@@ -290,7 +282,11 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool e
     // Detect collisions and reduce gain on occlusion
     if (al_occlusion->value)
     {
-      direct_gain = SX_GetGainObscured(ch, pent, sent);
+      direct_gain = SND_FadeToNewGain(ch, SX_GetGainObscured(ch, pent, sent));
+    }
+    else
+    {
+      direct_gain = SND_FadeToNewGain(ch, direct_gain);
     }
   }
 
@@ -310,15 +306,15 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool e
 
   if (underwater)
   {
-    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
     ch->source.setDopplerFactor(AL_UNDERWATER_DOPPLER_FACTOR_RATIO);
   }
   else
   {
-    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
     ch->source.setDopplerFactor(1.0f);
   }
-  ch->source.setAuxiliarySend(alAuxEffectSlots, 0);
+  ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
 }
 
 void SX_Init(void)
