@@ -525,7 +525,15 @@ qboolean SND_IsPlaying(sfx_t *sfx)
   for (ch_idx = 0; ch_idx < MAX_CHANNELS; ch_idx++)
   {
     if (channels[ch_idx].sfx == sfx)
-      return true;
+    {
+      if (channels[ch_idx].source)
+      {
+        if (channels[ch_idx].source.isPlaying())
+        {
+          return true;
+        }
+      }
+    }
   }
 
   return false;
@@ -537,7 +545,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   int first_to_die;
 
   if (entchannel == CHAN_STREAM && SND_IsPlaying(sfx))
-    return NULL;
+    return nullptr;
 
   first_to_die = -1;
 
