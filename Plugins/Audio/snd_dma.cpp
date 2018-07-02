@@ -895,7 +895,9 @@ qboolean OpenAL_Init(void)
     const char *_al_set_device;
     const char *device_set = CommandLine()->CheckParm("-al_device", &_al_set_device);
 
-    al_device = al_dev_manager.openPlayback(_al_set_device, std::nothrow);
+    if (_al_set_device != nullptr)
+      al_device = al_dev_manager.openPlayback(_al_set_device, std::nothrow);
+
     if (!al_device)
     {
 #ifdef _DEBUG
