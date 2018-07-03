@@ -193,8 +193,8 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         ch->iword++;
 
         VOX_TrimStartEndTimes(ch, sc);
-        ch->source.setOffset(ch->start);
         ch->buffer = al_context.getBuffer(sc->alpath);
+        ch->source.setOffset(ch->start);
         ch->source.play(ch->buffer);
         return;
       }
@@ -225,7 +225,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass
   SX_ApplyEffect(ch, roomtype, underwater, efx_interpl_firstpass);
 
   //for later usage
-  aud_sfxcache_t *sc = (aud_sfxcache_t *)Cache_Check(&ch->sfx->cache);
+  aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
 
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
@@ -819,8 +819,8 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       SND_Spatialize(ch, true);
       try
       {
-        ch->source.play(ch->buffer);
         ch->source.setOffset(ch->start);
+        ch->source.play(ch->buffer);
       }
       catch (const std::runtime_error& error)
       {
