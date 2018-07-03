@@ -60,10 +60,16 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         if (srcsample >= length)
           break;
 
-        if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
+        if (pdata != nullptr)
         {
-          ch->start += i;
-          ch->end -= skiplen + i;
+          if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
+          {
+            ch->start += i;
+            break;
+          }
+        }
+        else
+        {
           break;
         }
 
