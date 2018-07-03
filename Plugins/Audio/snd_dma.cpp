@@ -777,7 +777,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   ch->source.setPitch(ch->pitch);
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
-  ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
   ch->source.setAirAbsorptionFactor(1.0f);
 
@@ -790,6 +789,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       SND_Spatialize(ch, true);
       try
       {
+        ch->source.setOffset(ch->start);
         ch->source.play(decoder, 12000, 4);
       }
       catch (const std::runtime_error& error)
@@ -820,6 +820,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       try
       {
         ch->source.play(ch->buffer);
+        ch->source.setOffset(ch->start);
       }
       catch (const std::runtime_error& error)
       {
