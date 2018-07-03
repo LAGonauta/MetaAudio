@@ -768,9 +768,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->start = 0;
   ch->end = sc->length;
 
-  if (!fsentence && ch->pitch != 1)
-    VOX_MakeSingleWordSentence(ch, pitch);
-
   VOX_TrimStartEndTimes(ch, sc);
 
   if (!is_static)
@@ -778,6 +775,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     SND_InitMouth(entnum, entchannel);
   }
 
+  ch->source.setPitch(ch->pitch);
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setOffset(ch->start);
   ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);

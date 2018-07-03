@@ -361,36 +361,6 @@ int VOX_IFindEmptySentence(void)
   return -1;
 }
 
-void VOX_MakeSingleWordSentence(aud_channel_t *ch, int pitch)
-{
-  voxword_t voxword;
-  int k = VOX_IFindEmptySentence();
-
-  if (k < 0)
-  {
-    ch->pitch = 1;
-    ch->isentence = -1;
-    return;
-  }
-
-  voxword.sfx = ch->sfx;
-  voxword.pitch = 100;
-  voxword.volume = 100;
-  voxword.start = 0;
-  voxword.end = 100;
-  voxword.fKeepCached = 1;
-  voxword.samplefrac = 0;
-  voxword.timecompress = 0;
-
-  rgrgvoxword[k][0] = voxword;
-  rgrgvoxword[k][1].sfx = NULL;
-
-  ch->isentence = k;
-  ch->iword = 0;
-  ch->pitch = pitch / 100.0f;
-  ch->source.setPitch(ch->pitch);
-}
-
 aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
 {
   char buffer[512];
