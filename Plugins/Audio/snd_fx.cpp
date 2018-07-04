@@ -282,7 +282,19 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool e
     // Detect collisions and reduce gain on occlusion
     if (al_occlusion->value)
     {
-      direct_gain = SND_FadeToNewGain(ch, SX_GetGainObscured(ch, pent, sent));
+      // Check occlusion only on those entities that can be heard.
+      float distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistanceSquared(
+        alure::Vector3(pent->origin[0], pent->origin[1], pent->origin[2]));
+      float zero_gain_distance = FLT_MAX;
+      if (ch->attenuation)
+      {
+        zero_gain_distance = (1000.0f / ch->attenuation) * (1000.0f / ch->attenuation);
+      }
+       
+      if (distance < zero_gain_distance)
+      {
+        direct_gain = SND_FadeToNewGain(ch, SX_GetGainObscured(ch, pent, sent));
+      }
     }
     else
     {
