@@ -688,6 +688,9 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   if (nosound && nosound->value)
     return;
 
+  if (strncmp(sfx->name, "common/null.wav", 16) == 0)
+    return;
+
   if (sfx->name[0] == '*')
     entchannel = CHAN_STREAM;
 
