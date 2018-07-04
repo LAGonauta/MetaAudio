@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <limits>
 #include <math.h>
 
 //Vector
@@ -57,7 +58,8 @@ inline void VectorVectors(const vec3_t &forward, vec3_t &right, vec3_t &up)
 {
   vec3_t tmp;
 
-  if (forward[0] == 0 && forward[1] == 0)
+  // Comparison not ideal, but works for us.
+  if (forward[0] <= std::numeric_limits<float>::epsilon() && forward[1] <= std::numeric_limits<float>::epsilon())
   {
     // pitch 90 degrees up/down from identity
     right[0] = 0;
