@@ -161,14 +161,43 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
     ALint iSamplesPlayed = ch->source.getSampleOffset();
 
-    if (sc->loopstart == -1 && iSamplesPlayed >= ch->end)
+    if (sc->loopstart == -1)
     {
-      fWaveEnd = true;
+      if (iSamplesPlayed >= ch->end)
+      {
+        fWaveEnd = true;
+      }
+    }
+    else
+    {
+      if (ch->manual_looping)
+      {
+        // Samples that play in on frame
+        int iSampleOneFrame = sc->speed * (*gAudEngine.cl_time - *gAudEngine.cl_oldtime);
+
+        // If the sound will stop this frame assume it already has stopped so we
+        // reduce the chance of clicks.
+        if (ch->end - iSamplesPlayed <= iSampleOneFrame)
+        {
+          fWaveEnd = true;
+        }
+      }
     }
   }
 
   if (!fWaveEnd)
     return;
+
+  if (sc->loopstart != -1 && ch->manual_looping)
+  {
+    if (sc->loopstart < ch->end)
+    {
+      ch->source.stop();
+      ch->source.setOffset(sc->loopstart);
+      ch->source.play(ch->buffer);
+    }
+    return;
+  }
 
   if (ch->isentence >= 0)
   {
@@ -337,6 +366,9 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     return gAudEngine.S_Update(origin, forward, right, up);
   }
 
+  // Update Alure's OpenAL context at the start of processing.
+  al_context.update();
+
   AL_CopyVector(forward, orientation);
   AL_CopyVector(up, orientation + 3);
 
@@ -413,7 +445,6 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
     gEngfuncs.Con_Printf("----(%i)----\n", total);
   }
-  al_context.update();
 }
 
 void S_FreeChannel(aud_channel_t *ch)
@@ -735,6 +766,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     return;
 
   VectorCopy(origin, ch->origin);
+  ch->manual_looping = false;
   ch->attenuation = attenuation;
   ch->volume = fvol;
   ch->entnum = entnum;
@@ -805,19 +837,24 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       ch->buffer = al_context.getBuffer(sc->alpath);
       if (sc->loopstart != -1)
       {
-        ch->source.setLooping(true);
         if (sc->loopstart > 0)
         {
           try
           {
-            ch->buffer.setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer.getLength());
+            auto points = ch->buffer.getLoopPoints();
+            if (points.first != sc->loopstart)
+            {
+              ch->buffer.setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer.getLength());
+            }
           }
           catch (const std::exception& error)
           {
-            // Try to set loop points. Tell user if it did not work.
-            gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s.\n", ch->sfx->name, error.what());
+            // Try to set loop points, enable manual looping if it did not work.
+            ch->manual_looping = true;
+            gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Using manual looping.\n", ch->sfx->name, error.what());
           }
         }
+        ch->source.setLooping(!ch->manual_looping);
       }
       SND_Spatialize(ch, true);
       try
