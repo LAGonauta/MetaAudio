@@ -203,9 +203,6 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
     sfx_t *sfx;
 
-    //2015-12-12 fixed, stop the channel before free buffer
-    ch->source.stop();
-
     if (rgrgvoxword[ch->isentence][ch->iword].sfx && !rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
       S_FreeCache(rgrgvoxword[ch->isentence][ch->iword].sfx);
 
@@ -228,9 +225,10 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         return;
       }
     }
-
-    S_FreeChannel(ch);
   }
+
+  // Free the channel up if source has stopped and there is nothing else to do
+  S_FreeChannel(ch);
 }
 
 void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass = false)
@@ -452,6 +450,7 @@ void S_FreeChannel(aud_channel_t *ch)
   if (ch->source)
   {
     // Stop the Source and reset buffer
+    ch->buffer = nullptr;
     ch->source.stop();
     ch->source.destroy();
   }
@@ -555,15 +554,9 @@ qboolean SND_IsPlaying(sfx_t *sfx)
 
   for (ch_idx = 0; ch_idx < MAX_CHANNELS; ch_idx++)
   {
-    if (channels[ch_idx].sfx == sfx)
+    if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && channels[ch_idx].source.isPlaying())
     {
-      if (channels[ch_idx].source)
-      {
-        if (channels[ch_idx].source.isPlaying())
-        {
-          return true;
-        }
-      }
+      return true;
     }
   }
 
@@ -590,7 +583,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
   {
     ch = &channels[ch_idx];
-    if (ch->entchannel == CHAN_STREAM && ch->source.isPlaying())
+    if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ch->source.isPlaying())
     {
       if (entchannel == CHAN_VOICE)
         return nullptr;
