@@ -231,7 +231,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   S_FreeChannel(ch);
 }
 
-void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass = false)
+void SND_Spatialize(aud_channel_t *ch, qboolean init)
 {
   ch->firstpass = init;
   if (!ch->sfx)
@@ -243,13 +243,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init, bool efx_interpl_firstpass
 
   //apply effect
   qboolean underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
-  int roomtype = 0;
-
-  if (sxroomwater_type && sxroom_type)
-  {
-    roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
-  }
-  SX_ApplyEffect(ch, roomtype, underwater, efx_interpl_firstpass);
+  SX_ApplyEffect(ch, underwater);
 
   //for later usage
   aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
@@ -421,11 +415,17 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   al_listener.setPosition({ AL_UnpackVector(origin) });
   al_listener.setOrientation(alure_orientation);
 
-  bool efx_first_pass = true;
+  int roomtype = 0;
+  bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
+  if (sxroomwater_type && sxroom_type)
+  {
+    roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
+  }
+  SX_InterplEffect(roomtype);
+
   for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
   {
-    SND_Spatialize(ch, false, efx_first_pass);
-    efx_first_pass = false;
+    SND_Spatialize(ch, false);
   }
 
   if (snd_show && snd_show->value)

@@ -155,7 +155,7 @@ EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
   {
     return interpl_effect.ob_effect;
   }
-  
+
   // if first time updating, store new gain into gain & target, return
   // if gain_new is close to existing gain, store new gain into gain & target, return
   if (SX_CompareEffectDiffToValue(effect_new, interpl_effect.ob_effect, 0.01f))
@@ -272,7 +272,21 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
   return gain;
 }
 
-void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool efx_interpl_firstpass)
+void SX_InterplEffect(int roomtype)
+{
+  EFXEAXREVERBPROPERTIES desired = presets_room[0];
+  if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
+  {
+    desired = presets_room[roomtype];
+  }
+
+  // Interpolate effect
+  desired = SX_FadeToNewEffect(desired);
+  interpl_effect.generated_effect.setReverbProperties(desired);
+  alAuxEffectSlots.applyEffect(interpl_effect.generated_effect);
+}
+
+void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater)
 {
   float direct_gain = gain_epsilon;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
@@ -300,20 +314,6 @@ void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool e
     {
       direct_gain = SND_FadeToNewGain(ch, direct_gain);
     }
-  }
-
-  EFXEAXREVERBPROPERTIES desired = presets_room[0];
-  if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
-  {
-    desired = presets_room[roomtype];
-  }
-
-  // Interpolate effect
-  if (efx_interpl_firstpass)
-  {
-    desired = SX_FadeToNewEffect(desired);
-    interpl_effect.generated_effect.setReverbProperties(desired);
-    alAuxEffectSlots.applyEffect(interpl_effect.generated_effect);
   }
 
   if (underwater)

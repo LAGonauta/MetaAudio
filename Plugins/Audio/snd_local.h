@@ -158,7 +158,8 @@ void VoiceSE_NotifyFreeChannel(aud_channel_t *ch);
 void SX_RoomFX(void);
 void SX_Init(void);
 void SX_Shutdown(void);
-void SX_ApplyEffect(aud_channel_t *ch, int roomtype, qboolean underwater, bool efx_interpl_firstpass = false);
+void SX_InterplEffect(int roomtype);
+void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater);
 
 //common
 extern aud_engine_t gAudEngine;
