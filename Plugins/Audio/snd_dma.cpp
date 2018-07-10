@@ -60,10 +60,8 @@ void S_FreeCache(sfx_t *sfx)
   {
     if (sc->buffer)
     {
-      // We should remove the buffer here, but the game may stutter when loading it again
-      // Disable it for now
-      //auto context = alure::Context::GetCurrent();
-      //context.removeBuffer(sc->buffer->getHandle());
+      auto context = alure::Context::GetCurrent();
+      context.removeBuffer(sc->buffer->getHandle());
       sc->buffer = nullptr;
     }
 
