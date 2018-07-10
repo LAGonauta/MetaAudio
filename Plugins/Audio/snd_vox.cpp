@@ -42,6 +42,20 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   sstart = pvoxword->start;
   send = pvoxword->end;
   length = sc->length;
+
+  if (ch->entchannel == CHAN_STREAM)
+  {
+    auto start = length * (sstart / 100);
+    if (sstart > 0 && sstart < 100)
+    {
+      if (start < length)
+      {
+        ch->start += start;
+      }
+    }
+    return;
+  }
+
   pdata = (byte *)sc->data.data();
 
   if (sstart > send)
@@ -512,7 +526,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     return;
 
   iSamplesPlayed = ch->source.getSampleOffset();
-  availableSamples = ch->buffer.getLength() - iSamplesPlayed;
+  availableSamples = ch->buffer->getLength() - iSamplesPlayed;
 
   byte	*pdata = (byte *)sc->data.data() + iSamplesPlayed;
   if (pdata == nullptr)

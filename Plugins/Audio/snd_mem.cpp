@@ -9,6 +9,9 @@
 
 aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 {
+  // Some VOX_ that should be stream may not be set as streaming. Fix it here.
+  ch->entchannel = CHAN_STREAM;
+
   char			namebuffer[256];
   byte			*data;
   aud_sfxcache_t	*sc;
@@ -84,25 +87,33 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
     sc->length = info.samples;
     sc->loopstart = info.loopstart;
     sc->loopend = info.loopend;
-    sc->speed = info.rate;
+    sc->samplerate = info.rate;
     sc->width = info.width;
     sc->channels = info.channels;
     sc->dataofs = info.dataofs;
     sc->bitrate = info.bps;
-    sc->blockalign = info.align;//IMPORT: The OpenAL Buffer Size must be an exact multiple of the BlockAlignment ...
+    sc->blockalign = info.align; //IMPORTANT: The OpenAL Buffer Size must be an exact multiple of the BlockAlignment ...
 
     //Not used
     sc->datalen = 0;
   }
 
   // For OpenAL
-  if (sc->alpath[0] == 0)
+  if (sc->decoder == nullptr)
   {
     char al_file_path[MAX_PATH];
     g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
     if (al_file_path != nullptr && al_file_path[0] != 0)
     {
-      strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+      auto context = alure::Context::GetCurrent();
+      try
+      {
+        sc->decoder = context.createDecoder(al_file_path);
+      }
+      catch (const std::exception& e)
+      {
+        gEngfuncs.Con_DPrintf("S_LoadStreamSound: %s: %s\n", namebuffer, e.what());
+      }
     }
   }
 
@@ -204,28 +215,36 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->file = nullptr;
   sc->filesize = filesize;
 
-  sc->length = info.samples;//number of samples ( include channels )
-  sc->loopstart = info.loopstart;//-1 or loop start position
+  sc->length = info.samples; //number of samples ( include channels )
+  sc->loopstart = info.loopstart; //-1 or loop start position
   sc->loopend = info.loopend;
-  sc->speed = info.rate;//sample rate = 11025 / 22050 / 44100
-  sc->width = info.width;//bits = 8 / 16
-  sc->channels = info.channels;//channels = mono(1) / stereo(2)
-  sc->dataofs = info.dataofs;//the offset to the data chunk
-  sc->bitrate = info.bps;//bit rate, how many bits per seconds
-  sc->blockalign = info.align;//IMPORT: The OpenAL Buffer Size must be an exact multiple of the BlockAlignment ...
+  sc->samplerate = info.rate; //sample rate = 11025 / 22050 / 44100
+  sc->width = info.width; //bits = 8 / 16
+  sc->channels = info.channels; //channels = mono(1) / stereo(2)
+  sc->dataofs = info.dataofs; //the offset to the data chunk
+  sc->bitrate = info.bps; //bit rate, how many bits per seconds
+  sc->blockalign = info.align; //IMPORTANT: The OpenAL Buffer Size must be an exact multiple of the BlockAlignment ...
 
   //For VOX_ usage
-  sc->datalen = datalen - (datalen % sc->blockalign);
-  sc->data = std::vector<byte>(data + sc->dataofs, data + sc->dataofs + sc->datalen);
+  sc->datalen = datalen - (datalen % info.align);
+  sc->data = std::vector<byte>(data + info.dataofs, data + info.dataofs + sc->datalen);
 
   // For OpenAL
-  if (sc->alpath[0] == 0)
+  if (sc->buffer == nullptr)
   {
     char al_file_path[MAX_PATH];
     g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
     if (al_file_path != nullptr && al_file_path[0] != 0)
     {
-      strncpy(sc->alpath, al_file_path, sizeof(sc->alpath));
+      auto context = alure::Context::GetCurrent();
+      try
+      {
+        sc->buffer = alure::MakeUnique<alure::Buffer>(context.getBuffer(al_file_path));
+      }
+      catch (const std::exception& e)
+      {
+        gEngfuncs.Con_DPrintf("S_LoadSound: %s: %s\n", namebuffer, e.what());
+      }
     }
   }
 

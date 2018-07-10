@@ -24,7 +24,8 @@ typedef struct
   sfxcache_t *voicecache;
 
   // For OpenAL
-  alure::Buffer buffer;
+  alure::SharedPtr<alure::Decoder> decoder;
+  alure::SharedPtr<alure::Buffer> buffer;
   alure::Source source;
 
   // Used when the OpenAL driver does not support setting loop points
@@ -43,18 +44,21 @@ typedef struct
   int 	length;
   int 	loopstart;
   int 	loopend;
-  int 	speed;
+  int 	samplerate;
   int 	width;
   int 	channels;
   int		dataofs;
   int		bitrate;
   int		blockalign;
-  //for OpenAL buffer
-  bool alstreaming;
-  char alpath[MAX_PATH];
+
+  //OpenAL buffer
+  alure::SharedPtr<alure::Decoder> decoder;
+  alure::SharedPtr<alure::Buffer> buffer;
+
   //for Stream sound
   FileHandle_t file;
   int		filesize;
+
   //data chunk so we could do some magic change on the raw sound data
   int		datalen;
   std::vector<byte>	data;

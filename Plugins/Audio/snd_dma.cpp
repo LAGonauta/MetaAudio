@@ -58,9 +58,18 @@ void S_FreeCache(sfx_t *sfx)
 
   if (openal_enabled)
   {
-    if (sc->alpath)
+    if (sc->buffer)
     {
-      strcpy(sc->alpath, "\0");
+      // We should remove the buffer here, but the game may stutter when loading it again
+      // Disable it for now
+      //auto context = alure::Context::GetCurrent();
+      //context.removeBuffer(sc->buffer->getHandle());
+      sc->buffer = nullptr;
+    }
+
+    if (sc->decoder)
+    {
+      sc->decoder = nullptr;
     }
 
     if (sc->file)
@@ -173,7 +182,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
       if (ch->manual_looping)
       {
         // Samples that play in on frame
-        int iSampleOneFrame = sc->speed * (*gAudEngine.cl_time - *gAudEngine.cl_oldtime);
+        int iSampleOneFrame = sc->samplerate * (*gAudEngine.cl_time - *gAudEngine.cl_oldtime);
 
         // If the sound will stop this frame assume it already has stopped so we
         // reduce the chance of clicks.
@@ -194,7 +203,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
     {
       ch->source.stop();
       ch->source.setOffset(sc->loopstart);
-      ch->source.play(ch->buffer);
+      ch->source.play(ch->buffer->getHandle());
     }
     return;
   }
@@ -219,9 +228,19 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         ch->iword++;
 
         VOX_TrimStartEndTimes(ch, sc);
-        ch->buffer = al_context.getBuffer(sc->alpath);
-        ch->source.setOffset(ch->start);
-        ch->source.play(ch->buffer);
+        if (ch->entchannel == CHAN_STREAM)
+        {
+          ch->decoder = sc->decoder;
+          ch->source.setOffset(ch->start);
+          ch->source.play(ch->decoder, 12000, 4);
+        }
+        else
+        {
+          ch->buffer = sc->buffer;
+          ch->source.setOffset(ch->start);
+          ch->source.play(ch->buffer->getHandle());
+        }
+
         return;
       }
     }
@@ -627,7 +646,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     }
 
     played = ch->source.getSampleOffset();
-    life = (float)(ch->end - played) / (float)ch->buffer.getFrequency();
+    life = (float)(ch->end - played) / (float)ch->buffer->getFrequency();
 
     if (life < life_left)
     {
@@ -809,56 +828,52 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->source.setAirAbsorptionFactor(1.0f);
 
   // Should also set source priority
-  if (strcmp(sc->alpath, "\0") != 0)
+  if (ch->entchannel == CHAN_STREAM)
   {
-    if (ch->entchannel == CHAN_STREAM)
+    SND_Spatialize(ch, true);
+    try
     {
-      alure::SharedPtr<alure::Decoder> decoder = al_context.createDecoder(sc->alpath);
-      SND_Spatialize(ch, true);
-      try
-      {
-        ch->source.setOffset(ch->start);
-        ch->source.play(decoder, 12000, 4);
-      }
-      catch (const std::runtime_error& error)
-      {
-        gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
-      }
+      ch->source.setOffset(ch->start);
+      ch->source.play(sc->decoder, 12000, 4);
     }
-    else
+    catch (const std::runtime_error& error)
     {
-      ch->buffer = al_context.getBuffer(sc->alpath);
-      if (sc->loopstart != -1)
+      gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
+    }
+  }
+  else
+  {
+    ch->buffer = sc->buffer;
+    if (sc->loopstart != -1)
+    {
+      if (sc->loopstart > 0)
       {
-        if (sc->loopstart > 0)
+        try
         {
-          try
+          auto points = ch->buffer->getLoopPoints();
+          if (points.first != sc->loopstart)
           {
-            auto points = ch->buffer.getLoopPoints();
-            if (points.first != sc->loopstart)
-            {
-              ch->buffer.setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer.getLength());
-            }
-          }
-          catch (const std::exception& error)
-          {
-            // Try to set loop points, enable manual looping if it did not work.
-            ch->manual_looping = true;
-            gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Using manual looping.\n", ch->sfx->name, error.what());
+            ch->buffer->setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer->getLength());
           }
         }
-        ch->source.setLooping(!ch->manual_looping);
+        catch (const std::exception& error)
+        {
+          // Try to set loop points, enable manual looping if it did not work.
+          ch->manual_looping = true;
+          gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Using manual looping.\n", ch->sfx->name, error.what());
+        }
       }
-      SND_Spatialize(ch, true);
-      try
-      {
-        ch->source.setOffset(ch->start);
-        ch->source.play(ch->buffer);
-      }
-      catch (const std::runtime_error& error)
-      {
-        gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
-      }
+      ch->source.setLooping(!ch->manual_looping);
+    }
+    SND_Spatialize(ch, true);
+    try
+    {
+      ch->source.setOffset(ch->start);
+      ch->source.play(ch->buffer->getHandle());
+    }
+    catch (const std::runtime_error& error)
+    {
+      gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
     }
   }
 }
