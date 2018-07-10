@@ -175,6 +175,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
       if (iSamplesPlayed >= ch->end)
       {
         fWaveEnd = true;
+        ch->source.stop();
       }
     }
     else
