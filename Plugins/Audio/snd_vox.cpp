@@ -95,12 +95,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       pvoxword->samplefrac += ch->start << 8;
   }
 
-  if (send > 0 && send < 100)
+  if (send > 0 && send <= 100)
   {
     skiplen = sc->length * ((100 - send) / 100);
     length -= skiplen;
     srcsample = length;
     ch->end -= skiplen;
+    pvoxword->cbtrim -= skiplen;
 
     if (ch->start < length)
     {
@@ -112,7 +113,10 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
         {
           ch->end -= i;
-          pvoxword->cbtrim -= skiplen + i;
+          pvoxword->cbtrim -= i;
+        }
+        else
+        {
           break;
         }
 
