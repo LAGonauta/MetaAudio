@@ -60,8 +60,7 @@ void S_FreeCache(sfx_t *sfx)
   {
     if (sc->buffer)
     {
-      auto context = alure::Context::GetCurrent();
-      context.removeBuffer(sc->buffer->getHandle());
+      al_context.removeBuffer(sc->buffer->getHandle());
       sc->buffer = nullptr;
     }
 
