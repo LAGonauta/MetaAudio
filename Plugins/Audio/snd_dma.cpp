@@ -836,7 +836,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
-      gEngfuncs.Con_DPrintf("%s: %s\n", _function_name, error.what());
     }
   }
   else
@@ -863,7 +862,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
-      gEngfuncs.Con_DPrintf("%s: %s\n", _function_name, error.what());
     }
   }
 }
@@ -994,11 +992,43 @@ void AL_Version_f(void)
     gEngfuncs.Con_Printf("%s\n Failed to initalize OpenAL device.\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
 }
 
+void AL_Devices_f(bool basic = true)
+{
+#ifndef _DEBUG
+  alure::Vector<alure::String> devices;
+  if (basic)
+  {
+    devices = al_dev_manager.enumerate(alure::DeviceEnumeration::Basic);
+  }
+  else
+  {
+    devices = al_dev_manager.enumerate(alure::DeviceEnumeration::Full);
+  }
+  gEngfuncs.Con_Printf("Available OpenAL devices:\n");
+  for (const alure::String& device : devices)
+  {
+    gEngfuncs.Con_Printf("  %s\n", device.c_str());
+  }
+#endif
+}
+
+void AL_DevicesBasic_f(void)
+{
+  AL_Devices_f(true);
+}
+
+void AL_DevicesFull_f(void)
+{
+  AL_Devices_f(false);
+}
+
 void S_Init(void)
 {
   al_enable = gEngfuncs.pfnRegisterVariable("al_enable", "1", 0);
   al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", 0);
   gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
+  gEngfuncs.pfnAddCommand("al_show_basic_devices", AL_DevicesBasic_f);
+  gEngfuncs.pfnAddCommand("al_show_full_devices", AL_DevicesFull_f);
 
   gAudEngine.S_Init();
 
