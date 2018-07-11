@@ -824,7 +824,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
   ch->source.setAirAbsorptionFactor(1.0f);
-
+  
   // Should also set source priority
   if (ch->entchannel == CHAN_STREAM)
   {
@@ -836,7 +836,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
-      gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
+      gEngfuncs.Con_DPrintf("%s: %s\n", _function_name, error.what());
     }
   }
   else
@@ -846,19 +846,11 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     {
       if (sc->loopstart > 0)
       {
-        try
+        auto points = ch->buffer->getLoopPoints();
+        if (points.first != sc->loopstart)
         {
-          auto points = ch->buffer->getLoopPoints();
-          if (points.first != sc->loopstart)
-          {
-            ch->buffer->setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : ch->buffer->getLength());
-          }
-        }
-        catch (const std::exception& error)
-        {
-          // Try to set loop points, enable manual looping if it did not work.
+          // Disable automatic looping if required.
           ch->manual_looping = true;
-          gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Using manual looping.\n", ch->sfx->name, error.what());
         }
       }
       ch->source.setLooping(!ch->manual_looping);
@@ -871,7 +863,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
-      gEngfuncs.Con_Printf("%s: %s\n", _function_name, error.what());
+      gEngfuncs.Con_DPrintf("%s: %s\n", _function_name, error.what());
     }
   }
 }

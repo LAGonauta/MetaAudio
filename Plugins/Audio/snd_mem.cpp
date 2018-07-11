@@ -239,7 +239,22 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       auto context = alure::Context::GetCurrent();
       try
       {
-        sc->buffer = alure::MakeUnique<alure::Buffer>(context.getBuffer(al_file_path));
+        sc->buffer = alure::MakeShared<alure::Buffer>(context.getBuffer(al_file_path));
+        if (sc->loopstart > 0)
+        {
+          try
+          {
+            auto points = sc->buffer->getLoopPoints();
+            if (points.first != sc->loopstart)
+            {
+              sc->buffer->setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : sc->buffer->getLength());
+            }
+          }
+          catch (const std::exception& error)
+          {
+            gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
+          }
+        }
       }
       catch (const std::exception& e)
       {
