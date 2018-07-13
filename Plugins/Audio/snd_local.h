@@ -28,9 +28,6 @@ typedef struct
   alure::SharedPtr<alure::Buffer> buffer;
   alure::Source source;
 
-  // Used when the OpenAL driver does not support setting loop points
-  bool manual_looping;
-
   // For OpenAL EFX
   bool firstpass;            // true if this is first time sound is spatialized
   float ob_gain;             // gain drop if sound source obscured from listener

@@ -165,44 +165,15 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
     ALint iSamplesPlayed = ch->source.getSampleOffset();
 
-    if (sc->loopstart == -1)
+    if (sc->loopstart == -1 && iSamplesPlayed >= ch->end)
     {
-      if (iSamplesPlayed >= ch->end)
-      {
         fWaveEnd = true;
         ch->source.stop();
-      }
-    }
-    else
-    {
-      if (ch->manual_looping)
-      {
-        // Samples that play in on frame
-        int iSampleOneFrame = sc->samplerate * (*gAudEngine.cl_time - *gAudEngine.cl_oldtime);
-
-        // If the sound will stop this frame assume it already has stopped so we
-        // reduce the chance of clicks.
-        if (ch->end - iSamplesPlayed <= iSampleOneFrame)
-        {
-          fWaveEnd = true;
-        }
-      }
     }
   }
 
   if (!fWaveEnd)
     return;
-
-  if (sc->loopstart != -1 && ch->manual_looping)
-  {
-    if (sc->loopstart < ch->end)
-    {
-      ch->source.stop();
-      ch->source.setOffset(sc->loopstart);
-      ch->source.play(ch->buffer->getHandle());
-    }
-    return;
-  }
 
   if (ch->isentence >= 0)
   {
@@ -649,7 +620,15 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     }
 
     played = ch->source.getSampleOffset();
-    life = (float)(ch->end - played) / (float)ch->buffer->getFrequency();
+    if (ch->decoder)
+    {
+      life = (float)(ch->end - played) / (float)ch->decoder->getFrequency();
+    }
+    else
+    {
+      life = (float)(ch->end - played) / (float)ch->buffer->getFrequency();
+    }
+    
 
     if (life < life_left)
     {
@@ -781,7 +760,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     return;
 
   VectorCopy(origin, ch->origin);
-  ch->manual_looping = false;
   ch->attenuation = attenuation;
   ch->volume = fvol;
   ch->entnum = entnum;
@@ -846,29 +824,47 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   }
   else
   {
-    ch->buffer = sc->buffer;
+    bool force_stream = false;
     if (sc->loopstart != -1)
     {
+      ch->source.setLooping(true);
       if (sc->loopstart > 0)
       {
-        auto points = ch->buffer->getLoopPoints();
+        auto points = sc->buffer->getLoopPoints();
         if (points.first != sc->loopstart)
         {
-          // Disable automatic looping if required.
-          ch->manual_looping = true;
+          // Use Alure2 stream looping facilities
+          force_stream = true;
         }
       }
-      ch->source.setLooping(!ch->manual_looping);
     }
-    SND_Spatialize(ch, true);
-    try
+    if (force_stream)
     {
-      ch->source.setOffset(ch->start);
-      ch->source.play(ch->buffer->getHandle());
+      ch->decoder = al_context.createDecoder(sc->buffer->getName());
+      SND_Spatialize(ch, true);
+      try
+      {
+        ch->source.setOffset(ch->start);
+        ch->source.play(ch->decoder, 12000, 4);
+      }
+      catch (const std::runtime_error& error)
+      {
+        dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+      }
     }
-    catch (const std::runtime_error& error)
+    else
     {
-      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+      ch->buffer = sc->buffer;
+      SND_Spatialize(ch, true);
+      try
+      {
+        ch->source.setOffset(ch->start);
+        ch->source.play(ch->buffer->getHandle());
+      }
+      catch (const std::runtime_error& error)
+      {
+        dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+      }
     }
   }
 }
