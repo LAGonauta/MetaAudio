@@ -32,8 +32,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   if (ch->isentence < 0)
     return;
 
-  //16bits / stereo not support
-  if (sc->width != 1 || sc->channels != 1)
+  // only mono support
+  if (sc->channels != alure::ChannelConfig::Mono)
     return;
 
   pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
@@ -67,27 +67,64 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     srcsample = ch->start;
     ch->start += skiplen;
 
-    if (ch->start < length)
+    if (pdata != nullptr && ch->start < length)
     {
-      for (i = 0; i < CVOXZEROSCANMAX; i++)
+      switch (sc->width)
       {
-        if (srcsample >= length)
-          break;
-
-        if (pdata != nullptr)
+      case 1:
+      {
+        alure::ArrayView<byte> temp_data = sc->data.reinterpret_as<byte>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
-          if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
+          if (srcsample >= temp_data.size())
+            break;
+
+          if (temp_data[srcsample] + SCHAR_MIN >= -2 && temp_data[srcsample] + SCHAR_MIN <= 2)
           {
             ch->start += i;
             break;
           }
-        }
-        else
-        {
-          break;
-        }
 
-        srcsample++;
+          srcsample++;
+        }
+        break;
+      }
+      case 2:
+      {
+        alure::ArrayView<int16> temp_data = sc->data.reinterpret_as<int16>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
+        {
+          if (srcsample >= temp_data.size())
+            break;
+
+          if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
+          {
+            ch->start += i;
+            break;
+          }
+
+          srcsample++;
+        }
+        break;
+      }
+      case 4:
+      {
+        alure::ArrayView<float> temp_data = sc->data.reinterpret_as<float>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
+        {
+          if (srcsample >= temp_data.size())
+            break;
+
+          if (temp_data[srcsample] >= -0.016 && temp_data[srcsample] <= 0.016)
+          {
+            ch->start += i;
+            break;
+          }
+
+          srcsample++;
+        }
+        break;
+      }
       }
     }
 
@@ -103,24 +140,76 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     ch->end -= skiplen;
     pvoxword->cbtrim -= skiplen;
 
-    if (ch->start < length)
+    if (pdata != nullptr && ch->start < length)
     {
-      for (i = 0; i < CVOXZEROSCANMAX && srcsample; i++)
+      switch (sc->width)
       {
-        if (srcsample <= ch->start)
-          break;
-
-        if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
+      case 1:
+      {
+        alure::ArrayView<byte> temp_data = sc->data.reinterpret_as<byte>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
-          ch->end -= i;
-          pvoxword->cbtrim -= i;
-        }
-        else
-        {
-          break;
-        }
+          if (srcsample <= ch->start)
+            break;
 
-        srcsample--;
+          if (pdata[srcsample] + SCHAR_MIN >= -2 && pdata[srcsample] + SCHAR_MIN <= 2)
+          {
+            ch->end -= i;
+            pvoxword->cbtrim -= i;
+          }
+          else
+          {
+            break;
+          }
+
+          srcsample--;
+        }
+        break;
+      }
+      case 2:
+      {
+        alure::ArrayView<int16> temp_data = sc->data.reinterpret_as<int16>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
+        {
+          if (srcsample >= temp_data.size())
+            break;
+
+          if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
+          {
+            ch->end -= i;
+            pvoxword->cbtrim -= i;
+          }
+          else
+          {
+            break;
+          }
+
+          srcsample--;
+        }
+        break;
+      }
+      case 4:
+      {
+        alure::ArrayView<float> temp_data = sc->data.reinterpret_as<float>();
+        for (i = 0; i < CVOXZEROSCANMAX; i++)
+        {
+          if (srcsample >= temp_data.size())
+            break;
+
+          if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
+          {
+            ch->end -= i;
+            pvoxword->cbtrim -= i;
+          }
+          else
+          {
+            break;
+          }
+
+          srcsample--;
+        }
+        break;
+      }
       }
     }
   }
@@ -532,7 +621,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   iSamplesPlayed = ch->source.getSampleOffset();
   availableSamples = ch->buffer->getLength() - iSamplesPlayed;
 
-  byte	*pdata = (byte *)sc->data.data() + iSamplesPlayed;
+  byte	*pdata = (byte *)sc->data.data() + iSamplesPlayed * sc->width;
   if (pdata == nullptr)
   {
     return;
@@ -542,13 +631,47 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   scount = pent->mouth.sndcount;
   savg = 0;
 
-  while (i < availableSamples && scount < CAVGSAMPLES)
+  switch (sc->width)
   {
-    data = pdata[i] + SCHAR_MIN;
-    savg += abs(data);
+  case 1:
+  {
+    alure::ArrayView<byte> temp_array = sc->data.reinterpret_as<byte>();
+    while (i < availableSamples && scount < CAVGSAMPLES)
+    {
+      data = temp_array[i + iSamplesPlayed] + SCHAR_MIN;
+      savg += abs(data);
 
-    i += 80 + ((byte)data & 0x1F);
-    scount++;
+      i += 80 + ((byte)data & 0x1F);
+      scount++;
+    }
+    break;
+  }
+  case 2:
+  {
+    alure::ArrayView<int16> temp_array = sc->data.reinterpret_as<int16>();
+    while (i < availableSamples && scount < CAVGSAMPLES)
+    {
+      data = temp_array[i + iSamplesPlayed];
+      savg += abs(data / 256);
+
+      i += 80 + ((byte)data & 0x1F);
+      scount++;
+    }
+    break;
+  }
+  case 4:
+  {
+    alure::ArrayView<float> temp_array = sc->data.reinterpret_as<float>();
+    while (i < availableSamples && scount < CAVGSAMPLES)
+    {
+      data = temp_array[i + iSamplesPlayed] + SCHAR_MIN;
+      savg += abs(data * 128);
+
+      i += 80 + ((byte)data & 0x1F);
+      scount++;
+    }
+    break;
+  }
   }
 
   pent->mouth.sndavg += savg;

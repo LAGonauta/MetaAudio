@@ -68,11 +68,6 @@ void S_FreeCache(sfx_t *sfx)
     {
       sc->decoder = nullptr;
     }
-
-    if (sc->file)
-    {
-      g_pFileSystem->Close(sc->file);
-    }
   }
 
   Cache_Free(&sfx->cache);
@@ -268,7 +263,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
   {
-    if (sc && sc->channels == 1 && sc->width == 1 && sc->datalen > 0)
+    if (sc && sc->channels == alure::ChannelConfig::Mono && sc->data.size() > 0)
     {
       SND_MoveMouth(ch, sc);
     }

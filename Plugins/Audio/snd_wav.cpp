@@ -7,15 +7,7 @@
 #include "snd_local.h"
 #include "zone.h"
 
-byte	*data_p;
-byte 	*iff_end;
-byte 	*last_chunk;
-byte 	*iff_data;
-int 	iff_chunk_len;
-
-extern cvar_t *loadas8bit;
-
-short GetLittleShort(void)
+short LocalAudioDecoder::GetLittleShort(void)
 {
   short val = 0;
   val = *data_p;
@@ -24,7 +16,7 @@ short GetLittleShort(void)
   return val;
 }
 
-int GetLittleLong(void)
+int LocalAudioDecoder::GetLittleLong(void)
 {
   int val = 0;
   val = *data_p;
@@ -35,7 +27,7 @@ int GetLittleLong(void)
   return val;
 }
 
-void FindNextChunk(char *name)
+void LocalAudioDecoder::FindNextChunk(char *name)
 {
   while (1)
   {
@@ -63,17 +55,15 @@ void FindNextChunk(char *name)
   }
 }
 
-void FindChunk(char *name)
+void LocalAudioDecoder::FindChunk(char *name)
 {
   last_chunk = iff_data;
   FindNextChunk(name);
 }
 
-qboolean GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength)
+bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *path, byte *wav, int wavlength, alure::ArrayView<ALbyte>& data_output)
 {
   int     i;
-  int     format;
-  int		samples;
 
   memset(info, 0, sizeof(*info));
 
@@ -83,169 +73,115 @@ qboolean GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength)
   iff_data = wav;
   iff_end = wav + wavlength;
 
+  // If wav files try to find looppoints
+  // Else believe in Alure
+  bool wav_file = true;
+
   // find "RIFF" chunk
   FindChunk("RIFF");
   if (!(data_p && !strncmp((const char *)(data_p + 8), "WAVE", 4)))
   {
-    gEngfuncs.Con_Printf("Missing RIFF/WAVE chunks\n");
-    return false;
+    wav_file =  false;
   }
 
-  // get "fmt " chunk
-  iff_data = data_p + 12;
-  // DumpChunks ();
-
-  FindChunk("fmt ");
-  if (!data_p)
+  if (wav_file)
   {
-    gEngfuncs.Con_Printf("Missing fmt chunk\n");
-    return false;
-  }
-  data_p += 8;
-  format = GetLittleShort();
-  if (format != 1)
-  {
-    gEngfuncs.Con_Printf("Microsoft PCM format only\n");
-    return false;
-  }
+    // get "fmt " chunk
+    iff_data = data_p + 12;
 
-  info->channels = GetLittleShort();
-  info->rate = GetLittleLong();
-  info->bps = GetLittleLong();
-  info->align = GetLittleShort();
-  //data_p += 4+2;
-  info->width = GetLittleShort() / 8;
-
-  // get cue chunk
-  FindChunk("cue ");
-  if (data_p)
-  {
-    data_p += 8; // skip id and data size
-    int num_cue_pts = GetLittleLong();
-    std::vector<int> loop_pts;
-    for (int i = 0; i < num_cue_pts; ++i)
+    FindChunk("fmt ");
+    if (!data_p)
     {
-      data_p += 20; // useless data for us
-      loop_pts.push_back(GetLittleLong());
+      gEngfuncs.Con_Printf("Missing fmt chunk\n");
+      return false;
     }
 
-    // We only support the first two looping points
-    if (num_cue_pts > 0)
-    {
-      info->loopstart = loop_pts[0];
-      if (num_cue_pts > 1)
-      {
-        info->loopend = loop_pts[1];
-      }
-    }
+    // skips format, channels, samplerate, bps, aling, and width chunks
+    data_p += 22;
 
-    // if the next chunk is a LIST chunk, look for a cue length marker
-    FindNextChunk("LIST");
+    // get cue chunk
+    FindChunk("cue ");
     if (data_p)
     {
-      if (!strncmp((const char *)(data_p + 28), "mark", 4))
-      {	// this is not a proper parse, but it works with cooledit...
-        data_p += 24;
-        i = GetLittleLong();	// samples in loop
-        info->samples = info->loopstart + i;
+      data_p += 8; // skip id and data size
+      int num_cue_pts = GetLittleLong();
+      std::vector<int> loop_pts;
+      for (int i = 0; i < num_cue_pts; ++i)
+      {
+        data_p += 20; // useless data for us
+        loop_pts.push_back(GetLittleLong());
       }
+
+      // We only support the first two looping points
+      if (num_cue_pts > 0)
+      {
+        info->loopstart = loop_pts[0];
+        if (num_cue_pts > 1)
+        {
+          info->loopend = loop_pts[1];
+        }
+        else
+        {
+          info->loopend = INT_MAX;
+        }
+      }
+
+      // if the next chunk is a LIST chunk, look for a cue length marker
+      FindNextChunk("LIST");
+      if (data_p)
+      {
+        if (!strncmp((const char *)(data_p + 28), "mark", 4))
+        {	// this is not a proper parse, but it works with cooledit...
+          data_p += 24;
+          i = GetLittleLong();	// samples in loop
+          info->samples = info->loopstart + i;
+        }
+      }
+    }
+    else
+    {
+      info->loopstart = -1;
+      info->loopend = INT_MAX;
     }
   }
   else
   {
-    info->loopstart = -1;
-  }
-    
+    auto context = alure::Context::GetCurrent();
+    alure::SharedPtr<alure::Decoder> dec = context.createDecoder(path);
 
-  // find data chunk
-  FindChunk("data");
-  if (!data_p)
+    auto loop_points = dec->getLoopPoints();
+
+    // How to know it has no cue points? Every sound will loop with this setting here.
+    // Alure2 API suggestion: decoder.hasLoopPoints();
+    info->loopstart = loop_points.first;
+    info->loopend = loop_points.second;
+  }
+
+  info->channels = _channels;
+  info->samplerate = _samplerate;
+
+  switch (_type)
   {
-    gEngfuncs.Con_Printf("Missing data chunk\n");
-    return false;
+  case alure::SampleType::UInt8:
+    info->width = 1;
+    break;
+  case alure::SampleType::Int16:
+    info->width = 2;
+    break;
+  case alure::SampleType::Float32:
+    info->width = 4;
+    break;
   }
 
-  data_p += 4;
-  samples = GetLittleLong() / (info->width * info->channels);
-
-  if (info->samples)
-  {
-    if (samples < info->samples)
-      Sys_ErrorEx("Sound %s has a bad loop length", name);
-  }
-  else
-    info->samples = samples;
-
-  info->dataofs = data_p - wav;
+  info->samples = _data.size() / alure::FramesToBytes(1, _channels, _type);
+  data_output = _data;
 
   return true;
 }
 
-/*void ResampleSfx(aud_sfxcache_t *sc, byte *indata, byte *outdata)
-{
-  int i, srclength, outcount, fracstep, chancount;
-  int	samplefrac, srcsample, srcnextsample;
-
-  // this is usually 0.5 (128), 1 (256), or 2 (512)
-  fracstep = 256;
-
-  chancount = sc->channels - 1;
-  srclength = sc->length * sc->channels;
-  outcount = sc->length;
-
-  int tochannels = 1;
-
-// resample / decimate to the current source rate
-  if (fracstep == 256)
-  {
-    if (sc->width == 2)
-    {
-      for (i = 0; i < srclength; i++)
-        ((int16 *)outdata)[i] = LittleShort (((int16 *)indata)[i]);
-    }
-    else
-    { // 8bit
-      memcpy( outdata, indata, srclength );
-    }
-  }
-  else
-  {
-    int j, a, b, sample;
-
-// general case
-    samplefrac = 0;
-    srcsample = 0;
-    srcnextsample = tochannels;
-    outcount *= tochannels;
-
-#define RESAMPLE_AND_ADVANCE	\
-        sample = (((b - a) * (samplefrac & 255)) >> 8) + a; \
-        if (j == chancount) \
-        { \
-          samplefrac += fracstep; \
-          srcsample = (samplefrac >> 8) << chancount; \
-          srcnextsample = srcsample + sc->channels; \
-        }
-
-    if (sc->width == 2)
-    {
-      int16 *out = (int16 *)outdata, *in = (int16 *)indata;
-      for (i = 0, j = 0; i < outcount; i++, j = i & chancount) {
-        a = LittleShort (in[srcsample + j]);
-        b = ((srcnextsample < srclength) ? LittleShort (in[srcnextsample + j]) : 0);
-        RESAMPLE_AND_ADVANCE;
-        *out++ = (int16)sample;
-      }
-    }
-    else
-    {
-      byte *out = outdata, *in = indata;
-      for (i = 0, j = 0; i < outcount; i++, j = i & chancount) {
-        a = (int)in[srcsample + j];
-        b = ((srcnextsample < srclength) ? (int)in[srcnextsample + j] : 128);
-        RESAMPLE_AND_ADVANCE;
-        *out++ = (byte)sample;
-      }
-    }
-  }
-}*/
+void LocalAudioDecoder::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept {
+  _name = name;
+  _type = type;
+  _samplerate = samplerate;
+  _data = data;
+}

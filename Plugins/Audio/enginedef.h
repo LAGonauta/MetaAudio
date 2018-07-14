@@ -1,4 +1,5 @@
 #pragma once
+#include "alure/AL/alure2.h"
 
 #define	MAX_QPATH		64			// max length of a quake game pathname
 
@@ -54,15 +55,12 @@ typedef struct voxword_s
 
 typedef struct wavinfo_s
 {
-  int		bps;
-  int		align;
-  int		rate;
-  int		width;
-  int		channels;
+  int		samplerate;
+  int		width;       // 1 = 8-bit, 2 = 16-bit, 4 = float and 32-bit
+  alure::ChannelConfig		channels;
+  int		samples;
   int		loopstart;
   int		loopend;
-  int		samples;
-  int		dataofs;		// chunk starts this many bytes from file start
 } wavinfo_t;
 
 typedef struct sx_preset_s

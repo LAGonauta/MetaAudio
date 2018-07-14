@@ -41,27 +41,18 @@ typedef struct
 typedef struct
 {
   //wave info
-  int 	length;
-  int 	loopstart;
-  int 	loopend;
-  int 	samplerate;
-  int 	width;
-  int 	channels;
-  int		dataofs;
-  int		bitrate;
-  int		blockalign;
+  int length;
+  int loopstart;
+  int loopend;
+  int samplerate;
+  int width;
+  alure::ChannelConfig channels;
 
   //OpenAL buffer
   alure::SharedPtr<alure::Decoder> decoder;
   alure::SharedPtr<alure::Buffer> buffer;
 
-  //for Stream sound
-  FileHandle_t file;
-  int		filesize;
-
-  //data chunk so we could do some magic change on the raw sound data
-  int		datalen;
-  std::vector<byte>	data;
+  alure::ArrayView<ALbyte>	data;
 }aud_sfxcache_t;
 
 typedef struct
@@ -134,8 +125,31 @@ void S_FlushCaches(void);
 qboolean SND_IsPlaying(sfx_t *sfx);
 
 //snd_wav.cpp
-qboolean GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength);
-void ResampleSfx(aud_sfxcache_t *sc, byte *indata, byte *outdata);
+class LocalAudioDecoder final : public alure::MessageHandler {
+public:
+  bool GetWavinfo(wavinfo_t *info, char *name, byte *wav, int wavlength, alure::ArrayView<ALbyte>& data_output);
+  void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
+
+private:
+  // To get loop points from wav file while Alure doesn't give it to use
+  byte *data_p;
+  byte *iff_end;
+  byte *last_chunk;
+  byte *iff_data;
+  int iff_chunk_len;
+
+  // To return the data to the application we copy the information here
+  alure::StringView _name;
+  alure::ChannelConfig _channels;
+  alure::SampleType _type;
+  ALuint _samplerate;
+  alure::ArrayView<ALbyte> _data;
+
+  short GetLittleShort(void);
+  int GetLittleLong(void);
+  void FindNextChunk(char *name);
+  void FindChunk(char *name);
+};
 
 //snd_vox.cpp
 void VOX_Init(void);
