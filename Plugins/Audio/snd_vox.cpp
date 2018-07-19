@@ -651,9 +651,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     alure::ArrayView<int16> temp_array = sc->data.reinterpret_as<int16>();
     while (i < availableSamples && scount < CAVGSAMPLES)
     {
-      data = temp_array[i + iSamplesPlayed];
-      savg += abs(data / 256);
-
+      data = min(max(temp_array[i + iSamplesPlayed] >> 8, SCHAR_MIN + 1), SCHAR_MAX - 1);
+      savg += abs(data);
       i += 80 + ((byte)data & 0x1F);
       scount++;
     }
@@ -664,8 +663,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     alure::ArrayView<float> temp_array = sc->data.reinterpret_as<float>();
     while (i < availableSamples && scount < CAVGSAMPLES)
     {
-      data = temp_array[i + iSamplesPlayed] + SCHAR_MIN;
-      savg += abs(data * 128);
+      data = min(max(temp_array[i + iSamplesPlayed] * 128, SCHAR_MIN + 1), SCHAR_MAX - 1);
+      savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
       scount++;
