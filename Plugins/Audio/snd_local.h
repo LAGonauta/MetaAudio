@@ -49,7 +49,7 @@ typedef struct
   alure::SharedPtr<alure::Decoder> decoder;
   alure::SharedPtr<alure::Buffer> buffer;
 
-  alure::ArrayView<ALbyte>	data;
+  alure::UniquePtr<alure::Vector<ALubyte>> data;
 }aud_sfxcache_t;
 
 typedef struct

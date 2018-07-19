@@ -237,7 +237,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
   {
-    if (sc && sc->channels == alure::ChannelConfig::Mono && sc->data.size() > 0)
+    if (sc && sc->channels == alure::ChannelConfig::Mono && sc->data->size() > 0)
     {
       SND_MoveMouth(ch, sc);
     }

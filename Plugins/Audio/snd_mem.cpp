@@ -141,7 +141,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   char namebuffer[256];
   FileHandle_t hFile;
-  int filesize;
   aud_sfxcache_t *sc;
 
   if (s->name[0] == '*')
@@ -228,8 +227,11 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->width = info.width;
   sc->channels = info.channels;
 
-  //For VOX_ usage
-  sc->data = final_data;
+  //For VOX_ usage. We need a copy of the audio data to not interfere with Alure.
+  {
+    auto m_data = final_data.reinterpret_as<ALubyte>();
+    sc->data = alure::MakeUnique<alure::Vector<ALubyte>>(alure::Vector<ALubyte>(m_data.data(), m_data.data() + m_data.size()));
+  }
 
   // Set loop points if needed
   if (sc->loopstart > 0)
