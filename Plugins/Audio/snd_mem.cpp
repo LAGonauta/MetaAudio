@@ -73,7 +73,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
     g_pFileSystem->Close(file);
     file = nullptr;
 
-    if (data.data() == nullptr)
+    if (data.empty())
     {
       gEngfuncs.Con_DPrintf("S_LoadStreamSound: Couldn't load %s\n", s->name);
       return nullptr;
@@ -187,7 +187,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  if (data.data() == nullptr)
+  if (data.empty())
   {
     gEngfuncs.Con_DPrintf("S_LoadSound: Couldn't load %s\n", namebuffer);
     return nullptr;
