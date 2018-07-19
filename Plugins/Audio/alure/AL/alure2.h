@@ -1451,11 +1451,16 @@ public:
      */
     virtual bool seek(uint64_t pos) noexcept = 0;
 
+     /**
+     * Retrieves if the audio file has any loop point embedded.
+     */
+    virtual bool hasLoopPoints() const noexcept = 0;
+
     /**
      * Retrieves the loop points, in sample frames, as a [start,end) pair. If
      * start >= end, all available samples are included in the loop.
      */
-    virtual std::pair<uint64_t,uint64_t> getLoopPoints() const noexcept = 0;
+    virtual std::pair<uint64_t, uint64_t> getLoopPoints() const noexcept = 0;
 
     /**
      * Decodes count sample frames, writing them to ptr, and returns the number

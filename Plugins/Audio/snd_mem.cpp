@@ -109,12 +109,17 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
         }
         sc->channels = sc->decoder->getChannelConfig();
 
-        auto loop_points = sc->decoder->getLoopPoints();
-        sc->loopstart = loop_points.first;
-        sc->loopend = loop_points.second;
-
-        // Disable looping for now as there is no way to know looping is needed yet.
-        sc->loopstart = -1;
+        if (sc->decoder->hasLoopPoints())
+        {
+          auto loop_points = sc->decoder->getLoopPoints();
+          sc->loopstart = loop_points.first;
+          sc->loopend = loop_points.second;
+        }
+        else
+        {
+          sc->loopstart = -1;
+          sc->loopend = INT_MAX;
+        }
       }
       catch (const std::exception& error)
       {
@@ -136,7 +141,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   char namebuffer[256];
   FileHandle_t hFile;
-  std::vector<byte> data;
   int filesize;
   aud_sfxcache_t *sc;
 
@@ -163,16 +167,8 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   hFile = g_pFileSystem->Open(namebuffer, "rb");
 
-  // Normal cache
-  if (hFile)
-  {
-    filesize = g_pFileSystem->Size(hFile);
-    data.resize(filesize + 1);
-    g_pFileSystem->Read(data.data(), filesize, hFile);
-    g_pFileSystem->Close(hFile);
-    hFile = nullptr;
-  }
-  else
+  // Check if file exists
+  if (!hFile)
   {
     namebuffer[0] = '\0';
     if (s->name[0] != '/')
@@ -181,21 +177,17 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     namebuffer[sizeof(namebuffer) - 1] = 0;
 
     hFile = g_pFileSystem->Open(namebuffer, "rb");
-
-    if (hFile)
-    {
-      filesize = g_pFileSystem->Size(hFile);
-      data.resize(filesize + 1);
-      g_pFileSystem->Read(data.data(), filesize, hFile);
-      g_pFileSystem->Close(hFile);
-      hFile = nullptr;
-    }
   }
 
-  if (data.empty())
+  if (!hFile)
   {
     gEngfuncs.Con_DPrintf("S_LoadSound: Couldn't load %s\n", namebuffer);
     return nullptr;
+  }
+  else
+  {
+    g_pFileSystem->Close(hFile);
+    hFile = nullptr;
   }
 
   wavinfo_t info;
@@ -219,7 +211,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   }
 
   alure::ArrayView<ALbyte> final_data;
-  if (!local_decoder->GetWavinfo(&info, al_file_path, data.data(), filesize, final_data))
+  if (!local_decoder->GetWavinfo(&info, al_file_path, final_data))
     return nullptr;
 
   sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
