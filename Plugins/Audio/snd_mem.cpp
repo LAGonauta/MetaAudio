@@ -115,6 +115,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
       }
       catch (const std::exception& error)
       {
+        gEngfuncs.Con_DPrintf("S_LoadStreamSound: %s: %s\n", namebuffer, error.what());
       }
     }
   }
@@ -207,6 +208,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
     catch (const std::exception& error)
     {
+      gEngfuncs.Con_DPrintf("S_LoadSound: %s: %s\n", namebuffer, error.what());
     }
   }
 
@@ -240,6 +242,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
     catch (const std::exception& error)
     {
+      gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
     }
   }
 

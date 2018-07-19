@@ -40,6 +40,9 @@ char al_device_name[64] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
 
+//Print buffer
+std::string dprint_buffer;
+
 // translates from AL coordinate system to quake
 // HL seems to use inches, convert to meters.
 #define AL_UnitToMeters 0.0254f
@@ -372,6 +375,13 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
   // Update Alure's OpenAL context at the start of processing.
   al_context.update();
+
+  // Print buffer and clear it.
+  if (dprint_buffer.length())
+  {
+    gEngfuncs.Con_DPrintf((char*)(dprint_buffer.c_str()));
+    dprint_buffer.clear();
+  }
 
   AL_CopyVector(forward, orientation);
   AL_CopyVector(up, orientation + 3);
@@ -831,6 +841,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
+      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
     }
   }
   else
@@ -857,6 +868,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     catch (const std::runtime_error& error)
     {
+      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
     }
   }
 }
