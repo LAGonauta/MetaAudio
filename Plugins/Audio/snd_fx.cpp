@@ -323,10 +323,10 @@ void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater)
   }
   else
   {
-    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+    ch->source.setDirectFilter(alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
     ch->source.setDopplerFactor(1.0f);
   }
-  ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ direct_gain, AL_LOWPASS_DEFAULT_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+  ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
 }
 
 void SX_Init(void)
