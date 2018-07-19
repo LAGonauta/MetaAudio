@@ -61,9 +61,9 @@ void LocalAudioDecoder::FindChunk(char *name)
   FindNextChunk(name);
 }
 
-bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *path, byte *wav, int wavlength, alure::ArrayView<ALbyte>& data_output)
+bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, byte *wav, int wavlength, alure::ArrayView<ALbyte>& data_output)
 {
-  int     i;
+  int i;
 
   memset(info, 0, sizeof(*info));
 
@@ -147,7 +147,7 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *path, byte *wav, int w
   else
   {
     auto context = alure::Context::GetCurrent();
-    alure::SharedPtr<alure::Decoder> dec = context.createDecoder(path);
+    alure::SharedPtr<alure::Decoder> dec = context.createDecoder(full_path);
 
     auto loop_points = dec->getLoopPoints();
 
@@ -155,6 +155,9 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *path, byte *wav, int w
     // Alure2 API suggestion: decoder.hasLoopPoints();
     info->loopstart = loop_points.first;
     info->loopend = loop_points.second;
+
+    // Disable looping for now.
+    info->loopstart = -1;
   }
 
   info->channels = _channels;

@@ -112,10 +112,14 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
         auto loop_points = sc->decoder->getLoopPoints();
         sc->loopstart = loop_points.first;
         sc->loopend = loop_points.second;
+
+        // Disable looping for now as there is no way to know looping is needed yet.
+        sc->loopstart = -1;
       }
       catch (const std::exception& error)
       {
         gEngfuncs.Con_DPrintf("S_LoadStreamSound: %s: %s\n", namebuffer, error.what());
+        return nullptr;
       }
     }
   }
@@ -197,23 +201,25 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   wavinfo_t info;
 
   // For OpenAL
-  alure::SharedPtr<alure::Buffer> al_buffer;
   char al_file_path[MAX_PATH];
+  alure::Buffer al_buffer;
   g_pFileSystem->GetLocalPath(namebuffer, al_file_path, sizeof(al_file_path));
   if (al_file_path != nullptr && al_file_path[0] != 0)
   {
     try
     {
-      al_buffer = alure::MakeShared<alure::Buffer>(context.getBuffer(al_file_path));
+      al_buffer = context.getBuffer(al_file_path);
     }
     catch (const std::exception& error)
     {
       gEngfuncs.Con_DPrintf("S_LoadSound: %s: %s\n", namebuffer, error.what());
+      sc = nullptr;
+      return nullptr;
     }
   }
 
   alure::ArrayView<ALbyte> final_data;
-  if (!local_decoder->GetWavinfo(&info, s->name, data.data(), filesize, final_data))
+  if (!local_decoder->GetWavinfo(&info, al_file_path, data.data(), filesize, final_data))
     return nullptr;
 
   sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
@@ -222,14 +228,18 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   memset(sc, 0, sizeof(aud_sfxcache_t));
 
-  //we still give it a value though we don't need it
-
-  sc->buffer = al_buffer;
+  sc->buffer = alure::MakeShared<alure::Buffer>(al_buffer);
   sc->length = info.samples; //number of samples ( include channels )
   sc->loopstart = info.loopstart; //-1 or loop start position
   sc->loopend = info.loopend;
+  sc->samplerate = info.samplerate;
+  sc->width = info.width;
+  sc->channels = info.channels;
 
-  // Set looppoints if needed
+  //For VOX_ usage
+  sc->data = final_data;
+
+  // Set loop points if needed
   if (sc->loopstart > 0)
   {
     try
@@ -245,13 +255,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
     }
   }
-
-  sc->samplerate = info.samplerate; //sample rate = 11025 / 22050 / 44100
-  sc->width = info.width; //bits = 8 / 16
-  sc->channels = info.channels;
-
-  //For VOX_ usage
-  sc->data = final_data;
 
   return sc;
 }
