@@ -82,7 +82,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] + SCHAR_MIN >= -2 && temp_data[srcsample] + SCHAR_MIN <= 2)
           {
-            ch->start += i;
+            ch->start += 1;
             break;
           }
 
@@ -101,7 +101,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
           {
-            ch->start += i;
+            ch->start += 1;
             break;
           }
 
@@ -120,7 +120,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] >= -0.016 && temp_data[srcsample] <= 0.016)
           {
-            ch->start += i;
+            ch->start += 1;
             break;
           }
 
@@ -158,8 +158,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] + SCHAR_MIN >= -2 && temp_data[srcsample] + SCHAR_MIN <= 2)
           {
-            ch->end -= i;
-            pvoxword->cbtrim -= i;
+            ch->end -= 1;
+            pvoxword->cbtrim -= 1;
           }
           else
           {
@@ -181,8 +181,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
           {
-            ch->end -= i;
-            pvoxword->cbtrim -= i;
+            ch->end -= 1;
+            pvoxword->cbtrim -= 1;
           }
           else
           {
@@ -204,8 +204,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
           if (temp_data[srcsample] >= -0.016 && temp_data[srcsample] <= 0.016)
           {
-            ch->end -= i;
-            pvoxword->cbtrim -= i;
+            ch->end -= 1;
+            pvoxword->cbtrim -= 1;
           }
           else
           {
