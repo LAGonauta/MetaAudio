@@ -124,6 +124,7 @@ qboolean SND_IsPlaying(sfx_t *sfx);
 //snd_wav.cpp
 class LocalAudioDecoder final : public alure::MessageHandler {
 public:
+  static const alure::Array<alure::String, 3> SupportedExtensions;
   bool GetWavinfo(wavinfo_t *info, char *full_path, alure::ArrayView<ALbyte>& data_output);
   void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
 

@@ -7,6 +7,8 @@
 #include "snd_local.h"
 #include "zone.h"
 
+const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
+
 bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::ArrayView<ALbyte>& data_output)
 {
   memset(info, 0, sizeof(*info));
