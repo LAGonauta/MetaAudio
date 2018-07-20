@@ -160,51 +160,46 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   }
 
   // Check if file exists. Order: .wav, .flac, .ogg
-  for (const alure::String &extension : LocalAudioDecoder::SupportedExtensions)
+  alure::String sfx_name = s->name;
+  // Search for "." from right to left
+  int char_index = sfx_name.size() - 1;
+  while (sfx_name[char_index] != '.')
   {
-    alure::String sfx_name = s->name;
-    // Search for "." from right to left
-    int char_index = sfx_name.size() - 1;
-    while (sfx_name[char_index] != '.')
-    {
-      char_index--;
-      if (char_index < 0)
-      {
-        break;
-      }
-    }
-
-    // "." not found, abort
+    char_index--;
     if (char_index < 0)
     {
       break;
     }
-    else
+  }
+
+  if (char_index > 0)
+  {
+    for (const alure::String &extension : LocalAudioDecoder::SupportedExtensions)
     {
       sfx_name.replace(char_index, sfx_name.npos, extension);
-    }
 
-    strcpy(namebuffer, "sound");
-    if (s->name[0] != '/')
-      strncat(namebuffer, "/", sizeof(namebuffer) - strlen(namebuffer) - 1);
-    strncat(namebuffer, sfx_name.c_str(), sizeof(namebuffer) - strlen(namebuffer) - 1);
-
-    hFile = g_pFileSystem->Open(namebuffer, "rb");
-
-    if (!hFile)
-    {
-      namebuffer[0] = '\0';
+      strcpy(namebuffer, "sound");
       if (s->name[0] != '/')
         strncat(namebuffer, "/", sizeof(namebuffer) - strlen(namebuffer) - 1);
-      strncat(namebuffer, sfx_name.c_str(), sizeof(namebuffer) - 1);
-      namebuffer[sizeof(namebuffer) - 1] = 0;
+      strncat(namebuffer, sfx_name.c_str(), sizeof(namebuffer) - strlen(namebuffer) - 1);
 
       hFile = g_pFileSystem->Open(namebuffer, "rb");
-    }
 
-    if (hFile)
-    {
-      break;
+      if (!hFile)
+      {
+        namebuffer[0] = '\0';
+        if (s->name[0] != '/')
+          strncat(namebuffer, "/", sizeof(namebuffer) - strlen(namebuffer) - 1);
+        strncat(namebuffer, sfx_name.c_str(), sizeof(namebuffer) - 1);
+        namebuffer[sizeof(namebuffer) - 1] = 0;
+
+        hFile = g_pFileSystem->Open(namebuffer, "rb");
+      }
+
+      if (hFile)
+      {
+        break;
+      }
     }
   }
 
