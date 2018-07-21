@@ -147,7 +147,26 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return S_LoadStreamSound(s, ch);
 
   if (s->name[0] == '?')
-    return nullptr;// VoiceSE_GetSFXCache(s, ch);
+  {
+    try
+    {
+      alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(VoiceDecoder(s, ch));
+      sc = new aud_sfxcache_t();
+      sc->channels = dec->getChannelConfig();
+      sc->samplerate = dec->getFrequency();
+      sc->length = INT_MAX;
+      sc->loopstart = -1;
+      sc->loopend = INT_MAX;
+      sc->width = 0;
+      sc->decoder = dec;
+      return sc;
+    }
+    catch (const std::runtime_error& error)
+    {
+      gEngfuncs.Con_DPrintf("S_LoadSound: Unable to start voice playback. %s.\n", error.what());
+      return nullptr;
+    }
+  }
 
   sc = (aud_sfxcache_t *)Cache_Check(&s->cache);
   if (sc)

@@ -154,9 +154,32 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch);
 qboolean S_StreamLoadNextChunk(aud_channel_t *ch, aud_sfxcache_t *sc, ALuint alBuffer);
 
 //snd_voice.cpp
-void VoiceSE_QueueBuffers(aud_channel_t *ch);
-aud_sfxcache_t *VoiceSE_GetSFXCache(sfx_t *s, aud_channel_t *ch);
-void VoiceSE_NotifyFreeChannel(aud_channel_t *ch);
+class VoiceDecoder final : public alure::Decoder
+{
+  int(*VoiceSE_GetSoundDataCallback)(sfxcache_s *pCache, char *pCopyBuf, int maxOutDataSize, int samplePos, int sampleCount);
+
+  alure::ChannelConfig m_channel_config{ alure::ChannelConfig::Mono };
+  alure::SampleType m_sample_type{ alure::SampleType::UInt8 };
+  size_t m_sample_rate{ 8000 };
+
+  int m_entchannel;
+  sfxcache_t *m_sfxcache_t;
+
+public:
+  VoiceDecoder(sfx_t *sound, aud_channel_t *ch);
+  ~VoiceDecoder() override;
+
+  ALuint getFrequency() const noexcept override;
+  alure::ChannelConfig getChannelConfig() const noexcept override;
+  alure::SampleType getSampleType() const noexcept override;
+  
+  bool hasLoopPoints() const noexcept override;
+  std::pair<uint64_t, uint64_t> getLoopPoints() const noexcept override;
+
+  uint64_t getLength() const noexcept override;
+  bool seek(uint64_t pos) noexcept override;
+  ALuint read(ALvoid *ptr, ALuint count) noexcept override;
+};
 
 //snd_fx.cpp
 void SX_RoomFX(void);

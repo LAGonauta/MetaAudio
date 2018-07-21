@@ -448,8 +448,10 @@ void S_FreeChannel(aud_channel_t *ch)
     ch->source.destroy();
   }
 
-  //if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
-  //    VoiceSE_NotifyFreeChannel(ch);
+  if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+  {
+    ch->decoder == nullptr;
+  }
 
   if (ch->isentence >= 0)
   {
@@ -809,13 +811,21 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->source.setAirAbsorptionFactor(1.0f);
   
   // Should also set source priority
-  if (ch->entchannel == CHAN_STREAM)
+  if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
   {
     SND_Spatialize(ch, true);
     try
     {
       ch->source.setOffset(ch->start);
-      ch->source.play(sc->decoder, 12000, 4);
+      if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+      {
+        ch->decoder = sc->decoder;
+        ch->source.play(sc->decoder, 256, 3);
+      }
+      else
+      {
+        ch->source.play(sc->decoder, 12000, 4);
+      }
     }
     catch (const std::runtime_error& error)
     {

@@ -1,126 +1,108 @@
-//#include <metahook.h>
-//#include "exportfuncs.h"
-//#include "FileSystem.h"
-//#include "util.h"
-//#include "snd_local.h"
-//#include "zone.h"
-//
-//#define VOICE_BUFFER_SIZE 4096
-//
-//int (*VoiceSE_GetSoundDataCallback)(sfxcache_s *pCache, char *pCopyBuf, int maxOutDataSize, int samplePos, int sampleCount);
-//
-////not done
-//void VoiceSE_NotifyFreeChannel(aud_channel_t *ch)
-//{
-//	ch->voicecache = NULL;
-//	gAudEngine.VoiceSE_NotifyFreeChannel(ch->entchannel);
-//}
-//
-//aud_sfxcache_t *VoiceSE_FillSFXCache(sfxcache_t *oldsc)
-//{
-//	static aud_sfxcache_t sc;
-//
-//	sc.length = oldsc->length;
-//	sc.channels = oldsc->stereo ? 2 : 1;
-//	sc.speed = oldsc->speed;
-//	sc.width = oldsc->width;
-//	sc.albuffer = 0;
-//	sc.bitrate = sc.speed * sc.width;
-//	sc.blockalign = sc.width * sc.channels;
-//
-//	if(sc.channels == 1)
-//		sc.alformat = (sc.width == 1) ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
-//	else
-//		sc.alformat = (sc.width == 1) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
-//
-//	return &sc;
-//}
-//
-//qboolean VoiceSE_GetNextChunk(aud_channel_t *ch, ALuint alBuffer)
-//{
-//	//invalid voice?
-//	if(!ch->voicecache)
-//		return false;
-//
-//	aud_sfxcache_t *sc = VoiceSE_FillSFXCache(ch->voicecache);
-//
-//	size_t ulCopyBufferSize = sc->bitrate >> 2;
-//	char *pCopyBuffer = (char *)Hunk_TempAlloc( ulCopyBufferSize + 1 );
-//
-//	size_t ulExpectSamples = ulCopyBufferSize / (sc->width * sc->channels);
-//	size_t ulRecvedSamples = VoiceSE_GetSoundDataCallback(ch->voicecache, pCopyBuffer, ulCopyBufferSize, 0, ulExpectSamples);
-//	ulRecvedSamples -= (ulRecvedSamples % sc->blockalign);
-//
-//	qalBufferData(alBuffer, sc->alformat, pCopyBuffer, ulRecvedSamples * sc->width * sc->channels, sc->speed);
-//
-//	return true;
-//}
-//
-//void VoiceSE_QueueBuffers(aud_channel_t *ch)
-//{
-//	//Queue buffers for voice
-//	if (ch->alstreambuffers[0])
-//	{
-//		ALint iBuffersProcessed;
-//		ALuint uiBuffer;
-//
-//		qalGetSourcei(ch->source, AL_BUFFERS_PROCESSED, &iBuffersProcessed);
-//
-//		while(iBuffersProcessed)
-//		{
-//			qalSourceUnqueueBuffers(ch->source, 1, &uiBuffer);
-//
-//			if(VoiceSE_GetNextChunk(ch, uiBuffer))
-//			{
-//				qalSourceQueueBuffers(ch->source, 1, &uiBuffer);
-//			}
-//
-//			iBuffersProcessed--;
-//		}
-//	}
-//}
-//
-//aud_sfxcache_t *VoiceSE_GetSFXCache(sfx_t *s, aud_channel_t *ch)
-//{
-//	sfxcache_t *oldsc = (sfxcache_t *)gAudEngine.S_LoadSound(s, NULL);
-//
-//	if(!oldsc)
-//		return NULL;
-//
-//	VoiceSE_GetSoundDataCallback = (int (*)(sfxcache_s *, char *, int, int, int))oldsc->loopstart;
-//
-//	if(!ch->alstreambuffers[0])
-//	{
-//		qalGenBuffers(4, ch->alstreambuffers);
-//	}
-//
-//	//save the sfxcache for later usage
-//	ch->voicecache = oldsc;
-//
-//	aud_sfxcache_t *sc = VoiceSE_FillSFXCache(oldsc);
-//
-//	size_t ulCopyBufferSize = VOICE_BUFFER_SIZE;
-//	char *pCopyBuffer = (char *)Hunk_TempAlloc( ulCopyBufferSize + 1 );
-//
-//	size_t ulExpectSamples = ulCopyBufferSize / (sc->width * sc->channels);
-//	size_t ulRecvedSamples = VoiceSE_GetSoundDataCallback(oldsc, pCopyBuffer, ulCopyBufferSize, 0, ulExpectSamples);
-//
-//	size_t ulSampleSize = ulRecvedSamples * sc->width * sc->channels;
-//	ulSampleSize -= (ulSampleSize % sc->blockalign);
-//
-//	size_t ulBufferSize = ulSampleSize >> 2;
-//	ulBufferSize -= (ulBufferSize % sc->blockalign);
-//
-//	size_t ulSubmitSize = 0;
-//
-//	for(int i = 0; i < 4; ++i)
-//	{
-//		if(i == 3)
-//			qalBufferData(ch->alstreambuffers[i], sc->alformat, pCopyBuffer + ulSubmitSize, ulSampleSize - ulSubmitSize, sc->speed);
-//		else
-//			qalBufferData(ch->alstreambuffers[i], sc->alformat, pCopyBuffer + ulSubmitSize, ulBufferSize, sc->speed);
-//		ulSubmitSize += ulBufferSize;
-//	}
-//
-//	return sc;
-//}
+#include <metahook.h>
+#include "exportfuncs.h"
+#include "FileSystem.h"
+#include "util.h"
+#include "snd_local.h"
+#include "zone.h"
+
+#define VOICE_BUFFER_SIZE 4096
+
+VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
+{
+  sfxcache_t *oldsc = (sfxcache_t *)gAudEngine.S_LoadSound(sound, nullptr);
+
+  if (!oldsc)
+    throw std::runtime_error("Unable to find voice cache.");
+
+  //m_ch = ch;
+  m_entchannel = ch->entchannel;
+
+  VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_s *, char *, int, int, int))oldsc->loopstart;
+
+  //ch->voicecache = oldsc;
+  m_sfxcache_t = oldsc;
+
+  if (oldsc->stereo)
+  {
+    m_channel_config = alure::ChannelConfig::Stereo;
+  }
+  else
+  {
+    m_channel_config = alure::ChannelConfig::Mono;
+  }
+
+  if (oldsc->width == 2)
+  {
+    m_sample_type = alure::SampleType::Int16;
+  }
+  else
+  {
+    m_sample_type = alure::SampleType::UInt8;
+  }
+
+  m_sample_rate = oldsc->samplerate;
+}
+
+//not done
+VoiceDecoder::~VoiceDecoder()
+{
+	//m_ch->voicecache = nullptr;
+	gAudEngine.VoiceSE_NotifyFreeChannel(m_entchannel);
+}
+
+ALuint VoiceDecoder::read(ALvoid *ptr, ALuint count) noexcept
+{
+	//invalid voice?
+	if(!m_sfxcache_t)
+		return false;
+
+  size_t width = 1;
+  if (m_sample_type == alure::SampleType::Int16)
+  {
+    width = 2;
+  }
+  size_t channels = 1;
+  if (m_channel_config == alure::ChannelConfig::Stereo)
+  {
+    channels = 2;
+  }
+
+	size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_sfxcache_t, reinterpret_cast<char *>(ptr), count * width * channels, 0, count);
+
+	return ulRecvedFrames;
+}
+
+ALuint VoiceDecoder::getFrequency() const noexcept
+{
+  return m_sample_rate;
+}
+
+alure::ChannelConfig VoiceDecoder::getChannelConfig() const noexcept
+{
+  return m_channel_config;
+}
+
+alure::SampleType VoiceDecoder::getSampleType() const noexcept
+{
+  return m_sample_type;
+}
+
+uint64_t VoiceDecoder::getLength() const noexcept
+{
+  return UINT64_MAX;
+}
+
+bool VoiceDecoder::seek(uint64_t pos) noexcept
+{
+  return false;
+}
+
+bool VoiceDecoder::hasLoopPoints() const noexcept
+{
+  return false;
+}
+
+std::pair<uint64_t, uint64_t> VoiceDecoder::getLoopPoints() const noexcept
+{
+  return std::pair<uint64_t, uint64_t>(0, UINT64_MAX);
+}
