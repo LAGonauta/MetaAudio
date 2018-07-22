@@ -18,8 +18,6 @@ Tested mods:
 - Distance attenuation
 - EFX effects
 - Hardware acceleration (and X-RAM)
-
-# What does not work
 - Voice communication
 
 # What is better than current GoldSrc
@@ -32,7 +30,6 @@ Tested mods:
 
 # TODO
 - Possibly integrate Steam Audio (for reflections/reverb instead of OpenAL's native effects)
-- Add support for voice communication
 
 # Compiling
 Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
