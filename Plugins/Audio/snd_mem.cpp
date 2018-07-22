@@ -158,7 +158,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       sc->loopstart = -1;
       sc->loopend = INT_MAX;
       sc->width = 0;
-      sc->decoder = dec;
+      sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
       return sc;
     }
     catch (const std::runtime_error& error)

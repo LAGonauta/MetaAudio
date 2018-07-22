@@ -5,8 +5,6 @@
 #include "snd_local.h"
 #include "zone.h"
 
-#define VOICE_BUFFER_SIZE 4096
-
 VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
 {
   sfxcache_t *oldsc = (sfxcache_t *)gAudEngine.S_LoadSound(sound, nullptr);
@@ -14,13 +12,11 @@ VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
   if (!oldsc)
     throw std::runtime_error("Unable to find voice cache.");
 
-  //m_ch = ch;
-  m_entchannel = ch->entchannel;
+  m_ch = ch;
 
   VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_s *, char *, int, int, int))oldsc->loopstart;
 
-  //ch->voicecache = oldsc;
-  m_sfxcache_t = oldsc;
+  ch->voicecache = oldsc;
 
   if (oldsc->stereo)
   {
@@ -44,30 +40,24 @@ VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
 }
 
 //not done
-VoiceDecoder::~VoiceDecoder()
+VoiceDecoder::~VoiceDecoder() {}
+
+void VoiceDecoder::destroy()
 {
-	//m_ch->voicecache = nullptr;
-	gAudEngine.VoiceSE_NotifyFreeChannel(m_entchannel);
+  if (m_ch->voicecache)
+  {
+    m_ch->voicecache = nullptr;
+    gAudEngine.VoiceSE_NotifyFreeChannel(m_ch->entchannel);
+  }
 }
 
 ALuint VoiceDecoder::read(ALvoid *ptr, ALuint count) noexcept
 {
 	//invalid voice?
-	if(!m_sfxcache_t)
-		return false;
+  if(!m_ch->voicecache)
+    return 0;  
 
-  size_t width = 1;
-  if (m_sample_type == alure::SampleType::Int16)
-  {
-    width = 2;
-  }
-  size_t channels = 1;
-  if (m_channel_config == alure::ChannelConfig::Stereo)
-  {
-    channels = 2;
-  }
-
-	size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_sfxcache_t, reinterpret_cast<char *>(ptr), count * width * channels, 0, count);
+	size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, reinterpret_cast<char *>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
 
 	return ulRecvedFrames;
 }

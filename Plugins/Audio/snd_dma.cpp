@@ -448,9 +448,15 @@ void S_FreeChannel(aud_channel_t *ch)
     ch->source.destroy();
   }
 
-  if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+  if (ch->decoder && ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
   {
-    ch->decoder == nullptr;
+    auto ptr = std::dynamic_pointer_cast<VoiceDecoder>(ch->decoder);
+    if (ptr)
+    {
+      ptr->destroy();
+      ptr.reset();
+      ch->decoder.reset();
+    }
   }
 
   if (ch->isentence >= 0)

@@ -162,12 +162,13 @@ class VoiceDecoder final : public alure::Decoder
   alure::SampleType m_sample_type{ alure::SampleType::UInt8 };
   size_t m_sample_rate{ 8000 };
 
-  int m_entchannel;
-  sfxcache_t *m_sfxcache_t;
+  aud_channel_t *m_ch;
 
 public:
   VoiceDecoder(sfx_t *sound, aud_channel_t *ch);
   ~VoiceDecoder() override;
+
+  void destroy();
 
   ALuint getFrequency() const noexcept override;
   alure::ChannelConfig getChannelConfig() const noexcept override;
