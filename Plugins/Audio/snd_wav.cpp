@@ -9,7 +9,7 @@
 
 const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
 
-bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::Vector<ALubyte>& data_output)
+bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, alure::String full_path, alure::Vector<ALubyte>& data_output)
 {
   memset(info, 0, sizeof(*info));
 
