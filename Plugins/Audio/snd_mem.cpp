@@ -253,11 +253,11 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  alure::ArrayView<ALbyte> final_data;
+  alure::Vector<ALubyte> final_data;
   if (!local_decoder->GetWavinfo(&info, al_file_path, final_data))
     return nullptr;
 
-  sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
+  sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t) + final_data.size(), s->name);
   if (sc == nullptr)
     return nullptr;
 
@@ -272,10 +272,8 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->channels = info.channels;
 
   //For VOX_ usage. We need a copy of the audio data to not interfere with Alure.
-  {
-    auto m_data = final_data.reinterpret_as<ALubyte>();
-    sc->data = alure::MakeUnique<alure::Vector<ALubyte>>(alure::Vector<ALubyte>(m_data.data(), m_data.data() + m_data.size()));
-  }
+  memcpy(sc->data, final_data.data(), final_data.size());
+  final_data.clear();
 
   // Set loop points if needed
   if (sc->loopstart > 0)

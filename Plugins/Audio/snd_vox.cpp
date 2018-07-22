@@ -56,7 +56,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     return;
   }
 
-  pdata = (byte *)sc->data->data();
+  pdata = (byte *)sc->data;
 
   if (sstart > send)
     return;
@@ -73,8 +73,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       {
       case 1:
       {
-        byte* temp_data = reinterpret_cast<byte*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        byte* temp_data = reinterpret_cast<byte*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample >= data_size)
@@ -92,8 +92,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 2:
       {
-        int16* temp_data = reinterpret_cast<int16*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        int16* temp_data = reinterpret_cast<int16*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample >= data_size)
@@ -111,8 +111,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 4:
       {
-        float* temp_data = reinterpret_cast<float*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        float* temp_data = reinterpret_cast<float*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample >= data_size)
@@ -149,8 +149,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       {
       case 1:
       {
-        byte* temp_data = reinterpret_cast<byte*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        byte* temp_data = reinterpret_cast<byte*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
@@ -172,8 +172,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 2:
       {
-        int16* temp_data = reinterpret_cast<int16*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        int16* temp_data = reinterpret_cast<int16*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
@@ -195,8 +195,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 4:
       {
-        float* temp_data = reinterpret_cast<float*>(sc->data->data());
-        size_t data_size = sc->data->size() / sc->width;
+        float* temp_data = reinterpret_cast<float*>(sc->data);
+        size_t data_size = sc->length / sc->width;
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
@@ -631,8 +631,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
   case 1:
   {
-    byte* temp_array = reinterpret_cast<byte*>(sc->data->data());
-    size_t data_size = sc->data->size() / sc->width;
+    byte* temp_array = reinterpret_cast<byte*>(sc->data);
+    size_t data_size = sc->length / sc->width;
     while (i < data_size && scount < CAVGSAMPLES)
     {
       data = temp_array[i] + SCHAR_MIN;
@@ -645,8 +645,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
   case 2:
   {
-    int16* temp_array = reinterpret_cast<int16*>(sc->data->data());
-    size_t data_size = sc->data->size() / sc->width;
+    int16* temp_array = reinterpret_cast<int16*>(sc->data);
+    size_t data_size = sc->length / sc->width;
     while (i < data_size && scount < CAVGSAMPLES)
     {
       data = min(max(temp_array[i] >> 8, SCHAR_MIN), SCHAR_MAX);
@@ -659,8 +659,8 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
   case 4:
   {
-    float* temp_array = reinterpret_cast<float*>(sc->data->data());
-    size_t data_size = sc->data->size() / sc->width;
+    float* temp_array = reinterpret_cast<float*>(sc->data);
+    size_t data_size = sc->length / sc->width;
     while (i < data_size && scount < CAVGSAMPLES)
     {
       data = min(max(temp_array[i] * 128, SCHAR_MIN), SCHAR_MAX);

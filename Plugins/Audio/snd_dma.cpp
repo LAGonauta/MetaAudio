@@ -237,7 +237,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
   {
-    if (sc && sc->channels == alure::ChannelConfig::Mono && sc->data->size() > 0)
+    if (sc && sc->channels == alure::ChannelConfig::Mono && sc->data)
     {
       SND_MoveMouth(ch, sc);
     }
@@ -245,7 +245,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
   //update position
   alure::Vector3 alure_position(0, 0, 0);
-  if (ch->entnum != *gAudEngine.cl_viewentity)
+  if (ch->entnum > 0 && ch->entnum != *gAudEngine.cl_viewentity)
   {
     ch->source.setRelative(false);
     if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)

@@ -49,7 +49,7 @@ typedef struct
   alure::SharedPtr<alure::Decoder> decoder;
   alure::SharedPtr<alure::Buffer> buffer;
 
-  alure::UniquePtr<alure::Vector<ALubyte>> data;
+  ALubyte data[1];
 }aud_sfxcache_t;
 
 typedef struct
@@ -125,16 +125,16 @@ qboolean SND_IsPlaying(sfx_t *sfx);
 class LocalAudioDecoder final : public alure::MessageHandler {
 public:
   static const alure::Array<alure::String, 3> SupportedExtensions;
-  bool GetWavinfo(wavinfo_t *info, char *full_path, alure::ArrayView<ALbyte>& data_output);
+  bool GetWavinfo(wavinfo_t *info, char *full_path, alure::Vector<ALubyte>& data_output);
   void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
 
 private:
   // To return the data to the application we copy the information here
-  alure::StringView _name;
-  alure::ChannelConfig _channels;
-  alure::SampleType _type;
-  ALuint _samplerate;
-  alure::ArrayView<ALbyte> _data;
+  alure::StringView m_name;
+  alure::ChannelConfig m_channels;
+  alure::SampleType m_type;
+  ALuint m_samplerate;
+  alure::Vector<ALubyte> m_data;
 };
 
 //snd_vox.cpp

@@ -9,7 +9,7 @@
 
 const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
 
-bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::ArrayView<ALbyte>& data_output)
+bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::Vector<ALubyte>& data_output)
 {
   memset(info, 0, sizeof(*info));
 
@@ -36,10 +36,11 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::Arra
     info->loopend = INT_MAX;
   }
 
-  info->channels = _channels;
-  info->samplerate = _samplerate;
+  info->channels = m_channels;
+  info->samplerate = m_samplerate;
 
-  switch (_type)
+  info->stype = m_type;
+  switch (m_type)
   {
   case alure::SampleType::UInt8:
     info->width = 1;
@@ -52,15 +53,17 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, char *full_path, alure::Arra
     break;
   }
 
-  info->samples = _data.size() / alure::FramesToBytes(1, _channels, _type);
-  data_output = _data;
+  info->samples = m_data.size() / alure::FramesToBytes(1, m_channels, m_type);
+  data_output.swap(m_data);
 
   return true;
 }
 
 void LocalAudioDecoder::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept {
-  _name = name;
-  _type = type;
-  _samplerate = samplerate;
-  _data = data;
+  m_name = name;
+  m_type = type;
+  m_samplerate = samplerate;
+
+  auto temp_view = data.reinterpret_as<ALubyte>();
+  m_data = alure::Vector<ALubyte>(temp_view.begin(), temp_view.end());
 }
