@@ -64,12 +64,12 @@ void S_FreeCache(sfx_t *sfx)
     if (sc->buffer)
     {
       al_context.removeBuffer(sc->buffer->getHandle());
-      sc->buffer = nullptr;
+      sc->buffer.reset();
     }
 
     if (sc->decoder)
     {
-      sc->decoder = nullptr;
+      sc->decoder.reset();
     }
   }
 
@@ -448,15 +448,17 @@ void S_FreeChannel(aud_channel_t *ch)
     ch->source.destroy();
   }
 
-  if (ch->decoder && ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+  if (ch->decoder)
   {
-    auto ptr = std::dynamic_pointer_cast<VoiceDecoder>(ch->decoder);
-    if (ptr)
+    if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
     {
-      ptr->destroy();
-      ptr.reset();
-      ch->decoder.reset();
+      auto ptr = std::dynamic_pointer_cast<VoiceDecoder>(ch->decoder);
+      if (ptr)
+      {
+        ptr->destroy();
+      }
     }
+    ch->decoder.reset();
   }
 
   if (ch->isentence >= 0)
@@ -823,14 +825,15 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     try
     {
       ch->source.setOffset(ch->start);
+      ch->decoder = sc->decoder;
       if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
       {
-        ch->decoder = sc->decoder;
-        ch->source.play(sc->decoder, 256, 3);
+        ch->source.play(ch->decoder, 256, 3);
+        delete sc; // must be deleted here as voice data does not go to the cache to be deleted later 
       }
       else
       {
-        ch->source.play(sc->decoder, 12000, 4);
+        ch->source.play(ch->decoder, 4096, 4);
       }
     }
     catch (const std::runtime_error& error)
