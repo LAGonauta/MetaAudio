@@ -142,19 +142,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
       sc->decoder = context.createDecoder(file_path.value());
       sc->length = sc->decoder->getLength();
       sc->samplerate = sc->decoder->getFrequency();
-
-      switch (sc->decoder->getSampleType())
-      {
-      case alure::SampleType::UInt8:
-        sc->width = 1;
-        break;
-      case alure::SampleType::Int16:
-        sc->width = 2;
-        break;
-      case alure::SampleType::Float32:
-        sc->width = 4;
-        break;
-      }
+      sc->stype = sc->decoder->getSampleType();
       sc->channels = sc->decoder->getChannelConfig();
 
       if (sc->decoder->hasLoopPoints())
@@ -202,7 +190,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       sc->length = INT_MAX;
       sc->loopstart = -1;
       sc->loopend = INT_MAX;
-      sc->width = 0;
+      sc->stype = dec->getSampleType();
       sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
       return sc;
     }
@@ -247,9 +235,9 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   memset(sc, 0, sizeof(aud_sfxcache_t));
 
-  wavinfo_t info;
+  wavinfo_t info = wavinfo_t();
   //We can't interfere with Alure, so we need a copy of the data for mouth movement.
-  if (!local_decoder->GetWavinfo(&info, file_path.value(), sc->data))
+  if (!local_decoder->GetWavinfo(info, file_path.value(), sc->data))
     return nullptr;
 
   sc->buffer = alure::MakeShared<alure::Buffer>(al_buffer);
@@ -257,7 +245,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->loopstart = info.loopstart; //-1 or loop start position
   sc->loopend = info.loopend;
   sc->samplerate = info.samplerate;
-  sc->width = info.width;
+  sc->stype = info.stype;
   sc->channels = info.channels;
 
   // Set loop points if needed

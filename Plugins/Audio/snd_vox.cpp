@@ -67,9 +67,9 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
     if (!sc->data.empty() && ch->start < length)
     {
-      switch (sc->width)
+      switch (sc->stype)
       {
-      case 1:
+      case alure::SampleType::UInt8:
       {
         auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -87,7 +87,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         }
         break;
       }
-      case 2:
+      case alure::SampleType::Int16:
       {
         auto temp_viewer = data_viewer.reinterpret_as<int16>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -105,7 +105,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         }
         break;
       }
-      case 4:
+      case alure::SampleType::Float32:
       {
         auto temp_viewer = data_viewer.reinterpret_as<float>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -140,9 +140,9 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
     if (!sc->data.empty() && ch->start < length)
     {
-      switch (sc->width)
+      switch (sc->stype)
       {
-      case 1:
+      case alure::SampleType::UInt8:
       {
         auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -164,7 +164,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         }
         break;
       }
-      case 2:
+      case alure::SampleType::Int16:
       {
         auto temp_viewer = data_viewer.reinterpret_as<int16>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -186,7 +186,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
         }
         break;
       }
-      case 4:
+      case alure::SampleType::Float32:
       {
         auto temp_viewer = data_viewer.reinterpret_as<float>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
@@ -620,9 +620,9 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   savg = 0;
 
   alure::ArrayView<ALubyte> data_viewer = sc->data;
-  switch (sc->width)
+  switch (sc->stype)
   {
-  case 1:
+  case alure::SampleType::UInt8:
   {
     auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
     while (i < sc->length && scount < CAVGSAMPLES)
@@ -635,7 +635,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     }
     break;
   }
-  case 2:
+  case alure::SampleType::Int16:
   {
     auto temp_viewer = data_viewer.reinterpret_as<int16>();
     while (i < sc->length && scount < CAVGSAMPLES)
@@ -648,7 +648,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     }
     break;
   }
-  case 4:
+  case alure::SampleType::Float32:
   {
     auto temp_viewer = data_viewer.reinterpret_as<float>();
     while (i < sc->length && scount < CAVGSAMPLES)

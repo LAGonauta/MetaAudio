@@ -42,7 +42,7 @@ typedef struct
   int loopstart;
   int loopend;
   int samplerate;
-  int width;
+  alure::SampleType stype;
   alure::ChannelConfig channels;
 
   //OpenAL buffer
@@ -125,7 +125,7 @@ qboolean SND_IsPlaying(sfx_t *sfx);
 class LocalAudioDecoder final : public alure::MessageHandler {
 public:
   static const alure::Array<alure::String, 3> SupportedExtensions;
-  bool GetWavinfo(wavinfo_t *info, alure::String full_path, alure::Vector<ALubyte>& data_output);
+  bool GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output);
   void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
 
 private:

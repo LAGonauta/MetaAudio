@@ -9,10 +9,8 @@
 
 const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
 
-bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, alure::String full_path, alure::Vector<ALubyte>& data_output)
+bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output)
 {
-  memset(info, 0, sizeof(*info));
-
   auto context = alure::Context::GetCurrent();
   alure::SharedPtr<alure::Decoder> dec;
   try
@@ -28,35 +26,20 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, alure::String full_path, alu
   if (dec->hasLoopPoints())
   {
     auto loop_points = dec->getLoopPoints();
-    info->loopstart = loop_points.first;
-    info->loopend = loop_points.second;
+    info.loopstart = loop_points.first;
+    info.loopend = loop_points.second;
   }
   else
   {
-    info->loopstart = -1;
-    info->loopend = INT_MAX;
+    info.loopstart = -1;
+    info.loopend = INT_MAX;
   }
+  info.channels = m_channels;
+  info.samplerate = m_samplerate;
+  info.stype = m_type;
+  info.samples = m_data.size() / alure::FramesToBytes(1, m_channels, m_type);
 
-  info->channels = m_channels;
-  info->samplerate = m_samplerate;
-
-  info->stype = m_type;
-  switch (m_type)
-  {
-  case alure::SampleType::UInt8:
-    info->width = 1;
-    break;
-  case alure::SampleType::Int16:
-    info->width = 2;
-    break;
-  case alure::SampleType::Float32:
-    info->width = 4;
-    break;
-  }
-
-  info->samples = m_data.size() / alure::FramesToBytes(1, m_channels, m_type);
   data_output.swap(m_data);
-
   return true;
 }
 

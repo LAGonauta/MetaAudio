@@ -56,7 +56,6 @@ typedef struct voxword_s
 typedef struct wavinfo_s
 {
   int samplerate;
-  int width;       // 1 = 8-bit, 2 = 16-bit, 4 = float and 32-bit
   alure::SampleType stype;
   alure::ChannelConfig channels;
   int samples;
