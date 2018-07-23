@@ -229,8 +229,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return nullptr;
   }
 
-  wavinfo_t info;
-
   alure::Buffer al_buffer;
   try
   {
@@ -243,15 +241,16 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return nullptr;
   }
 
-  alure::Vector<ALubyte> final_data;
-  if (!local_decoder->GetWavinfo(&info, file_path.value(), final_data))
-    return nullptr;
-
-  sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t) + final_data.size(), s->name);
+  sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
   if (sc == nullptr)
     return nullptr;
 
   memset(sc, 0, sizeof(aud_sfxcache_t));
+
+  wavinfo_t info;
+  //We can't interfere with Alure, so we need a copy of the data for mouth movement.
+  if (!local_decoder->GetWavinfo(&info, file_path.value(), sc->data))
+    return nullptr;
 
   sc->buffer = alure::MakeShared<alure::Buffer>(al_buffer);
   sc->length = info.samples; //number of samples ( include channels )
@@ -260,9 +259,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->samplerate = info.samplerate;
   sc->width = info.width;
   sc->channels = info.channels;
-
-  //For VOX_ usage. We need a copy of the audio data to not interfere with Alure.
-  memcpy(sc->data, final_data.data(), final_data.size());
 
   // Set loop points if needed
   if (sc->loopstart > 0)

@@ -21,6 +21,7 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t *info, alure::String full_path, alu
   }
   catch (const std::exception& error)
   {
+    gEngfuncs.Con_DPrintf("Unable to create decoder for %s. %s.", full_path.c_str(), error.what());
     return false;
   }
   

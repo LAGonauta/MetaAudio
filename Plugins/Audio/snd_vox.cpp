@@ -27,7 +27,6 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   int srcsample;
   int skiplen;
   voxword_t *pvoxword;
-  byte *pdata;
 
   if (ch->isentence < 0)
     return;
@@ -56,31 +55,29 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     return;
   }
 
-  pdata = (byte *)sc->data;
-
   if (sstart > send)
     return;
 
+  alure::ArrayView<ALubyte> data_viewer = sc->data;
   if (sstart > 0 && sstart < 100)
   {
     skiplen = length * (sstart / 100);
     srcsample = ch->start;
     ch->start += skiplen;
 
-    if (pdata != nullptr && ch->start < length)
+    if (!sc->data.empty() && ch->start < length)
     {
       switch (sc->width)
       {
       case 1:
       {
-        byte* temp_data = reinterpret_cast<byte*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
-          if (srcsample >= data_size)
+          if (srcsample >= sc->length)
             break;
 
-          if (temp_data[srcsample] + SCHAR_MIN >= -2 && temp_data[srcsample] + SCHAR_MIN <= 2)
+          if (temp_viewer[srcsample] + SCHAR_MIN >= -2 && temp_viewer[srcsample] + SCHAR_MIN <= 2)
           {
             ch->start += 1;
             break;
@@ -92,14 +89,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 2:
       {
-        int16* temp_data = reinterpret_cast<int16*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<int16>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
-          if (srcsample >= data_size)
+          if (srcsample >= sc->length)
             break;
 
-          if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
+          if (temp_viewer[srcsample] >= -512 && temp_viewer[srcsample] <= 512)
           {
             ch->start += 1;
             break;
@@ -111,14 +107,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 4:
       {
-        float* temp_data = reinterpret_cast<float*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<float>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
-          if (srcsample >= data_size)
+          if (srcsample >= sc->length)
             break;
 
-          if (temp_data[srcsample] >= -0.016 && temp_data[srcsample] <= 0.016)
+          if (temp_viewer[srcsample] >= -0.016 && temp_viewer[srcsample] <= 0.016)
           {
             ch->start += 1;
             break;
@@ -143,20 +138,19 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     ch->end -= skiplen;
     pvoxword->cbtrim -= skiplen;
 
-    if (pdata != nullptr && ch->start < length)
+    if (!sc->data.empty() && ch->start < length)
     {
       switch (sc->width)
       {
       case 1:
       {
-        byte* temp_data = reinterpret_cast<byte*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
             break;
 
-          if (temp_data[srcsample] + SCHAR_MIN >= -2 && temp_data[srcsample] + SCHAR_MIN <= 2)
+          if (temp_viewer[srcsample] + SCHAR_MIN >= -2 && temp_viewer[srcsample] + SCHAR_MIN <= 2)
           {
             ch->end -= 1;
             pvoxword->cbtrim -= 1;
@@ -172,14 +166,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 2:
       {
-        int16* temp_data = reinterpret_cast<int16*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<int16>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
             break;
 
-          if (temp_data[srcsample] >= -512 && temp_data[srcsample] <= 512)
+          if (temp_viewer[srcsample] >= -512 && temp_viewer[srcsample] <= 512)
           {
             ch->end -= 1;
             pvoxword->cbtrim -= 1;
@@ -195,14 +188,13 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
       }
       case 4:
       {
-        float* temp_data = reinterpret_cast<float*>(sc->data);
-        size_t data_size = sc->length;
+        auto temp_viewer = data_viewer.reinterpret_as<float>();
         for (i = 0; i < CVOXZEROSCANMAX; i++)
         {
           if (srcsample <= ch->start)
             break;
 
-          if (temp_data[srcsample] >= -0.016 && temp_data[srcsample] <= 0.016)
+          if (temp_viewer[srcsample] >= -0.016 && temp_viewer[srcsample] <= 0.016)
           {
             ch->end -= 1;
             pvoxword->cbtrim -= 1;
@@ -627,15 +619,15 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   scount = pent->mouth.sndcount;
   savg = 0;
 
+  alure::ArrayView<ALubyte> data_viewer = sc->data;
   switch (sc->width)
   {
   case 1:
   {
-    byte* temp_array = reinterpret_cast<byte*>(sc->data);
-    size_t data_size = sc->length;
-    while (i < data_size && scount < CAVGSAMPLES)
+    auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
+    while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = temp_array[i] + SCHAR_MIN;
+      data = temp_viewer[i] + SCHAR_MIN;
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
@@ -645,11 +637,10 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
   case 2:
   {
-    int16* temp_array = reinterpret_cast<int16*>(sc->data);
-    size_t data_size = sc->length;
-    while (i < data_size && scount < CAVGSAMPLES)
+    auto temp_viewer = data_viewer.reinterpret_as<int16>();
+    while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = min(max(temp_array[i] >> 8, SCHAR_MIN), SCHAR_MAX);
+      data = min(max(temp_viewer[i] >> 8, SCHAR_MIN), SCHAR_MAX);
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
@@ -659,11 +650,10 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
   case 4:
   {
-    float* temp_array = reinterpret_cast<float*>(sc->data);
-    size_t data_size = sc->length;
-    while (i < data_size && scount < CAVGSAMPLES)
+    auto temp_viewer = data_viewer.reinterpret_as<float>();
+    while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = min(max(temp_array[i] * 128, SCHAR_MIN), SCHAR_MAX);
+      data = min(max(temp_viewer[i] * 128, SCHAR_MIN), SCHAR_MAX);
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
