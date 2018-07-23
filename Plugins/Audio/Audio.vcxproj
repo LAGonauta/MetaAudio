@@ -86,8 +86,8 @@
       <AdditionalDependencies>alure\alure2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
-copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -119,8 +119,8 @@ copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\commo
       <AdditionalDependencies>alure\alure2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
-copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
