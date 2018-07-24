@@ -1,6 +1,5 @@
 #include <metahook.h>
 
-#include "alure/AL/efx-presets.h"
 #include "efx-util.h"
 #include "event_api.h"
 #include "exportfuncs.h"
@@ -12,100 +11,14 @@ extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 static cvar_t *al_occlusion = nullptr;
 
-static alure::AuxiliaryEffectSlot alAuxEffectSlots;
-
-// HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
-// with no adjustment of reverb intensity with distance.
-// Reverb adjustment with distance is disabled per-source.
-static constexpr float AL_REVERBMIX = 0.38f;
-static constexpr float AL_SND_GAIN_FADE_TIME = 0.25f;
-
-static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
-static constexpr float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
-
-// Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
-// they get stuck.
-static constexpr float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
-
-// Temporary effect for interpolation
-static struct
-{
-  EFXEAXREVERBPROPERTIES ob_effect;        // Effect change if listener changes environment
-  EFXEAXREVERBPROPERTIES ob_effect_target; // Target effect while crossfading between ob_effect and ob_effect_target
-  EFXEAXREVERBPROPERTIES ob_effect_inc;    // crossfade increment
-  alure::Effect generated_effect;                // Generated effect from crossfade
-} interpl_effect;
-
-static EFXEAXREVERBPROPERTIES presets_room[CSXROOM] = {
-    EFX_REVERB_PRESET_GENERIC,                    //  0
-  //SXROOM_GENERIC
-    EFX_REVERB_PRESET_ROOM,                       //  1
-  //SXROOM_METALIC_S
-    EFX_REVERB_PRESET_BATHROOM,                   //  2
-    EFX_REVERB_PRESET_BATHROOM,                   //  3
-    EFX_REVERB_PRESET_BATHROOM,                   //  4
-  //SXROOM_TUNNEL_S
-    EFX_REVERB_PRESET_SEWERPIPE,                  //  4
-    EFX_REVERB_PRESET_SEWERPIPE,                  //  6
-    EFX_REVERB_PRESET_SEWERPIPE,                  //  7
-  //SXROOM_CHAMBER_S
-    EFX_REVERB_PRESET_STONEROOM,                  //  8
-    EFX_REVERB_PRESET_STONEROOM,                  //  9
-    EFX_REVERB_PRESET_STONEROOM,                  // 10
-  //SXROOM_BRITE_S
-    EFX_REVERB_PRESET_STONECORRIDOR,              // 11
-    EFX_REVERB_PRESET_STONECORRIDOR,              // 12
-    EFX_REVERB_PRESET_STONECORRIDOR,              // 13
-  //SXROOM_WATER1
-    EFX_REVERB_PRESET_UNDERWATER,                 // 14
-    EFX_REVERB_PRESET_UNDERWATER,                 // 15
-    EFX_REVERB_PRESET_UNDERWATER,                 // 16
-  //SXROOM_CONCRETE_S
-    EFX_REVERB_PRESET_GENERIC,                    // 17
-    EFX_REVERB_PRESET_GENERIC,                    // 18
-    EFX_REVERB_PRESET_GENERIC,                    // 19
-  //SXROOM_OUTSIDE1
-    EFX_REVERB_PRESET_ARENA,                      // 20
-    EFX_REVERB_PRESET_ARENA,                      // 21
-    EFX_REVERB_PRESET_ARENA,                      // 22
-  //SXROOM_CAVERN_S
-    EFX_REVERB_PRESET_CONCERTHALL,                // 23
-    EFX_REVERB_PRESET_CONCERTHALL,                // 24
-    EFX_REVERB_PRESET_CONCERTHALL,                // 25
-  //SXROOM_WEIRDO1
-    EFX_REVERB_PRESET_DIZZY,                      // 26
-    EFX_REVERB_PRESET_DIZZY,                      // 27
-    EFX_REVERB_PRESET_DIZZY                       // 28
-};
-
-struct pmplane_t
-{
-  vec3_t	normal;
-  float	dist;
-};
-
-struct pmtrace_s
-{
-  qboolean	allsolid;		       // if true, plane is not valid
-  qboolean	startsolid;	       // if true, the initial point was in a solid area
-  qboolean	inopen, inwater;   // End point is in empty space or in water
-  float	fraction;              // time completed, 1.0 = didn't hit anything
-  vec3_t	endpos;              // final position
-  pmplane_t	plane;             // surface normal at impact
-  int	ent;                     // entity at impact
-  vec3_t	deltavelocity;       // Change in player's velocity caused by impact.  
-                               // Only run on server.
-  int	hitgroup;
-};
-
-void SX_PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
+void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
 {
   // 0 = regular player hull, 1 = ducked player hull, 2 = point hull
   gEngfuncs.pEventAPI->EV_SetTraceHull(2);
   gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
 }
 
-float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
+float EnvEffects::FadeToNewGain(aud_channel_t *ch, float gain_new)
 {
   float	speed, frametime;
   frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
@@ -146,7 +59,7 @@ float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
   return ch->ob_gain;
 }
 
-EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
+EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
 {
   EFXEAXREVERBPROPERTIES change_speed;
   float	frametime;
@@ -181,7 +94,7 @@ EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
   return interpl_effect.ob_effect;
 }
 
-float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
+float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
   float	gain = gain_epsilon;
   vec3_t	endpoint;
@@ -191,7 +104,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
   // set up traceline from player eyes to sound emitting entity origin
   VectorCopy(ch->origin, endpoint);
 
-  SX_PlayerTrace(pent->origin, endpoint, PM_STUDIO_IGNORE, tr);
+  PlayerTrace(pent->origin, endpoint, PM_STUDIO_IGNORE, tr);
 
   if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
   {
@@ -258,7 +171,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     for (count = 0, i = 0; i < 4; i++)
     {
       // UNDONE: some endpoints are in walls - in this case, trace from the wall hit location
-      SX_PlayerTrace(pent->origin, endpoints[i], PM_STUDIO_IGNORE, tr);
+      PlayerTrace(pent->origin, endpoints[i], PM_STUDIO_IGNORE, tr);
 
       if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
       {
@@ -272,7 +185,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
   return gain;
 }
 
-void SX_InterplEffect(int roomtype)
+void EnvEffects::InterplEffect(int roomtype)
 {
   EFXEAXREVERBPROPERTIES desired = presets_room[0];
   if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
@@ -281,12 +194,12 @@ void SX_InterplEffect(int roomtype)
   }
 
   // Interpolate effect
-  desired = SX_FadeToNewEffect(desired);
+  desired = FadeToNewEffect(desired);
   interpl_effect.generated_effect.setReverbProperties(desired);
   alAuxEffectSlots.applyEffect(interpl_effect.generated_effect);
 }
 
-void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater)
+void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 {
   float direct_gain = gain_epsilon;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
@@ -307,12 +220,12 @@ void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater)
        
       if (distance < zero_gain_distance)
       {
-        direct_gain = SND_FadeToNewGain(ch, SX_GetGainObscured(ch, pent, sent));
+        direct_gain = FadeToNewGain(ch, GetGainObscured(ch, pent, sent));
       }
     }
     else
     {
-      direct_gain = SND_FadeToNewGain(ch, direct_gain);
+      direct_gain = FadeToNewGain(ch, direct_gain);
     }
   }
 
@@ -329,9 +242,8 @@ void SX_ApplyEffect(aud_channel_t *ch, qboolean underwater)
   ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
 }
 
-void SX_Init(void)
+EnvEffects::EnvEffects(alure::Context al_context)
 {
-  alure::Context al_context = alure::Context::GetCurrent();
   al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", 0);
 
   // Disable reverb when room_type = 0:
@@ -460,7 +372,7 @@ void SX_Init(void)
   alAuxEffectSlots.setGain(AL_REVERBMIX);
 }
 
-void SX_Shutdown(void)
+EnvEffects::~EnvEffects()
 {
   alAuxEffectSlots.destroy();
   interpl_effect.generated_effect.destroy();

@@ -36,6 +36,7 @@ qboolean openal_mute = false;
 static alure::DeviceManager al_dev_manager;
 static alure::Device al_device;
 static alure::Context al_context;
+static alure::UniquePtr<EnvEffects> al_efx;
 char al_device_name[64] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
@@ -228,7 +229,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
   //apply effect
   qboolean underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
-  SX_ApplyEffect(ch, underwater);
+  al_efx->ApplyEffect(ch, underwater);
 
   //for later usage
   aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
@@ -413,7 +414,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   {
     roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
   }
-  SX_InterplEffect(roomtype);
+  al_efx->InterplEffect(roomtype);
 
   for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
   {
@@ -978,6 +979,7 @@ qboolean OpenAL_Init(void)
 
     alure::Context::MakeCurrent(al_context);
     al_context.setDistanceModel(alure::DistanceModel::Linear);
+    al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
   }
   catch (...)
@@ -999,8 +1001,6 @@ void S_Startup(void)
     {
       openal_started = true;
       openal_enabled = (al_enable->value) ? true : false;
-
-      SX_Init();
     }
   }
 }
@@ -1086,7 +1086,7 @@ void S_ShutdownAL(void)
   if (openal_started)
   {
     S_StopAllSounds(true);
-    SX_Shutdown();
+    al_efx.reset();
     OpenAL_Shutdown();
     openal_started = false;
   }
