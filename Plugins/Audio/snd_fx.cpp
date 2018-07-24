@@ -108,7 +108,7 @@ void SX_PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
 float SND_FadeToNewGain(aud_channel_t *ch, float gain_new)
 {
   float	speed, frametime;
-  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
+  frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
     return ch->ob_gain;
@@ -150,7 +150,7 @@ EFXEAXREVERBPROPERTIES SX_FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
 {
   EFXEAXREVERBPROPERTIES change_speed;
   float	frametime;
-  frametime = (*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime);
+  frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
     return interpl_effect.ob_effect;
@@ -219,7 +219,7 @@ float SX_GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent
     // Calculate radius based on attenuation
     if (ch->attenuation && radius == 0)
     {
-      radius = (20 * log10(pow(10, 3) / (ch->attenuation * 36 / 1000))); // sndlvl from dist_mul
+      radius = static_cast<float>((20 * log10(pow(10, 3) / (ch->attenuation * 36 / 1000)))); // sndlvl from dist_mul
       radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius from min and max sndlvl
     }  
 
@@ -343,19 +343,19 @@ void SX_Init(void)
   // flDecayHFRatio = EAX 1.0 damping (probably)
   presets_room[1].flGain = 0.417f;
   presets_room[1].flDecayTime = 0.4f;
-  presets_room[1].flDecayHFRatio = static_cast<float>(2 / 3);
+  presets_room[1].flDecayHFRatio = 2.0f / 3.0f;
 
   presets_room[2].flGain = 0.3f;
   presets_room[2].flDecayTime = 1.5f;
-  presets_room[2].flDecayHFRatio = static_cast<float>(1 / 6);
+  presets_room[2].flDecayHFRatio = 1.0f / 6.0f;
 
   presets_room[3].flGain = 0.4f;
   presets_room[3].flDecayTime = 1.5f;
-  presets_room[3].flDecayHFRatio = static_cast<float>(1 / 6);
+  presets_room[3].flDecayHFRatio = 1.0f / 6.0f;
 
   presets_room[4].flGain = 0.6f;
   presets_room[4].flDecayTime = 1.5f;
-  presets_room[4].flDecayHFRatio = static_cast<float>(1 / 6);
+  presets_room[4].flDecayHFRatio = 1.0f / 6.0f;
 
   presets_room[5].flGain = 0.4f;
   presets_room[5].flDecayTime = 2.886f;
@@ -419,15 +419,15 @@ void SX_Init(void)
 
   presets_room[20].flGain = 0.4f;
   presets_room[20].flDecayTime = 7.284f;
-  presets_room[20].flDecayHFRatio = static_cast<float>(1 / 3);
+  presets_room[20].flDecayHFRatio = 1.0f / 3.0f;
 
   presets_room[21].flGain = 0.55f;
   presets_room[21].flDecayTime = 7.284f;
-  presets_room[21].flDecayHFRatio = static_cast<float>(1 / 3);
+  presets_room[21].flDecayHFRatio = 1.0f / 3.0f;
 
   presets_room[22].flGain = 0.7f;
   presets_room[22].flDecayTime = 7.284f;
-  presets_room[22].flDecayHFRatio = static_cast<float>(1 / 3);
+  presets_room[22].flDecayHFRatio = 1.0f / 3.0f;
 
   presets_room[23].flGain = 0.5f;
   presets_room[23].flDecayTime = 3.961f;
@@ -443,15 +443,15 @@ void SX_Init(void)
 
   presets_room[26].flGain = 0.2f;
   presets_room[26].flDecayTime = 17.234f;
-  presets_room[26].flDecayHFRatio = static_cast<float>(2 / 3);
+  presets_room[26].flDecayHFRatio = 2.0f / 3.0f;
 
   presets_room[27].flGain = 0.3f;
   presets_room[27].flDecayTime = 17.234f;
-  presets_room[27].flDecayHFRatio = static_cast<float>(2 / 3);
+  presets_room[27].flDecayHFRatio = 2.0f / 3.0f;
 
   presets_room[28].flGain = 0.4f;
   presets_room[28].flDecayTime = 17.234f;
-  presets_room[28].flDecayHFRatio = static_cast<float>(2 / 3);
+  presets_room[28].flDecayHFRatio = 2.0f / 3.0f;
 
   // Init interpolated effect
   interpl_effect.generated_effect = al_context.createEffect();
