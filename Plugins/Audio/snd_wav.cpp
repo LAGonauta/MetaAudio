@@ -23,17 +23,11 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alu
     return false;
   }
   
-  if (dec->hasLoopPoints())
-  {
-    auto loop_points = dec->getLoopPoints();
-    info.loopstart = loop_points.first;
-    info.loopend = loop_points.second;
-  }
-  else
-  {
-    info.loopstart = -1;
-    info.loopend = INT_MAX;
-  }
+  auto loop_points = dec->getLoopPoints();
+  info.looping = dec->hasLoopPoints();
+  info.loopstart = loop_points.first;
+  info.loopend = loop_points.second;
+
   info.channels = m_channels;
   info.samplerate = m_samplerate;
   info.stype = m_type;

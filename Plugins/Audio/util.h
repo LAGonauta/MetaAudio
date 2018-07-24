@@ -87,7 +87,7 @@ inline float VectorAngle(vec3_t a, vec3_t b)
   if (lab == 0.0)
     return 0.0;
   else
-    return (double)(acos(DotProduct(a, b) / lab) * (180 / M_PI));
+    return static_cast<float>(acos(DotProduct(a, b) / lab) * (180 / M_PI));
 }
 
 inline float ApproachVal(float target, float value, float speed)

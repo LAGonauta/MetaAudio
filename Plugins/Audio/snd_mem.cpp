@@ -145,17 +145,10 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
       sc->stype = sc->decoder->getSampleType();
       sc->channels = sc->decoder->getChannelConfig();
 
-      if (sc->decoder->hasLoopPoints())
-      {
-        auto loop_points = sc->decoder->getLoopPoints();
-        sc->loopstart = loop_points.first;
-        sc->loopend = loop_points.second;
-      }
-      else
-      {
-        sc->loopstart = -1;
-        sc->loopend = INT_MAX;
-      }
+      auto loop_points = sc->decoder->getLoopPoints();
+      sc->looping = sc->decoder->hasLoopPoints();
+      sc->loopstart = loop_points.first;
+      sc->loopend = loop_points.second;
     }
     catch (const std::exception& error)
     {
@@ -187,9 +180,10 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       sc = new aud_sfxcache_t();
       sc->channels = dec->getChannelConfig();
       sc->samplerate = dec->getFrequency();
-      sc->length = INT_MAX;
-      sc->loopstart = -1;
-      sc->loopend = INT_MAX;
+      sc->length = UINT64_MAX;
+      sc->looping = false;
+      sc->loopstart = 0;
+      sc->loopend = UINT64_MAX;
       sc->stype = dec->getSampleType();
       sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
       return sc;
@@ -242,6 +236,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 
   sc->buffer = alure::MakeShared<alure::Buffer>(al_buffer);
   sc->length = info.samples; //number of samples ( include channels )
+  sc->looping = info.looping;
   sc->loopstart = info.loopstart; //-1 or loop start position
   sc->loopend = info.loopend;
   sc->samplerate = info.samplerate;
@@ -249,14 +244,14 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   sc->channels = info.channels;
 
   // Set loop points if needed
-  if (sc->loopstart > 0)
+  if (sc->looping)
   {
     try
     {
       auto points = sc->buffer->getLoopPoints();
       if (points.first != sc->loopstart)
       {
-        sc->buffer->setLoopPoints(sc->loopstart, sc->loopend ? sc->loopend : sc->buffer->getLength());
+        sc->buffer->setLoopPoints(static_cast<ALuint>(sc->loopstart), sc->loopend ? static_cast<ALuint>(sc->loopend) : sc->buffer->getLength());
       }
     }
     catch (const std::exception& error)

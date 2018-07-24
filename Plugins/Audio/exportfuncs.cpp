@@ -12,7 +12,7 @@ void Sys_ErrorEx(const char *fmt, ...)
   char msg[1024];
 
   va_start(argptr, fmt);
-  _vsnprintf(msg, sizeof(msg), fmt, argptr);
+  _vsnprintf_s(msg, sizeof(msg), fmt, argptr);
   va_end(argptr);
 
   if (gEngfuncs.pfnClientCmd)

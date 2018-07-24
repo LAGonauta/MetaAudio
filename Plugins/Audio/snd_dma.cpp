@@ -97,7 +97,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
 
   for (i = 0; i < num_sfx; i++)
   {
-    if (!stricmp(known_sfx[i].name, name))
+    if (!_stricmp(known_sfx[i].name, name))
     {
       if (pfInCache)
       {
@@ -134,7 +134,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
     S_FreeCache(sfx);
   }
 
-  strncpy(sfx->name, name, sizeof(sfx->name) - 1);
+  strncpy_s(sfx->name, name, sizeof(sfx->name) - 1);
   sfx->name[sizeof(sfx->name) - 1] = 0;
 
   if (pfInCache)
@@ -148,7 +148,6 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   if (ch->voicecache)
   {
-    //VoiceSE_QueueBuffers(ch);
     return;
   }
 
@@ -163,9 +162,9 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
   else if (ch->entchannel != CHAN_STREAM)
   {
-    ALint iSamplesPlayed = ch->source.getSampleOffset();
+    uint64_t iSamplesPlayed = ch->source.getSampleOffset();
 
-    if (sc->loopstart == -1 && iSamplesPlayed >= ch->end)
+    if (!sc->looping && iSamplesPlayed >= ch->end)
     {
         fWaveEnd = true;
         ch->source.stop();
@@ -262,16 +261,16 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
           // but most other bushes do not. How to correctly detect them?
           if (sent->baseline.origin[0] == 0.0f || sent->baseline.origin[1] == 0.0f || sent->baseline.origin[2] == 0.0f)
           {
-            ch->origin[0] = (sent->curstate.mins[0] + sent->curstate.maxs[0]) * 0.5 + sent->curstate.origin[0];
-            ch->origin[1] = (sent->curstate.mins[1] + sent->curstate.maxs[1]) * 0.5 + sent->curstate.origin[1];
-            ch->origin[2] = (sent->curstate.mins[2] + sent->curstate.maxs[2]) * 0.5 + sent->curstate.origin[2];
+            ch->origin[0] = (sent->curstate.mins[0] + sent->curstate.maxs[0]) * 0.5f + sent->curstate.origin[0];
+            ch->origin[1] = (sent->curstate.mins[1] + sent->curstate.maxs[1]) * 0.5f + sent->curstate.origin[1];
+            ch->origin[2] = (sent->curstate.mins[2] + sent->curstate.maxs[2]) * 0.5f + sent->curstate.origin[2];
           }
         }
 
         float ratio = 0;
         if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
         {
-          ratio = 1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+          ratio = static_cast<float>(1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
         }
         
         vec3_t sent_velocity = { (sent->curstate.origin[0] - sent->prevstate.origin[0]) * ratio,
@@ -396,7 +395,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     float ratio = 0;
     if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
     {
-      ratio = 1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+      ratio = static_cast<float>(1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
     }
 
     vec3_t view_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
@@ -578,7 +577,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
 
   float life_left = 99999;
   float life;
-  int played;
+  uint64_t played;
 
   aud_channel_t *ch;
 
@@ -780,7 +779,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   if (sfx->name[0] == '!' || sfx->name[0] == '#')
   {
     char name[MAX_QPATH];
-    strncpy(name, sfx->name + 1, sizeof(name) - 1);
+    strncpy_s(name, sfx->name + 1, sizeof(name) - 1);
     name[sizeof(name) - 1] = 0;
     sc = VOX_LoadSound(ch, name);
     fsentence = true;
@@ -844,7 +843,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   else
   {
     bool force_stream = false;
-    if (sc->loopstart != -1)
+    if (sc->looping)
     {
       ch->source.setLooping(true);
       if (sc->loopstart > 0)
@@ -966,9 +965,9 @@ qboolean OpenAL_Init(void)
     }
 
 #ifndef _DEBUG
-    strncpy(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
+    strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
 #else
-    strncpy(al_device_name, "Unable to get name in debug mode.", sizeof(al_device_name));
+    strncpy_s(al_device_name, "Unable to get name in debug mode.", sizeof(al_device_name));
 #endif
     
     al_context = al_device.createContext();

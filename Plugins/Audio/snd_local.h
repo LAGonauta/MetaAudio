@@ -15,8 +15,8 @@ typedef struct
   int entnum;
   int entchannel;
   vec3_t origin;
-  int start;
-  int end;
+  uint64_t start;
+  uint64_t end;
   //for sentence
   int	isentence;
   int	iword;
@@ -38,10 +38,11 @@ typedef struct
 typedef struct
 {
   //wave info
-  int length;
-  int loopstart;
-  int loopend;
-  int samplerate;
+  uint64_t length;
+  uint64_t loopstart;
+  uint64_t loopend;
+  ALuint samplerate;
+  bool looping;
   alure::SampleType stype;
   alure::ChannelConfig channels;
 

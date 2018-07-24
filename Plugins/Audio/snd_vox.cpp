@@ -22,9 +22,9 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   float sstart;
   float send;
-  int length;
+  size_t length;
   int i;
-  int srcsample;
+  size_t srcsample;
   int skiplen;
   voxword_t *pvoxword;
 
@@ -38,9 +38,9 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
   pvoxword->cbtrim = sc->length;
 
-  sstart = pvoxword->start;
-  send = pvoxword->end;
-  length = sc->length;
+  sstart = static_cast<float>(pvoxword->start);
+  send = static_cast<float>(pvoxword->end);
+  length = static_cast<size_t>(sc->length);
 
   if (ch->entchannel == CHAN_STREAM)
   {
@@ -49,7 +49,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
     {
       if (start < length)
       {
-        ch->start += start;
+        ch->start += static_cast<int>(start);
       }
     }
     return;
@@ -61,8 +61,8 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   alure::ArrayView<ALubyte> data_viewer = sc->data;
   if (sstart > 0 && sstart < 100)
   {
-    skiplen = length * (sstart / 100);
-    srcsample = ch->start;
+    skiplen = static_cast<int>(length * (sstart / 100));
+    srcsample = static_cast<size_t>(ch->start);
     ch->start += skiplen;
 
     if (!sc->data.empty() && ch->start < length)
@@ -132,7 +132,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 
   if (send > 0 && send <= 100)
   {
-    skiplen = sc->length * ((100 - send) / 100);
+    skiplen = static_cast<int>(sc->length * ((100 - send) / 100));
     length -= skiplen;
     srcsample = length;
     ch->end -= skiplen;
@@ -224,14 +224,14 @@ void VOX_SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
 
   if (vol > 0 && vol != 100)
   {
-    (*fvol) *= (vol / 100.0);
+    (*fvol) *= (vol / 100.0f);
   }
 
   pitch = rgrgvoxword[ch->isentence][ch->iword].pitch;
 
   if (pitch > 0 && pitch != 100)
   {
-    (*fpitch) *= (pitch / 100.0);
+    (*fpitch) *= (pitch / 100.0f);
   }
 }
 
@@ -254,7 +254,7 @@ char *VOX_LookupString(char *pszin, int *psentencenum)
 
   for (i = 0; i < *gAudEngine.cszrawsentences; i++)
   {
-    if (!stricmp(pszin, (*gAudEngine.rgpszrawsentence)[i]))
+    if (!_stricmp(pszin, (*gAudEngine.rgpszrawsentence)[i]))
     {
       if (psentencenum)
         *psentencenum = i;
@@ -286,7 +286,7 @@ char *VOX_GetDirectory(char *szpath, char *psz)
   if (c != '/')
   {
     // didn't find '/', return default directory
-    strcpy(szpath, "vox/");
+    strcpy_s(szpath, sizeof(char) * 32, "vox/");
     return psz;
   }
 
@@ -509,7 +509,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
   }
 
   // copy into buffer
-  strncpy(buffer, psz, sizeof(buffer) - 1);
+  strncpy_s(buffer, psz, sizeof(buffer) - 1);
   buffer[sizeof(buffer) - 1] = 0;
   psz = buffer;
 
@@ -529,7 +529,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
     if (VOX_ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
     {
       // this is a valid word (as opposed to a parameter block)
-      _snprintf(pathbuffer, sizeof(pathbuffer), "%s%s.wav", szpath, rgpparseword[i]);
+      _snprintf_s(pathbuffer, sizeof(pathbuffer), "%s%s.wav", szpath, rgpparseword[i]);
       pathbuffer[sizeof(pathbuffer) - 1] = 0;
 
       if (strlen(pathbuffer) >= sizeof(pathbuffer))
@@ -605,7 +605,7 @@ void SND_CloseMouth(aud_channel_t *ch)
 void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   int data;
-  int i;
+  size_t i;
   int savg;
   int scount;
   cl_entity_t *pent;
@@ -615,7 +615,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   if (!pent)
     return;  
 
-  i = ch->source.getSampleOffset();
+  i = static_cast<size_t>(ch->source.getSampleOffset());
   scount = pent->mouth.sndcount;
   savg = 0;
 
@@ -653,7 +653,7 @@ void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     auto temp_viewer = data_viewer.reinterpret_as<float>();
     while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = min(max(temp_viewer[i] * 128, SCHAR_MIN), SCHAR_MAX);
+      data = static_cast<int>(min(max(temp_viewer[i] * 128, SCHAR_MIN), SCHAR_MAX));
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
