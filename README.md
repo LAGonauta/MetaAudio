@@ -10,26 +10,36 @@ This is a fork of MetaAudio, a GoldSrc plugin that adds OpenAL support to its so
 
 Thus we now have HRTF and surround sound back to our beloved GoldSrc games, and, as this plugin hooks directly into the engine, most mods should work with the new system.
 
-Tested mods:
-- Natural-selection
+Working games and mods:
+- Half-Life
+- Half-Life: Opposing Force
+- Half-Life: Blue Shift
+- Half-Life: C.A.G.E.D.
+- Natural-Selection
+- Counter-Strike
+- Counter-Strike: Condition Zero
+... and possibly more!
 
 # What works
 - Sound positioning
 - Distance attenuation
 - EFX effects
-- Hardware acceleration (and X-RAM)
 - Voice communication
 
 # What is better than current GoldSrc
+- FLAC and OGG support (if Alure2 was compiled with support)
 - Occlusion support like A3D
 - Fade between environmental effects
+- Hardware acceleration (with X-RAM support)
+- Significantly lower audio latency (especially if used with hardware acceleration)
+- "Unlimited" heap size for audio
 
 # Known bugs
 - Some sounds are too quiet
 - Some sounds does not use the correct source origin
 
-# TODO
-- Possibly integrate Steam Audio (for reflections/reverb instead of OpenAL's native effects)
+# Maybe in the future
+- Integrate Steam Audio for reflections/reverb instead of OpenAL's native effects
 
 # Compiling
 Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
