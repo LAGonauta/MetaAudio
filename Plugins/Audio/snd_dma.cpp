@@ -41,7 +41,7 @@ static alure::Device al_device;
 static alure::Context al_context;
 static alure::UniquePtr<EnvEffects> al_efx;
 static alure::UniquePtr<VOX> vox;
-char al_device_name[64] = "";
+char al_device_name[1024] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
 
