@@ -3,6 +3,7 @@
 #include "exportfuncs.h"
 #include "FileSystem.h"
 #include "snd_local.h"
+#include "snd_fx.hpp"
 #include "util.h"
 #include "zone.h"
 

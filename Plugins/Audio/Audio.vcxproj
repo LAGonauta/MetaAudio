@@ -104,9 +104,9 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4244;4267;4305;4311;4312;4819;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <OmitFramePointers>false</OmitFramePointers>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile />
@@ -147,6 +147,7 @@
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="plat.h" />
     <ClInclude Include="plugins.h" />
+    <ClInclude Include="snd_fx.hpp" />
     <ClInclude Include="snd_local.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="zone.h" />

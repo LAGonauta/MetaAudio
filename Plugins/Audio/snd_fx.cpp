@@ -5,6 +5,7 @@
 #include "exportfuncs.h"
 #include "pm_defs.h"
 #include "snd_local.h"
+#include "snd_fx.hpp"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
