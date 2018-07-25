@@ -1,5 +1,6 @@
 #pragma once
 
+#include "exportfuncs.h"
 #include "enginedef.h"
 #include "aud_int_internal.h"
 

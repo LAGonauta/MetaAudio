@@ -1,7 +1,6 @@
 #include <metahook.h>
 #include <IAudio.h>
 
-#include "exportfuncs.h"
 #include "snd_local.h"
 #include "zone.h"
 

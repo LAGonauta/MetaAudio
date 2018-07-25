@@ -1,6 +1,5 @@
 #include <metahook.h>
 
-#include "exportfuncs.h"
 #include "plugins.h"
 #include "snd_local.h"
 

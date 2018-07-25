@@ -1,6 +1,5 @@
 #include <metahook.h>
 
-#include "exportfuncs.h"
 #include "snd_local.h"
 #include "snd_voice.hpp"
 

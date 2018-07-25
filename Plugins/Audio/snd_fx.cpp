@@ -2,7 +2,6 @@
 
 #include "efx-util.h"
 #include "event_api.h"
-#include "exportfuncs.h"
 #include "pm_defs.h"
 #include "snd_local.h"
 #include "snd_fx.hpp"

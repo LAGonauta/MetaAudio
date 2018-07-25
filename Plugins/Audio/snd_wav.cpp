@@ -1,6 +1,5 @@
 #include <metahook.h>
 
-#include "exportfuncs.h"
 #include "snd_wav.hpp"
 
 const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
