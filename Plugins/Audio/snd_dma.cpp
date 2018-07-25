@@ -16,17 +16,17 @@ aud_channel_t channels[MAX_CHANNELS];
 int total_channels;
 
 //engine cvars
-cvar_t *nosound = NULL;
-cvar_t *volume = NULL;
-cvar_t *loadas8bit = NULL;
-cvar_t *sxroom_off = NULL;
-cvar_t *sxroomwater_type = NULL;
-cvar_t *sxroom_type = NULL;
-cvar_t *snd_show = NULL;
+cvar_t *nosound = nullptr;
+cvar_t *volume = nullptr;
+cvar_t *loadas8bit = nullptr;
+cvar_t *sxroom_off = nullptr;
+cvar_t *sxroomwater_type = nullptr;
+cvar_t *sxroom_type = nullptr;
+cvar_t *snd_show = nullptr;
 
 //active control
-cvar_t *al_enable = NULL;
-cvar_t *al_doppler = NULL;
+cvar_t *al_enable = nullptr;
+cvar_t *al_doppler = nullptr;
 qboolean openal_started = false;
 qboolean openal_enabled = false;
 qboolean openal_mute = false;
@@ -90,7 +90,7 @@ void S_FlushCaches(void)
 sfx_t *S_FindName(char *name, int *pfInCache)
 {
   int i = 0;
-  sfx_t *sfx = NULL;
+  sfx_t *sfx = nullptr;
 
   if (!name)
     Sys_ErrorEx("S_FindName: NULL\n");
@@ -467,12 +467,12 @@ void S_FreeChannel(aud_channel_t *ch)
   {
     for (size_t i = 0; i < CVOXWORDMAX; ++i)
     {
-      vox->rgrgvoxword[ch->isentence][i].sfx = NULL;
+      vox->rgrgvoxword[ch->isentence][i].sfx = nullptr;
     }
   }
 
   ch->isentence = -1;
-  ch->sfx = NULL;
+  ch->sfx = nullptr;
 
   vox->CloseMouth(ch);
 }
@@ -495,7 +495,7 @@ int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pit
       ch = &channels[ch_idx];
       if (ch->entnum == entnum
         && ch->entchannel == entchannel
-        && ch->sfx != NULL
+        && ch->sfx != nullptr
         && ch->isentence >= 0)
       {
         if (flags & SND_CHANGE_PITCH)
@@ -612,7 +612,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    if (ch->sfx == NULL)
+    if (ch->sfx == nullptr)
     {
       first_to_die = ch_idx;
       break;
@@ -650,7 +650,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   }
 
   if (first_to_die == -1)
-    return NULL;
+    return nullptr;
 
   if (channels[first_to_die].sfx)
   {
@@ -796,7 +796,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   if (!sc)
   {
-    ch->sfx = NULL;
+    ch->sfx = nullptr;
     return;
   }
 

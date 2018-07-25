@@ -56,8 +56,8 @@ typedef struct zonevar2_s
 }
 zonevar2_t;
 
-zonevar1_t *zonevar1 = NULL;
-zonevar2_t *zonevar2 = NULL;
+zonevar1_t *zonevar1 = nullptr;
+zonevar2_t *zonevar2 = nullptr;
 
 #define mainzone (zonevar1->mainzone)
 #define hunk_base (zonevar1->hunk_base)
@@ -160,7 +160,7 @@ void *Z_TagMalloc(int size, int tag)
   do
   {
     if (rover == start)
-      return NULL;
+      return nullptr;
 
     if (rover->tag)
       base = rover = rover->next;
@@ -346,7 +346,7 @@ void *Hunk_HighAllocName(int size, char *name)
   if (hunk_size - hunk_low_used - hunk_high_used < size)
   {
     gEngfuncs.Con_Printf("Hunk_HighAlloc: failed on %i bytes\n", size);
-    return NULL;
+    return nullptr;
   }
 
   hunk_high_used += size;
@@ -419,7 +419,7 @@ void Cache_FreeHigh(int new_high_hunk)
 {
   cache_system_t *c, *prev;
 
-  prev = NULL;
+  prev = nullptr;
 
   while (1)
   {
@@ -448,7 +448,7 @@ void Cache_UnlinkLRU(cache_system_t *cs)
 
   cs->lru_next->lru_prev = cs->lru_prev;
   cs->lru_prev->lru_next = cs->lru_next;
-  cs->lru_prev = cs->lru_next = NULL;
+  cs->lru_prev = cs->lru_next = nullptr;
 }
 
 void Cache_MakeLRU(cache_system_t *cs)
@@ -517,7 +517,7 @@ cache_system_t *Cache_TryAlloc(int size, qboolean nobottom)
     return _new;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void Cache_Flush(void)
@@ -543,8 +543,8 @@ void Cache_Free(cache_user_t *c)
   cs = ((cache_system_t *)c->data) - 1;
   cs->prev->next = cs->next;
   cs->next->prev = cs->prev;
-  cs->next = cs->prev = NULL;
-  c->data = NULL;
+  cs->next = cs->prev = nullptr;
+  c->data = nullptr;
   Cache_UnlinkLRU(cs);
 }
 
@@ -564,7 +564,7 @@ void *Cache_Check(cache_user_t *c)
   cache_system_t *cs;
 
   if (!c->data)
-    return NULL;
+    return nullptr;
 
   cs = ((cache_system_t *)c->data) - 1;
   Cache_UnlinkLRU(cs);
