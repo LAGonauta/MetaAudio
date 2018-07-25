@@ -1,24 +1,14 @@
 #include <metahook.h>
 
 #include "exportfuncs.h"
-#include "FileSystem.h"
 #include "snd_local.h"
-#include "util.h"
-#include "zone.h"
+#include "snd_vox.hpp"
 
-voxword_t rgrgvoxword[CVOXSENTENCEMAX][CVOXWORDMAX];
+VOX::VOX() : rgrgvoxword{} {}
 
-static char		*rgpparseword[CVOXWORDMAX];	// array of pointers to parsed words
-static char		voxperiod[] = "_period";				// vocal pause
-static char		voxcomma[] = "_comma";				// vocal pause
-static voxword_t voxwordDefault;
+VOX::~VOX() {}
 
-void VOX_Init(void)
-{
-  memset(rgrgvoxword, 0, sizeof(voxword_t) * CVOXSENTENCEMAX * CVOXWORDMAX);
-}
-
-void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
+void VOX::TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   float sstart;
   float send;
@@ -213,7 +203,7 @@ void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc)
   }
 }
 
-void VOX_SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
+void VOX::SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
 {
   int vol, pitch;
 
@@ -235,7 +225,7 @@ void VOX_SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
   }
 }
 
-char *VOX_LookupString(char *pszin, int *psentencenum)
+char *VOX::LookupString(char *pszin, int *psentencenum)
 {
   int i;
   char *cptr;
@@ -269,7 +259,7 @@ char *VOX_LookupString(char *pszin, int *psentencenum)
   return NULL;
 }
 
-char *VOX_GetDirectory(char *szpath, char *psz)
+char *VOX::GetDirectory(char *szpath, char *psz)
 {
   char c;
   int cb = 0;
@@ -296,7 +286,7 @@ char *VOX_GetDirectory(char *szpath, char *psz)
   return pszscan + 1;
 }
 
-void VOX_ParseString(char *psz)
+void VOX::ParseString(char *psz)
 {
   int i;
   int fdone = 0;
@@ -363,7 +353,7 @@ void VOX_ParseString(char *psz)
   }
 }
 
-int VOX_ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
+int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
 {
   char *pszsave = psz;
   char c;
@@ -458,7 +448,7 @@ int VOX_ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
     return 1;
 }
 
-int VOX_IFindEmptySentence(void)
+int VOX::IFindEmptySentence(void)
 {
   int k;
 
@@ -472,7 +462,7 @@ int VOX_IFindEmptySentence(void)
   return -1;
 }
 
-aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
+aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
 {
   char buffer[512];
   int i, j, k, cword;
@@ -491,7 +481,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
   // lookup actual string in (*gAudEngine.rgpszrawsentence), 
   // set pointer to string data
 
-  psz = VOX_LookupString(pszin, NULL);
+  psz = LookupString(pszin, NULL);
 
   if (!psz)
   {
@@ -500,7 +490,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
   }
 
   // get directory from string, advance psz
-  psz = VOX_GetDirectory(szpath, psz);
+  psz = GetDirectory(szpath, psz);
 
   if (strlen(psz) > sizeof(buffer) - 1)
   {
@@ -515,7 +505,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
 
   // parse sentence (also inserts null terminators between words)
 
-  VOX_ParseString(psz);
+  ParseString(psz);
 
   // for each word in the sentence, construct the filename,
   // lookup the sfx and save each pointer in a temp array	
@@ -526,7 +516,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
   {
     // Get any pitch, volume, start, end params into voxword
 
-    if (VOX_ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
+    if (ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
     {
       // this is a valid word (as opposed to a parameter block)
       _snprintf_s(pathbuffer, sizeof(pathbuffer), "%s%s.wav", szpath, rgpparseword[i]);
@@ -543,7 +533,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
     i++;
   }
 
-  k = VOX_IFindEmptySentence();
+  k = IFindEmptySentence();
   if (k < 0)
     return NULL;
 
@@ -565,9 +555,7 @@ aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin)
   return sc;
 }
 
-//Mouth
-
-void SND_ForceInitMouth(int entnum)
+void VOX::ForceInitMouth(int entnum)
 {
   cl_entity_t *pEntity = gEngfuncs.GetEntityByIndex(entnum);
 
@@ -580,7 +568,7 @@ void SND_ForceInitMouth(int entnum)
   }
 }
 
-void SND_ForceCloseMouth(int entnum)
+void VOX::ForceCloseMouth(int entnum)
 {
   cl_entity_t *pEntity = gEngfuncs.GetEntityByIndex(entnum);
 
@@ -590,19 +578,19 @@ void SND_ForceCloseMouth(int entnum)
   }
 }
 
-void SND_InitMouth(int entnum, int entchannel)
+void VOX::InitMouth(int entnum, int entchannel)
 {
   if (entchannel == CHAN_STREAM || entchannel == CHAN_VOICE)
-    SND_ForceInitMouth(entnum);
+    ForceInitMouth(entnum);
 }
 
-void SND_CloseMouth(aud_channel_t *ch)
+void VOX::CloseMouth(aud_channel_t *ch)
 {
   if (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM)
-    SND_ForceCloseMouth(ch->entnum);
+    ForceCloseMouth(ch->entnum);
 }
 
-void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
+void VOX::MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
 {
   int data;
   size_t i;

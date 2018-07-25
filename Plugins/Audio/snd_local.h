@@ -106,36 +106,23 @@ void S_FillAddress(void);
 void S_InstallHook(void);
 
 //snd_dma.cpp
-void S_Startup(void);
-void S_Init(void);
-void S_Shutdown(void);
+void S_Startup(void); // hooked
+void S_Init(void); // hooked
+void S_Shutdown(void); // hooked
 void S_ShutdownAL(void);
-sfx_t *S_FindName(char *name, int *pfInCache);
-void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);
-void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch);
-void S_StopSound(int entnum, int entchannel);
-void S_StopAllSounds(qboolean clear);
-void S_Update(float *origin, float *forward, float *right, float *up);
+sfx_t *S_FindName(char *name, int *pfInCache); // hooked
+void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
+void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
+void S_StopSound(int entnum, int entchannel); // hooked
+void S_StopAllSounds(qboolean clear); // hooked
+void S_Update(float *origin, float *forward, float *right, float *up); // hooked
 void S_FreeChannel(aud_channel_t *ch);
 void S_FreeCache(sfx_t *sfx);
 void S_FlushCaches(void);
-qboolean SND_IsPlaying(sfx_t *sfx);
-
-//snd_vox.cpp
-void VOX_Init(void);
-void VOX_Shutdown(void);
-void VOX_TrimStartEndTimes(aud_channel_t *ch, aud_sfxcache_t *sc);
-void VOX_SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch);
-void VOX_ReadSentenceFile(void);
-aud_sfxcache_t *VOX_LoadSound(aud_channel_t *pchan, char *pszin);
-void VOX_MakeSingleWordSentence(aud_channel_t *ch, int pitch);
-void SND_InitMouth(int entnum, int entchannel);
-void SND_CloseMouth(aud_channel_t *ch);
-void SND_MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc);
+bool SND_IsPlaying(sfx_t *sfx);
 
 //snd_mem.cpp
-aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch);
-qboolean S_StreamLoadNextChunk(aud_channel_t *ch, aud_sfxcache_t *sc, ALuint alBuffer);
+aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch); // hooked
 
 //common
 extern aud_engine_t gAudEngine;

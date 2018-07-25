@@ -94,5 +94,8 @@
     <ClInclude Include="snd_wav.hpp">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="snd_vox.hpp">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

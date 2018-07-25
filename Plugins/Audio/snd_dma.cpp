@@ -5,6 +5,7 @@
 #include "snd_local.h"
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
+#include "snd_vox.hpp"
 #include "util.h"
 #include "zone.h"
 
@@ -39,6 +40,7 @@ static alure::DeviceManager al_dev_manager;
 static alure::Device al_device;
 static alure::Context al_context;
 static alure::UniquePtr<EnvEffects> al_efx;
+static alure::UniquePtr<VOX> vox;
 char al_device_name[64] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
@@ -181,10 +183,10 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
   {
     sfx_t *sfx;
 
-    if (rgrgvoxword[ch->isentence][ch->iword].sfx && !rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
-      S_FreeCache(rgrgvoxword[ch->isentence][ch->iword].sfx);
+    if (vox->rgrgvoxword[ch->isentence][ch->iword].sfx && !vox->rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
+      S_FreeCache(vox->rgrgvoxword[ch->isentence][ch->iword].sfx);
 
-    ch->sfx = sfx = rgrgvoxword[ch->isentence][ch->iword + 1].sfx;
+    ch->sfx = sfx = vox->rgrgvoxword[ch->isentence][ch->iword + 1].sfx;
 
     if (sfx)
     {
@@ -196,7 +198,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         ch->end = sc->length;
         ch->iword++;
 
-        VOX_TrimStartEndTimes(ch, sc);
+        vox->TrimStartEndTimes(ch, sc);
         if (ch->entchannel == CHAN_STREAM)
         {
           ch->decoder = sc->decoder;
@@ -241,7 +243,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   {
     if (sc && sc->channels == alure::ChannelConfig::Mono && !sc->data.empty())
     {
-      SND_MoveMouth(ch, sc);
+      vox->MoveMouth(ch, sc);
     }
   }
 
@@ -303,7 +305,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   float fvol = 1.0f;
   float fpitch = 1.0f;
 
-  VOX_SetChanVolPitch(ch, &fvol, &fpitch);
+  vox->SetChanVolPitch(ch, &fvol, &fpitch);
 
   if (sc && sc->length != 0x40000000)
   {
@@ -467,14 +469,14 @@ void S_FreeChannel(aud_channel_t *ch)
   {
     for (size_t i = 0; i < CVOXWORDMAX; ++i)
     {
-      rgrgvoxword[ch->isentence][i].sfx = NULL;
+      vox->rgrgvoxword[ch->isentence][i].sfx = NULL;
     }
   }
 
   ch->isentence = -1;
   ch->sfx = NULL;
 
-  SND_CloseMouth(ch);
+  vox->CloseMouth(ch);
 }
 
 int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pitch, int flags)
@@ -553,7 +555,7 @@ int S_AlterChannel(int entnum, int entchannel, sfx_t *sfx, float fvol, float pit
   return false;
 }
 
-qboolean SND_IsPlaying(sfx_t *sfx)
+bool SND_IsPlaying(sfx_t *sfx)
 {
   int ch_idx;
 
@@ -784,7 +786,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     char name[MAX_QPATH];
     strncpy_s(name, sfx->name + 1, sizeof(name) - 1);
     name[sizeof(name) - 1] = 0;
-    sc = VOX_LoadSound(ch, name);
+    sc = vox->LoadSound(ch, name);
     fsentence = true;
   }
   else
@@ -808,11 +810,11 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->start = 0;
   ch->end = sc->length;
 
-  VOX_TrimStartEndTimes(ch, sc);
+  vox->TrimStartEndTimes(ch, sc);
 
   if (!is_static)
   {
-    SND_InitMouth(entnum, entchannel);
+    vox->InitMouth(entnum, entchannel);
   }
 
   ch->source.setPitch(ch->pitch);
@@ -1058,7 +1060,7 @@ void S_Init(void)
   memset(known_sfx, 0, sizeof(sfx_t) * MAX_SFX);
   num_sfx = 0;
 
-  VOX_Init();
+  vox = alure::MakeUnique<VOX>();
 
   if (!gEngfuncs.CheckParm("-nosound", NULL))
   {
@@ -1089,6 +1091,7 @@ void S_ShutdownAL(void)
   {
     S_StopAllSounds(true);
     al_efx.reset();
+    vox.reset();
     OpenAL_Shutdown();
     openal_started = false;
   }

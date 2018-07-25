@@ -150,6 +150,7 @@
     <ClInclude Include="snd_fx.hpp" />
     <ClInclude Include="snd_local.h" />
     <ClInclude Include="snd_voice.hpp" />
+    <ClInclude Include="snd_vox.hpp" />
     <ClInclude Include="snd_wav.hpp" />
     <ClInclude Include="util.h" />
     <ClInclude Include="zone.h" />
