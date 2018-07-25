@@ -97,52 +97,52 @@ inline T DWordSwapAsm(T dw)
 #endif
 
 #if defined( _SGI_SOURCE ) || defined( _X360 )
-#define	BIG_ENDIAN 1
+#define BIG_ENDIAN 1
 #endif
 
 // If a swapped float passes through the fpu, the bytes may get changed.
 // Prevent this by swapping floats as DWORDs.
-#define SafeSwapFloat( pOut, pIn )	(*((uint*)pOut) = DWordSwap( *((uint*)pIn) ))
+#define SafeSwapFloat( pOut, pIn ) (*((uint*)pOut) = DWordSwap( *((uint*)pIn) ))
 
 #if defined(LITTLE_ENDIAN)
 
-#define BigShort( val )				WordSwap( val )
-#define BigWord( val )				WordSwap( val )
-#define BigLong( val )				DWordSwap( val )
-#define BigDWord( val )				DWordSwap( val )
-#define LittleShort( val )			( val )
-#define LittleWord( val )			( val )
-#define LittleLong( val )			( val )
-#define LittleDWord( val )			( val )
-#define SwapShort( val )			BigShort( val )
-#define SwapWord( val )				BigWord( val )
-#define SwapLong( val )				BigLong( val )
-#define SwapDWord( val )			BigDWord( val )
+#define BigShort( val ) WordSwap( val )
+#define BigWord( val ) WordSwap( val )
+#define BigLong( val ) DWordSwap( val )
+#define BigDWord( val ) DWordSwap( val )
+#define LittleShort( val ) ( val )
+#define LittleWord( val ) ( val )
+#define LittleLong( val ) ( val )
+#define LittleDWord( val ) ( val )
+#define SwapShort( val ) BigShort( val )
+#define SwapWord( val ) BigWord( val )
+#define SwapLong( val ) BigLong( val )
+#define SwapDWord( val ) BigDWord( val )
 
 // Pass floats by pointer for swapping to avoid truncation in the fpu
-#define BigFloat( pOut, pIn )		SafeSwapFloat( pOut, pIn )
-#define LittleFloat( pOut, pIn )	( *pOut = *pIn )
-#define SwapFloat( pOut, pIn )		BigFloat( pOut, pIn )
+#define BigFloat( pOut, pIn ) SafeSwapFloat( pOut, pIn )
+#define LittleFloat( pOut, pIn ) ( *pOut = *pIn )
+#define SwapFloat( pOut, pIn ) BigFloat( pOut, pIn )
 
 #elif defined(BIG_ENDIAN)
 
-#define BigShort( val )				( val )
-#define BigWord( val )				( val )
-#define BigLong( val )				( val )
-#define BigDWord( val )				( val )
-#define LittleShort( val )			WordSwap( val )
-#define LittleWord( val )			WordSwap( val )
-#define LittleLong( val )			DWordSwap( val )
-#define LittleDWord( val )			DWordSwap( val )
-#define SwapShort( val )			LittleShort( val )
-#define SwapWord( val )				LittleWord( val )
-#define SwapLong( val )				LittleLong( val )
-#define SwapDWord( val )			LittleDWord( val )
+#define BigShort( val ) ( val )
+#define BigWord( val ) ( val )
+#define BigLong( val ) ( val )
+#define BigDWord( val ) ( val )
+#define LittleShort( val ) WordSwap( val )
+#define LittleWord( val ) WordSwap( val )
+#define LittleLong( val ) DWordSwap( val )
+#define LittleDWord( val ) DWordSwap( val )
+#define SwapShort( val ) LittleShort( val )
+#define SwapWord( val ) LittleWord( val )
+#define SwapLong( val ) LittleLong( val )
+#define SwapDWord( val ) LittleDWord( val )
 
 // Pass floats by pointer for swapping to avoid truncation in the fpu
-#define BigFloat( pOut, pIn )		( *pOut = *pIn )
-#define LittleFloat( pOut, pIn )	SafeSwapFloat( pOut, pIn )
-#define SwapFloat( pOut, pIn )		LittleFloat( pOut, pIn )
+#define BigFloat( pOut, pIn ) ( *pOut = *pIn )
+#define LittleFloat( pOut, pIn ) SafeSwapFloat( pOut, pIn )
+#define SwapFloat( pOut, pIn ) LittleFloat( pOut, pIn )
 
 #else
 

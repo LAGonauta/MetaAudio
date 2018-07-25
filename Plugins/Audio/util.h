@@ -92,7 +92,7 @@ inline float VectorAngle(vec3_t a, vec3_t b)
 
 inline float ApproachVal(float target, float value, float speed)
 {
-  float	delta = target - value;
+  float delta = target - value;
 
   if (delta > speed)
     value += speed;

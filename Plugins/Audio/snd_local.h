@@ -18,8 +18,8 @@ typedef struct
   uint64_t start;
   uint64_t end;
   //for sentence
-  int	isentence;
-  int	iword;
+  int isentence;
+  int iword;
   //for voice sound
   sfxcache_t *voicecache;
 
@@ -72,7 +72,7 @@ typedef struct
   //s_dma.c
   void(*S_Startup)(void);//hooked
   void(*S_Init)(void);//hooked
-  void(*S_Shutdown)(void);//hooked	
+  void(*S_Shutdown)(void);//hooked
   sfx_t *(*S_FindName)(char *name, int *pfInCache);//hooked
   sfx_t *(*S_PrecacheSound)(char *name);//hooked
   void(*SND_Spatialize)(aud_channel_t *ch);

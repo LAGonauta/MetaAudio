@@ -18,7 +18,7 @@ public:
   virtual void CreateCmdLine(const char *commandline);
   virtual void CreateCmdLine(int argc, char **argv);
   virtual const char *GetCmdLine(void) const;
-  virtual	const char *CheckParm(const char *psz, const char **ppszValue = 0) const;
+  virtual const char *CheckParm(const char *psz, const char **ppszValue = 0) const;
 
   virtual void RemoveParm(const char *parm);
   virtual void AppendParm(const char *pszParm, const char *pszValues);

@@ -1,7 +1,7 @@
 #pragma once
 #include "alure/AL/alure2.h"
 
-#define	MAX_QPATH		64			// max length of a quake game pathname
+#define MAX_QPATH  64   // max length of a quake game pathname
 
 #define MAX_SFX  1024
 
@@ -19,12 +19,12 @@ typedef struct sfxcache_s
   int samplerate;
   int width;
   int stereo;
-  byte data[1];		// variable sized
+  byte data[1];  // variable sized
 } sfxcache_t;
 
 typedef struct channel_s
 {
-  sfx_t	*sfx;       // sfx number
+  sfx_t *sfx;       // sfx number
   int leftvol;      // 0-255 volume
   int rightvol;     // 0-255 volume
   int end;          // end time in global paintsamples
@@ -50,7 +50,7 @@ typedef struct voxword_s
   int fKeepCached;        // 1 if this word was already in cache before sentence referenced it
   uint64_t samplefrac;    // if pitch shifting, this is position into wav * 256
   int timecompress;       // % of wave to skip during playback (causes no pitch shift)
-  sfx_t	*sfx;             // name and cache pointer
+  sfx_t *sfx;             // name and cache pointer
 } voxword_t;
 
 typedef struct wavinfo_s
@@ -73,19 +73,19 @@ typedef struct sx_preset_s
   float room_refl;        // reverb: decay time
   float room_rvblp;       // reverb: low pass filtering level
 
-  float room_delay;				// mono delay: delay time
+  float room_delay;       // mono delay: delay time
   float room_feedback;    // mono delay: decay time
   float room_dlylp;       // mono delay: low pass filtering level
 
   float room_left;        // left channel delay time
 } sx_preset_t;
 
-#define MAX_SOUNDS		512	
+#define MAX_SOUNDS 512
 
 // a sound with no channel is a local only sound
 #define SND_VOLUME (1<<0)      // a byte
-#define SND_ATTENUATION	(1<<1)    // a byte
-#define SND_LARGE_INDEX	(1<<2)    // a long
+#define SND_ATTENUATION (1<<1)    // a byte
+#define SND_LARGE_INDEX (1<<2)    // a long
 #define SND_PITCH (1<<3)
 #define SND_SENTENCE (1<<4)
 #define SND_STOP (1<<5)
@@ -93,8 +93,8 @@ typedef struct sx_preset_s
 #define SND_CHANGE_PITCH (1<<7)
 #define SND_SPAWNING (1<<8)
 
-#define	NUM_AMBIENTS 4           // automatic ambient sounds
-#define	MAX_DYNAMIC_CHANNELS 128
+#define NUM_AMBIENTS 4           // automatic ambient sounds
+#define MAX_DYNAMIC_CHANNELS 128
 #define MAX_CHANNELS 256
 
 #define MAX_WAVSTREAM_SIZE (32*1024)

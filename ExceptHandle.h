@@ -8,15 +8,15 @@ extern "C" int _except_handler3(PEXCEPTION_RECORD, EXCEPTION_REGISTRATION *, PCO
 extern "C" int _except_handler4(PEXCEPTION_RECORD, EXCEPTION_REGISTRATION *, CONTEXT *, void *);
 
 #define SetupExceptHandler3() \
-	DWORD handler = (DWORD)_except_handler3; \
+ DWORD handler = (DWORD)_except_handler3; \
 \
-	__asm push handler \
-	__asm push FS:[0] \
-	__asm mov FS:[0], ESP
+ __asm push handler \
+ __asm push FS:[0] \
+ __asm mov FS:[0], ESP
 
 #define SetupExceptHandler4() \
-	DWORD handler = (DWORD)_except_handler4; \
+ DWORD handler = (DWORD)_except_handler4; \
 \
-	__asm push handler \
-	__asm push FS:[0] \
-	__asm mov FS:[0], ESP
+ __asm push handler \
+ __asm push FS:[0] \
+ __asm mov FS:[0], ESP

@@ -379,7 +379,7 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
   c = *(psz + strlen(psz) - 1);
 
   if (c != ')')
-    return 1;		// no formatting, return
+    return 1;  // no formatting, return
 
                     // scan forward to first '('
   c = *psz;
@@ -387,11 +387,9 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
     c = *(++psz);
 
   if (c == ')')
-    return 0;		// bogus formatting
+    return 0;  // bogus formatting
 
-                    // null terminate
-
-  *psz = 0;
+  *psz = 0;    // null terminate
   ct = *(++psz);
 
   while (1)
@@ -465,8 +463,8 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
 {
   char buffer[512];
   int i, j, k, cword;
-  char	pathbuffer[64];
-  char	szpath[32];
+  char pathbuffer[64];
+  char szpath[32];
   aud_sfxcache_t *sc;
   voxword_t rgvoxword[CVOXWORDMAX];
   char *psz;
@@ -477,7 +475,7 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   memset(rgvoxword, 0, sizeof(voxword_t) * CVOXWORDMAX);
   memset(buffer, 0, sizeof(buffer));
 
-  // lookup actual string in (*gAudEngine.rgpszrawsentence), 
+  // lookup actual string in (*gAudEngine.rgpszrawsentence),
   // set pointer to string data
 
   psz = LookupString(pszin, NULL);
@@ -507,7 +505,7 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   ParseString(psz);
 
   // for each word in the sentence, construct the filename,
-  // lookup the sfx and save each pointer in a temp array	
+  // lookup the sfx and save each pointer in a temp array
 
   i = 0;
   cword = 0;

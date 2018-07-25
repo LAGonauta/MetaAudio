@@ -20,7 +20,7 @@ void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
 
 float EnvEffects::FadeToNewGain(aud_channel_t *ch, float gain_new)
 {
-  float	speed, frametime;
+  float speed, frametime;
   frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
@@ -62,7 +62,7 @@ float EnvEffects::FadeToNewGain(aud_channel_t *ch, float gain_new)
 EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
 {
   EFXEAXREVERBPROPERTIES change_speed;
-  float	frametime;
+  float frametime;
   frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
@@ -96,9 +96,9 @@ EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effec
 
 float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
-  float	gain = gain_epsilon;
-  vec3_t	endpoint;
-  int	count = 1;
+  float gain = gain_epsilon;
+  vec3_t endpoint;
+  int count = 1;
   pmtrace_s tr;
 
   // set up traceline from player eyes to sound emitting entity origin
@@ -112,15 +112,15 @@ float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entit
     // build extents based on dB sndlvl of source,
     // test to see how many extents are visible,
     // drop gain by g_snd_obscured_loss_db per extent hidden
-    vec3_t	endpoints[4];
-    int	i;
-    vec3_t	vecl, vecr, vecl2, vecr2;
-    vec3_t	vsrc_forward;
-    vec3_t	vsrc_right;
-    vec3_t	vsrc_up;
+    vec3_t endpoints[4];
+    int i;
+    vec3_t vecl, vecr, vecl2, vecr2;
+    vec3_t vsrc_forward;
+    vec3_t vsrc_right;
+    vec3_t vsrc_up;
 
     // get radius
-    float	radius = 0;
+    float radius = 0;
     if (sent->model != nullptr)
     {
       if (sent->model->radius > 0)
