@@ -4,6 +4,7 @@
 #include "FileSystem.h"
 #include "snd_local.h"
 #include "snd_fx.hpp"
+#include "snd_voice.hpp"
 #include "util.h"
 #include "zone.h"
 

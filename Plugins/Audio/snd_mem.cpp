@@ -5,6 +5,7 @@
 #include "util.h"
 #include "exportfuncs.h"
 #include "snd_local.h"
+#include "snd_voice.hpp"
 #include "zone.h"
 
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();

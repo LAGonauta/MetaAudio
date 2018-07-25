@@ -1,9 +1,8 @@
 #include <metahook.h>
+
 #include "exportfuncs.h"
-#include "FileSystem.h"
-#include "util.h"
 #include "snd_local.h"
-#include "zone.h"
+#include "snd_voice.hpp"
 
 VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
 {

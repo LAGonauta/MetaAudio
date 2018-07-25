@@ -88,5 +88,8 @@
     <ClInclude Include="snd_fx.hpp">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="snd_voice.hpp">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
