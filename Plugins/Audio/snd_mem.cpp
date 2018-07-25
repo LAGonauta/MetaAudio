@@ -111,7 +111,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   std::vector<byte> data;
   aud_sfxcache_t *sc;
 
-  qboolean ffileopened = false;
+  bool ffileopened = false;
 
   //if (cl.fPrecaching)
   //  return nullptr;

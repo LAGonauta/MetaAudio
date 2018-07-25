@@ -255,7 +255,7 @@ char *VOX::LookupString(char *pszin, int *psentencenum)
       return cptr;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 char *VOX::GetDirectory(char *szpath, char *psz)
@@ -292,7 +292,8 @@ void VOX::ParseString(char *psz)
   char *pszscan = psz;
   char c;
 
-  memset(rgpparseword, 0, sizeof(char *) * CVOXWORDMAX);
+  rgpparseword.fill(nullptr);
+  //memset(rgpparseword, 0, sizeof(char *) * CVOXWORDMAX);
 
   if (!psz)
     return;
@@ -466,24 +467,23 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   char pathbuffer[64];
   char szpath[32];
   aud_sfxcache_t *sc;
-  voxword_t rgvoxword[CVOXWORDMAX];
+  alure::Array<voxword_t, CVOXWORDMAX> rgvoxword{};
   char *psz;
 
   if (!pszin)
-    return NULL;
+    return nullptr;
 
-  memset(rgvoxword, 0, sizeof(voxword_t) * CVOXWORDMAX);
   memset(buffer, 0, sizeof(buffer));
 
   // lookup actual string in (*gAudEngine.rgpszrawsentence),
   // set pointer to string data
 
-  psz = LookupString(pszin, NULL);
+  psz = LookupString(pszin, nullptr);
 
   if (!psz)
   {
     gEngfuncs.Con_DPrintf("VOX_LoadSound: no sentence named %s\n", pszin);
-    return NULL;
+    return nullptr;
   }
 
   // get directory from string, advance psz
@@ -492,7 +492,7 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   if (strlen(psz) > sizeof(buffer) - 1)
   {
     gEngfuncs.Con_DPrintf("VOX_LoadSound: sentence is too long %s\n", psz);
-    return NULL;
+    return nullptr;
   }
 
   // copy into buffer
@@ -532,11 +532,14 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
 
   k = IFindEmptySentence();
   if (k < 0)
-    return NULL;
+    return nullptr;
 
   j = 0;
-  while (rgvoxword[j].sfx != NULL)
-    rgrgvoxword[k][j] = rgvoxword[j++];
+  while (rgvoxword[j].sfx != nullptr)
+  {
+    rgrgvoxword[k][j] = rgvoxword[j];
+    ++j;
+  }
 
   pchan->isentence = k;
   pchan->iword = 0;
@@ -546,7 +549,7 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   if (!sc)
   {
     S_FreeChannel(pchan);
-    return NULL;
+    return nullptr;
   }
 
   return sc;

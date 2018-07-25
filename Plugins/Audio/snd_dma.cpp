@@ -8,11 +8,11 @@
 #include "zone.h"
 
 //sfx struct
-sfx_t known_sfx[MAX_SFX];
+alure::Array<sfx_t, MAX_SFX> known_sfx{};
 int num_sfx;
 
 //channels
-aud_channel_t channels[MAX_CHANNELS];
+alure::Array<aud_channel_t, MAX_CHANNELS> channels{};
 int total_channels;
 
 //engine cvars
@@ -323,7 +323,6 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 {
   int i, total;
   vec_t orientation[6];
-  aud_channel_t *ch;
 
   if (openal_started)
   {
@@ -418,20 +417,19 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   }
   al_efx->InterplEffect(roomtype);
 
-  for (i = NUM_AMBIENTS, ch = channels + NUM_AMBIENTS; i < total_channels; i++, ch++)
+  for (i = NUM_AMBIENTS; i < total_channels; i++)
   {
-    SND_Spatialize(ch, false);
+    SND_Spatialize(&channels[i], false);
   }
 
   if (snd_show && snd_show->value)
   {
     total = 0;
-    ch = channels;
-    for (i = 0; i < total_channels; i++, ch++)
+    for (i = 0; i < total_channels; i++)
     {
-      if (ch->sfx && ch->volume > 0)
+      if (channels[i].sfx && channels[i].volume > 0)
       {
-          gEngfuncs.Con_Printf("%3i %s\n", (int)(ch->volume * 255.0f), ch->sfx->name);
+          gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
           total++;
       }
     }
@@ -941,7 +939,7 @@ void S_StopAllSounds(qboolean clear)
     }
   }
 
-  memset(channels, 0, MAX_CHANNELS * sizeof(aud_channel_t));
+  channels.fill(aud_channel_t());
   total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
 }
 
@@ -1055,7 +1053,6 @@ void S_Init(void)
 
   gAudEngine.S_Init();
 
-  memset(known_sfx, 0, sizeof(sfx_t) * MAX_SFX);
   num_sfx = 0;
 
   vox = alure::MakeUnique<VOX>();

@@ -112,7 +112,7 @@ float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entit
     // build extents based on dB sndlvl of source,
     // test to see how many extents are visible,
     // drop gain by g_snd_obscured_loss_db per extent hidden
-    vec3_t endpoints[4];
+    alure::Array<vec3_t, 4> endpoints;
     int i;
     vec3_t vecl, vecr, vecl2, vecr2;
     vec3_t vsrc_forward;

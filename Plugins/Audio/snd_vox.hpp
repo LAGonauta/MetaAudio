@@ -5,9 +5,9 @@
 class VOX final
 {
 private:
-  char *rgpparseword[CVOXWORDMAX];  // array of pointers to parsed words
-  char voxperiod[8] = "_period";      // vocal pause
-  char voxcomma[7] = "_comma";        // vocal pause
+  alure::Array<char *, CVOXWORDMAX> rgpparseword{};  // array of pointers to parsed words
+  char voxperiod[8] = "_period";                     // vocal pause
+  char voxcomma[7] = "_comma";                       // vocal pause
   voxword_t voxwordDefault;
 
   // Voice file lookup
