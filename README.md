@@ -1,9 +1,9 @@
-**DO NOT USE WITH STEAM ONLINE, OR IN VAC SERVERS. YOU RISK GETTING BANNED.**
-
-**I AM NOT RESPONSIBLE FOR YOUR BAN, USE AT YOUR OWN RISK.**
-
 # MetaHook
 GoldSrc engine plugin extensions
+
+# Warning
+While the plugin is not a cheat, VAC may flag MetaHook and ban the user.
+Do not use with Steam in online mode, we are not responsible if your account is banned.
 
 # MetaAudio
 This is a fork of MetaAudio, a GoldSrc plugin that adds OpenAL support to its sound system. This fork fixes some bugs and uses Alure instead of OpenAL directly for easier source management.
