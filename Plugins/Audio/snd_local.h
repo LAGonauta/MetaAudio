@@ -121,22 +121,6 @@ void S_FreeCache(sfx_t *sfx);
 void S_FlushCaches(void);
 qboolean SND_IsPlaying(sfx_t *sfx);
 
-//snd_wav.cpp
-class LocalAudioDecoder final : public alure::MessageHandler {
-public:
-  static const alure::Array<alure::String, 3> SupportedExtensions;
-  bool GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output);
-  void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
-
-private:
-  // To return the data to the application we copy the information here
-  alure::StringView m_name;
-  alure::ChannelConfig m_channels;
-  alure::SampleType m_type;
-  ALuint m_samplerate;
-  alure::Vector<ALubyte> m_data;
-};
-
 //snd_vox.cpp
 void VOX_Init(void);
 void VOX_Shutdown(void);
