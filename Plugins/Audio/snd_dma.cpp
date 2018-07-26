@@ -66,8 +66,7 @@ void S_FreeCache(sfx_t *sfx)
   {
     if (sc->buffer)
     {
-      al_context.removeBuffer(sc->buffer->getHandle());
-      sc->buffer.reset();
+      al_context.removeBuffer(sc->buffer);
     }
 
     if (sc->decoder)
@@ -207,7 +206,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         {
           ch->buffer = sc->buffer;
           ch->source.setOffset(ch->start);
-          ch->source.play(ch->buffer->getHandle());
+          ch->source.play(ch->buffer);
         }
 
         return;
@@ -632,11 +631,11 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     played = ch->source.getSampleOffset();
     if (ch->decoder)
     {
-      life = (float)(ch->end - played) / (float)ch->decoder->getFrequency();
+      life = static_cast<float>(ch->end - played) / ch->decoder->getFrequency();
     }
     else
     {
-      life = (float)(ch->end - played) / (float)ch->buffer->getFrequency();
+      life = static_cast<float>(ch->end - played) / ch->buffer.getFrequency();
     }
     
 
@@ -849,7 +848,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       ch->source.setLooping(true);
       if (sc->loopstart > 0)
       {
-        auto points = sc->buffer->getLoopPoints();
+        auto points = sc->buffer.getLoopPoints();
         if (points.first != sc->loopstart)
         {
           // Use Alure2 stream looping facilities
@@ -859,7 +858,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     }
     if (force_stream)
     {
-      ch->decoder = al_context.createDecoder(sc->buffer->getName());
+      ch->decoder = al_context.createDecoder(sc->buffer.getName());
       SND_Spatialize(ch, true);
       try
       {
@@ -878,7 +877,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       try
       {
         ch->source.setOffset(ch->start);
-        ch->source.play(ch->buffer->getHandle());
+        ch->source.play(ch->buffer);
       }
       catch (const std::runtime_error& error)
       {

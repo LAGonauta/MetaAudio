@@ -247,7 +247,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   if (!local_decoder->GetWavinfo(info, file_path.value(), sc->data))
     return nullptr;
 
-  sc->buffer = alure::MakeShared<alure::Buffer>(al_buffer);
+  sc->buffer = al_buffer;
   sc->length = info.samples; //number of samples ( include channels )
   sc->looping = info.looping;
   sc->loopstart = info.loopstart; //-1 or loop start position
@@ -261,10 +261,10 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
   {
     try
     {
-      auto points = sc->buffer->getLoopPoints();
+      auto points = sc->buffer.getLoopPoints();
       if (points.first != sc->loopstart)
       {
-        sc->buffer->setLoopPoints(static_cast<ALuint>(sc->loopstart), sc->loopend ? static_cast<ALuint>(sc->loopend) : sc->buffer->getLength());
+        sc->buffer.setLoopPoints(static_cast<ALuint>(sc->loopstart), sc->loopend ? static_cast<ALuint>(sc->loopend) : sc->buffer.getLength());
       }
     }
     catch (const std::exception& error)

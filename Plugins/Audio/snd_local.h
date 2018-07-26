@@ -25,7 +25,7 @@ typedef struct
 
   // For OpenAL
   alure::SharedPtr<alure::Decoder> decoder;
-  alure::SharedPtr<alure::Buffer> buffer;
+  alure::Buffer buffer;
   alure::Source source;
 
   // For OpenAL EFX
@@ -48,7 +48,7 @@ typedef struct
 
   //OpenAL buffer
   alure::SharedPtr<alure::Decoder> decoder;
-  alure::SharedPtr<alure::Buffer> buffer;
+  alure::Buffer buffer;
 
   alure::Vector<ALubyte> data;
 }aud_sfxcache_t;
