@@ -1,3 +1,7 @@
+// Copyright 2018
+// Licensed under GPLv3
+// Refer to the LICENSE.md file included.
+
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
 

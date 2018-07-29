@@ -1,3 +1,7 @@
+// Copyright 2018
+// Licensed under GPLv3
+// Refer to the LICENSE.md file included.
+
 class IFileSystem;
 
 extern HINSTANCE g_hInstance, g_hThisModule, g_hEngineModule;

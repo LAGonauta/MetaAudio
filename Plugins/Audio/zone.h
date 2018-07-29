@@ -1,3 +1,7 @@
+// Copyright 2018
+// Licensed under GPLv3
+// Refer to the LICENSE.md file included.
+
 void Z_Free(void *ptr);
 void *Z_Malloc(int size);
 void *Z_TagMalloc(int size, int tag);
