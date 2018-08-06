@@ -12,7 +12,7 @@ private:
 
   // Voice file lookup
   char *LookupString(char *pszin, int *psentencenum);
-  char *GetDirectory(char *szpath, char *psz);
+  char *GetDirectory(alure::String& szpath, char *psz);
   void ParseString(char *psz);
   int ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst);
   int IFindEmptySentence(void);

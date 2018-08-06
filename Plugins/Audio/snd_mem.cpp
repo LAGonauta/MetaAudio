@@ -41,7 +41,7 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
   if (char_index > 0)
   {
     auto context = alure::Context::GetCurrent();
-    for (const alure::String &extension : LocalAudioDecoder::SupportedExtensions)
+    for (const alure::String& extension : LocalAudioDecoder::SupportedExtensions)
     {
       sfx_name.replace(char_index, sfx_name.npos, extension);
 

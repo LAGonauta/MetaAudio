@@ -258,7 +258,7 @@ char *VOX::LookupString(char *pszin, int *psentencenum)
   return nullptr;
 }
 
-char *VOX::GetDirectory(char *szpath, char *psz)
+char *VOX::GetDirectory(alure::String& szpath, char *psz)
 {
   char c;
   int cb = 0;
@@ -275,30 +275,25 @@ char *VOX::GetDirectory(char *szpath, char *psz)
   if (c != '/')
   {
     // didn't find '/', return default directory
-    strcpy_s(szpath, sizeof(char) * 32, "vox/");
+    szpath = "vox/";
     return psz;
   }
 
-  cb = strlen(psz) - cb;
-  memcpy(szpath, psz, cb);
-  szpath[cb] = 0;
+  szpath.assign(psz, 0, cb);
   return pszscan + 1;
 }
 
 void VOX::ParseString(char *psz)
 {
-  int i;
-  int fdone = 0;
-  char *pszscan = psz;
-  char c;
-
   rgpparseword.fill(nullptr);
-  //memset(rgpparseword, 0, sizeof(char *) * CVOXWORDMAX);
 
   if (!psz)
     return;
 
-  i = 0;
+  int i = 0;
+  int fdone = 0;
+  char *pszscan = psz;
+  char c;
   rgpparseword[i++] = psz;
 
   while (!fdone && i < CVOXWORDMAX)
@@ -374,7 +369,7 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
 
   *pvoxword = voxwordDefault;
 
-  // look at next to last char to see if we have a 
+  // look at next to last char to see if we have a
   // valid format:
 
   c = *(psz + strlen(psz) - 1);
@@ -382,7 +377,7 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
   if (c != ')')
     return 1;  // no formatting, return
 
-                    // scan forward to first '('
+  // scan forward to first '('
   c = *psz;
   while (!(c == '(' || c == ')'))
     c = *(++psz);
@@ -390,13 +385,13 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
   if (c == ')')
     return 0;  // bogus formatting
 
-  *psz = 0;    // null terminate
+  // null terminate
+  *psz = 0;
   ct = *(++psz);
 
   while (1)
   {
     // scan until we hit a character in the commandSet
-
     while (ct && !(ct == 'v' || ct == 'p' || ct == 's' || ct == 'e' || ct == 't'))
       ct = *(++psz);
 
@@ -436,7 +431,6 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
   // if the string has zero length, this was an isolated
   // parameter block.  Set default voxword to these
   // values
-
   if (strlen(pszsave) == 0)
   {
     voxwordDefault = *pvoxword;
@@ -462,22 +456,18 @@ int VOX::IFindEmptySentence(void)
 
 aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
 {
-  char buffer[512];
+  if (!pszin)
+    return nullptr;
+
   int i, j, k, cword;
-  char pathbuffer[64];
-  char szpath[32];
+  alure::String pathbuffer;
+  alure::String szpath;
   aud_sfxcache_t *sc;
   alure::Array<voxword_t, CVOXWORDMAX> rgvoxword{};
   char *psz;
 
-  if (!pszin)
-    return nullptr;
-
-  memset(buffer, 0, sizeof(buffer));
-
   // lookup actual string in (*gAudEngine.rgpszrawsentence),
   // set pointer to string data
-
   psz = LookupString(pszin, nullptr);
 
   if (!psz)
@@ -489,42 +479,24 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   // get directory from string, advance psz
   psz = GetDirectory(szpath, psz);
 
-  if (strlen(psz) > sizeof(buffer) - 1)
-  {
-    gEngfuncs.Con_DPrintf("VOX_LoadSound: sentence is too long %s\n", psz);
-    return nullptr;
-  }
-
-  // copy into buffer
-  strncpy_s(buffer, psz, sizeof(buffer) - 1);
-  buffer[sizeof(buffer) - 1] = 0;
-  psz = buffer;
-
   // parse sentence (also inserts null terminators between words)
-
   ParseString(psz);
 
   // for each word in the sentence, construct the filename,
   // lookup the sfx and save each pointer in a temp array
-
   i = 0;
   cword = 0;
   while (rgpparseword[i])
   {
     // Get any pitch, volume, start, end params into voxword
-
     if (ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
     {
       // this is a valid word (as opposed to a parameter block)
-      _snprintf_s(pathbuffer, sizeof(pathbuffer), "%s%s.wav", szpath, rgpparseword[i]);
-      pathbuffer[sizeof(pathbuffer) - 1] = 0;
-
-      if (strlen(pathbuffer) >= sizeof(pathbuffer))
-        continue;
+      pathbuffer = szpath + rgpparseword[i] + ".wav";
 
       // find name, if already in cache, mark voxword
       // so we don't discard when word is done playing
-      rgvoxword[cword].sfx = S_FindName(pathbuffer, &(rgvoxword[cword].fKeepCached));
+      rgvoxword[cword].sfx = S_FindName((char*)pathbuffer.c_str(), &(rgvoxword[cword].fKeepCached));
       cword++;
     }
     i++;
@@ -601,7 +573,7 @@ void VOX::MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
   pent = gEngfuncs.GetEntityByIndex(ch->entnum);
 
   if (!pent)
-    return;  
+    return;
 
   i = static_cast<size_t>(ch->source.getSampleOffset());
   scount = pent->mouth.sndcount;

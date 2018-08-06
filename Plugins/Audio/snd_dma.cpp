@@ -168,8 +168,8 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 
     if (!sc->looping && iSamplesPlayed >= ch->end)
     {
-        fWaveEnd = true;
-        ch->source.stop();
+      fWaveEnd = true;
+      ch->source.stop();
     }
   }
 
@@ -274,7 +274,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
         {
           ratio = static_cast<float>(1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
         }
-        
+
         vec3_t sent_velocity = { (sent->curstate.origin[0] - sent->prevstate.origin[0]) * ratio,
           (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
           (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
@@ -295,7 +295,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   }
   else
   {
-    ch->source.setRelative(true);    
+    ch->source.setRelative(true);
   }
   ch->source.setPosition(alure_position);
 
@@ -428,8 +428,8 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     {
       if (channels[i].sfx && channels[i].volume > 0)
       {
-          gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
-          total++;
+        gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
+        total++;
       }
     }
 
@@ -637,7 +637,6 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     {
       life = static_cast<float>(ch->end - played) / ch->buffer.getFrequency();
     }
-    
 
     if (life < life_left)
     {
@@ -816,7 +815,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
   ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
   ch->source.setAirAbsorptionFactor(1.0f);
-  
+
   // Should also set source priority
   if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
   {
@@ -828,7 +827,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
       {
         ch->source.play(ch->decoder, 256, 3);
-        delete sc; // must be deleted here as voice data does not go to the cache to be deleted later 
+        delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
       }
       else
       {
@@ -969,7 +968,7 @@ qboolean OpenAL_Init(void)
 #else
     strncpy_s(al_device_name, "Unable to get name in debug mode.", sizeof(al_device_name));
 #endif
-    
+
     al_context = al_device.createContext();
 
     alure::Version ver = al_device.getALCVersion();

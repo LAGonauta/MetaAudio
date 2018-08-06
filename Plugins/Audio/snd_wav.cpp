@@ -17,7 +17,7 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alu
     gEngfuncs.Con_DPrintf("Unable to create decoder for %s. %s.", full_path.c_str(), error.what());
     return false;
   }
-  
+
   auto loop_points = dec->getLoopPoints();
   info.looping = dec->hasLoopPoints();
   info.loopstart = loop_points.first;

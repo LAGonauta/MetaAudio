@@ -51,13 +51,13 @@ void VoiceDecoder::destroy()
 
 ALuint VoiceDecoder::read(ALvoid *ptr, ALuint count) noexcept
 {
- //invalid voice?
-  if(!m_ch->voicecache)
-    return 0;  
+  //invalid voice?
+  if (!m_ch->voicecache)
+    return 0;
 
- size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, reinterpret_cast<char *>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
+  size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, reinterpret_cast<char *>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
 
- return ulRecvedFrames;
+  return ulRecvedFrames;
 }
 
 ALuint VoiceDecoder::getFrequency() const noexcept

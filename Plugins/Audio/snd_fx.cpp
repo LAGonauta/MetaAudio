@@ -134,7 +134,7 @@ float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entit
     {
       radius = static_cast<float>((20 * log10(pow(10, 3) / (ch->attenuation * 36 / 1000)))); // sndlvl from dist_mul
       radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius from min and max sndlvl
-    }  
+    }
 
     // set up extent endpoints - on upward or downward diagonals, facing player
     for (i = 0; i < 4; i++)
@@ -155,7 +155,7 @@ float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entit
     VectorNormalize(vecl);
     VectorNormalize(vecr);
 
-    // get diagonal vectors from sound source 
+    // get diagonal vectors from sound source
     VectorScale(vecl, radius, vecl2);
     VectorScale(vecr, radius, vecr2);
     VectorScale(vecl, (radius / 2.0f), vecl);
@@ -217,7 +217,7 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
       {
         zero_gain_distance = (1000.0f / ch->attenuation) * (1000.0f / ch->attenuation);
       }
-       
+
       if (distance < zero_gain_distance)
       {
         direct_gain = FadeToNewGain(ch, GetGainObscured(ch, pent, sent));
