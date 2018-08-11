@@ -1,20 +1,21 @@
 #pragma once
+#include <optional>
 
 #include "snd_local.h"
 
 class VOX final
 {
 private:
-  alure::Array<char *, CVOXWORDMAX> rgpparseword{};  // array of pointers to parsed words
-  char voxperiod[8] = "_period";                     // vocal pause
-  char voxcomma[7] = "_comma";                       // vocal pause
+  alure::Array<alure::String, CVOXWORDMAX> rgpparseword{};  // array parsed words
+  alure::String voxperiod = "_period";                      // vocal pause
+  alure::String voxcomma = "_comma";                        // vocal pause
   voxword_t voxwordDefault;
 
   // Voice file lookup
-  char *LookupString(char *pszin, int *psentencenum);
-  char *GetDirectory(alure::String& szpath, char *psz);
-  void ParseString(char *psz);
-  int ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst);
+  std::optional<alure::String> LookupString(char *pszin, int *psentencenum);
+  alure::String GetDirectory(alure::String& szpath, alure::String& psz);
+  void ParseString(const alure::String& psz);
+  bool ParseWordParams(alure::String& psz, voxword_t *pvoxword, int fFirst);
   int IFindEmptySentence(void);
 
   // Mouth movement
@@ -36,4 +37,3 @@ public:
   void CloseMouth(aud_channel_t *ch);
   void MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc);
 };
-

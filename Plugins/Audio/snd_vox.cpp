@@ -224,7 +224,7 @@ void VOX::SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
   }
 }
 
-char *VOX::LookupString(char *pszin, int *psentencenum)
+std::optional<alure::String> VOX::LookupString(char *pszin, int *psentencenum)
 {
   int i;
   char *cptr;
@@ -238,7 +238,7 @@ char *VOX::LookupString(char *pszin, int *psentencenum)
     sentenceEntry = gAudEngine.SequenceGetSentenceByIndex(atoi(indexAsString));
 
     if (sentenceEntry)
-      return sentenceEntry->data;
+      return alure::String(sentenceEntry->data);
   }
 
   for (i = 0; i < *gAudEngine.cszrawsentences; i++)
@@ -252,109 +252,96 @@ char *VOX::LookupString(char *pszin, int *psentencenum)
       while (*cptr == ' ' || *cptr == '\t')
         cptr++;
 
-      return cptr;
+      return alure::String(cptr);
     }
   }
-  return nullptr;
+  return std::nullopt;
 }
 
-char *VOX::GetDirectory(alure::String& szpath, char *psz)
+alure::String VOX::GetDirectory(alure::String& szpath, alure::String& psz)
 {
-  char c;
-  int cb = 0;
-  char *pszscan = psz + strlen(psz) - 1;
+  int charscan_index = psz.length() - 1;
 
   // scan backwards until first '/' or start of string
-  c = *pszscan;
-  while (pszscan > psz && c != '/')
+  while (charscan_index > 0 && psz[charscan_index] != '/')
   {
-    c = *(--pszscan);
-    cb++;
+    --charscan_index;
   }
 
-  if (c != '/')
+  if (psz[charscan_index] != '/')
   {
     // didn't find '/', return default directory
     szpath = "vox/";
     return psz;
   }
 
-  szpath.assign(psz, strlen(psz) - cb);
-  return pszscan + 1;
+  szpath.assign(psz, 0, charscan_index + 1);
+  return alure::String(psz, charscan_index + 1, psz.length());
 }
 
-void VOX::ParseString(char *psz)
+void VOX::ParseString(const alure::String& psz)
 {
-  rgpparseword.fill(nullptr);
+  rgpparseword.fill(alure::String());
 
-  if (!psz)
+  if (!psz.length())
     return;
 
-  int i = 0;
-  int fdone = 0;
-  char *pszscan = psz;
-  char c;
-  rgpparseword[i++] = psz;
+  // Split over space, comma, and periods.
+  // If comma or periods, add them to own slot.
+  alure::Vector<alure::String> split_string;
 
-  while (!fdone && i < CVOXWORDMAX)
+  int psz_size = psz.length();
+  int charscan_initial_index = 0;
+  int charscan_last_index = 0;
+  while (split_string.size() < CVOXWORDMAX && charscan_last_index < psz_size)
   {
-    // scan up to next word
-    c = *pszscan;
-    while (c && !(c == '.' || c == ' ' || c == ',' || c == '('))
-      c = *(++pszscan);
-
-    // if '(' then scan for matching ')'
-    if (c == '(')
+    if (psz[charscan_last_index] == ' ')
     {
-      while (*pszscan != ')')
-        pszscan++;
-
-      c = *(++pszscan);
-      if (!c)
-        fdone = 1;
-    }
-
-    if (fdone || !c)
-      fdone = 1;
-    else
-    {
-      // if . or , insert pause into rgpparseword,
-      // unless this is the last character
-      if ((c == '.' || c == ',') && *(pszscan + 1) != '\n' && *(pszscan + 1) != '\r'
-        && *(pszscan + 1) != 0)
+      if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ',' && psz[charscan_last_index - 1] != '.')
       {
-        if (c == '.')
-          rgpparseword[i++] = voxperiod;
-        else
-          rgpparseword[i++] = voxcomma;
-
-        if (i >= CVOXWORDMAX)
-          break;
+        split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
+      }
+      charscan_initial_index = charscan_last_index + 1;
+    }
+    else if (psz[charscan_last_index] == '.' || psz[charscan_last_index] == ',')
+    {
+      if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
+      {
+        split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
       }
 
-      // null terminate substring
-      *pszscan++ = 0;
-
-      // skip whitespace
-      c = *pszscan;
-      while (c && (c == '.' || c == ' ' || c == ','))
-        c = *(++pszscan);
-
-      if (!c)
-        fdone = 1;
-      else
-        rgpparseword[i++] = pszscan;
+      switch (psz[charscan_last_index])
+      {
+      case ',':
+        split_string.push_back(voxcomma);
+        break;
+      case '.':
+        split_string.push_back(voxperiod);
+        break;
+      }
+      charscan_initial_index = charscan_last_index;
     }
+    ++charscan_last_index;
+
+    // Finished parsing, add last word
+    if (charscan_last_index == psz_size)
+    {
+      split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
+    }
+  }
+
+  for (size_t i = 0, last = split_string.size(); i < last; ++i)
+  {
+    rgpparseword[i] = std::move(split_string[i]);
   }
 }
 
-int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
+bool VOX::ParseWordParams(alure::String& initial_string, voxword_t *pvoxword, int fFirst)
 {
-  char *pszsave = psz;
-  char c;
-  char ct;
-  char sznum[8];
-  int i;
+  size_t charscan_index;
+  alure::String psz = initial_string;
+  alure::String ct;
+  alure::String sznum;
 
   // init to defaults if this is the first word in string.
   if (fFirst)
@@ -371,73 +358,70 @@ int VOX::ParseWordParams(char *psz, voxword_t *pvoxword, int fFirst)
 
   // look at next to last char to see if we have a
   // valid format:
+  charscan_index = psz.length() - 1;
 
-  c = *(psz + strlen(psz) - 1);
-
-  if (c != ')')
-    return 1;  // no formatting, return
+  if (psz[charscan_index] != ')')
+    return true;  // no formatting, return
 
   // scan forward to first '('
-  c = *psz;
-  while (!(c == '(' || c == ')'))
-    c = *(++psz);
+  charscan_index = 0;
+  while (charscan_index < psz.length() && !(psz[charscan_index] == '(' || psz[charscan_index] == ')'))
+    ++charscan_index;
 
-  if (c == ')')
-    return 0;  // bogus formatting
+  if (psz[charscan_index] == ')')
+    return false;  // bogus formatting
 
-  // null terminate
-  *psz = 0;
-  ct = *(++psz);
+  // remove parameter block from initial string
+  initial_string.assign(initial_string, 0, charscan_index);
+
+  ct = psz[++charscan_index];
 
   while (1)
   {
     // scan until we hit a character in the commandSet
-    while (ct && !(ct == 'v' || ct == 'p' || ct == 's' || ct == 'e' || ct == 't'))
-      ct = *(++psz);
+    while (charscan_index < psz.length() && psz[charscan_index] != ')' &&
+      !(ct[0] == 'v' || ct[0] == 'p' ||
+        ct[0] == 's' || ct[0] == 'e' ||
+        ct[0] == 't'))
+    {
+      ct = psz[++charscan_index];
+    }
 
-    if (ct == ')')
+    if (psz[charscan_index] == ')')
       break;
 
-    memset(sznum, 0, sizeof(sznum));
-    i = 0;
-
-    c = *(++psz);
-
-    if (!isdigit(c))
+    ++charscan_index;
+    if (!isdigit(psz[charscan_index]))
       break;
 
     // read number
-    while (isdigit(c) && i < sizeof(sznum) - 1)
+    sznum = "";
+    while (isdigit(psz[charscan_index]))
     {
-      sznum[i++] = c;
-      c = *(++psz);
+      sznum += psz[charscan_index];
+      ++charscan_index;
     }
 
-    // get value of number
-    i = atoi(sznum);
-
-    switch (ct)
+    switch (ct[0])
     {
-    case 'v': pvoxword->volume = i; break;
-    case 'p': pvoxword->pitch = i; break;
-    case 's': pvoxword->start = i; break;
-    case 'e': pvoxword->end = i; break;
-    case 't': pvoxword->timecompress = i; break;
+    case 'v': pvoxword->volume = stoi(sznum); break;
+    case 'p': pvoxword->pitch = stoi(sznum); break;
+    case 's': pvoxword->start = stoi(sznum); break;
+    case 'e': pvoxword->end = stoi(sznum); break;
+    case 't': pvoxword->timecompress = stoi(sznum); break;
     }
 
-    ct = c;
+    ct = psz[charscan_index];
   }
 
-  // if the string has zero length, this was an isolated
-  // parameter block.  Set default voxword to these
-  // values
-  if (strlen(pszsave) == 0)
+  // isolated parameter block
+  if (psz[0] == '(')
   {
     voxwordDefault = *pvoxword;
-    return 0;
+    return false;
   }
   else
-    return 1;
+    return true;
 }
 
 int VOX::IFindEmptySentence(void)
@@ -464,13 +448,16 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   alure::String szpath;
   aud_sfxcache_t *sc;
   alure::Array<voxword_t, CVOXWORDMAX> rgvoxword{};
-  char *psz;
+  alure::String psz;
 
   // lookup actual string in (*gAudEngine.rgpszrawsentence),
   // set pointer to string data
-  psz = LookupString(pszin, nullptr);
-
-  if (!psz)
+  auto data_string = LookupString(pszin, nullptr);
+  if (data_string.has_value())
+  {
+    psz = data_string.value();
+  }
+  else
   {
     gEngfuncs.Con_DPrintf("VOX_LoadSound: no sentence named %s\n", pszin);
     return nullptr;
@@ -479,14 +466,14 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   // get directory from string, advance psz
   psz = GetDirectory(szpath, psz);
 
-  // parse sentence (also inserts null terminators between words)
+  // parse sentence
   ParseString(psz);
 
   // for each word in the sentence, construct the filename,
   // lookup the sfx and save each pointer in a temp array
   i = 0;
   cword = 0;
-  while (rgpparseword[i])
+  while (rgpparseword[i].length())
   {
     // Get any pitch, volume, start, end params into voxword
     if (ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
@@ -496,7 +483,7 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
 
       // find name, if already in cache, mark voxword
       // so we don't discard when word is done playing
-      rgvoxword[cword].sfx = S_FindName((char*)pathbuffer.c_str(), &(rgvoxword[cword].fKeepCached));
+      rgvoxword[cword].sfx = S_FindName(const_cast<char*>(pathbuffer.c_str()), &(rgvoxword[cword].fKeepCached));
       cword++;
     }
     i++;
