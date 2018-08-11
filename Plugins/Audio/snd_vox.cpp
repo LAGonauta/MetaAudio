@@ -279,7 +279,7 @@ char *VOX::GetDirectory(alure::String& szpath, char *psz)
     return psz;
   }
 
-  szpath.assign(psz, 0, cb);
+  szpath.assign(psz, strlen(psz) - cb);
   return pszscan + 1;
 }
 
