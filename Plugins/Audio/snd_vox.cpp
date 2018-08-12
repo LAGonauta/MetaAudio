@@ -288,18 +288,18 @@ void VOX::ParseString(const alure::String& psz)
 
   // Split over space, comma, and periods.
   // If comma or periods, add them to own slot.
-  alure::Vector<alure::String> split_string;
-
   int psz_size = psz.length();
   int charscan_initial_index = 0;
   int charscan_last_index = 0;
-  while (split_string.size() < CVOXWORDMAX && charscan_last_index < psz_size)
+  size_t word_index = 0;
+  while (word_index < CVOXWORDMAX && charscan_last_index < psz_size)
   {
     if (psz[charscan_last_index] == ' ')
     {
       if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ',' && psz[charscan_last_index - 1] != '.')
       {
-        split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
+        rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+        ++word_index;
       }
       charscan_initial_index = charscan_last_index + 1;
     }
@@ -307,16 +307,19 @@ void VOX::ParseString(const alure::String& psz)
     {
       if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
       {
-        split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
+        rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+        ++word_index;
       }
 
       switch (psz[charscan_last_index])
       {
       case ',':
-        split_string.push_back(voxcomma);
+        rgpparseword[word_index] = voxcomma;
+        ++word_index;
         break;
       case '.':
-        split_string.push_back(voxperiod);
+        rgpparseword[word_index] = voxperiod;
+        ++word_index;
         break;
       }
       charscan_initial_index = charscan_last_index;
@@ -326,13 +329,9 @@ void VOX::ParseString(const alure::String& psz)
     // Finished parsing, add last word
     if (charscan_last_index == psz_size)
     {
-      split_string.push_back(alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index));
+      rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+      ++word_index;
     }
-  }
-
-  for (size_t i = 0, last = split_string.size(); i < last; ++i)
-  {
-    rgpparseword[i] = std::move(split_string[i]);
   }
 }
 
