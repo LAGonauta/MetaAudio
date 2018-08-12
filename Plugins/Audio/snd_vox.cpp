@@ -298,7 +298,7 @@ void VOX::ParseString(const alure::String& psz)
     {
       if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ',' && psz[charscan_last_index - 1] != '.')
       {
-        rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+        rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
         ++word_index;
       }
       charscan_initial_index = charscan_last_index + 1;
@@ -307,18 +307,18 @@ void VOX::ParseString(const alure::String& psz)
     {
       if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
       {
-        rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+        rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
         ++word_index;
       }
 
       switch (psz[charscan_last_index])
       {
       case ',':
-        rgpparseword[word_index] = voxcomma;
+        rgpparseword[word_index].assign(voxcomma);
         ++word_index;
         break;
       case '.':
-        rgpparseword[word_index] = voxperiod;
+        rgpparseword[word_index].assign(voxperiod);
         ++word_index;
         break;
       }
@@ -329,7 +329,7 @@ void VOX::ParseString(const alure::String& psz)
     // Finished parsing, add last word
     if (charscan_last_index == psz_size)
     {
-      rgpparseword[word_index] = alure::String(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
+      rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
       ++word_index;
     }
   }
