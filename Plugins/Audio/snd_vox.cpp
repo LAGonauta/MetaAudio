@@ -303,6 +303,14 @@ void VOX::ParseString(const alure::String& psz)
       }
       charscan_initial_index = charscan_last_index + 1;
     }
+    else if (psz[charscan_last_index] == '(')
+    {
+      // search for matching ')'
+      while (charscan_last_index < psz.length() && psz[charscan_last_index] != ')')
+      {
+        ++charscan_last_index;
+      }
+    }
     else if (psz[charscan_last_index] == '.' || psz[charscan_last_index] == ',')
     {
       if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
