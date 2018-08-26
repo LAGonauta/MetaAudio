@@ -99,7 +99,7 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
   else
   {
     gEngfuncs.Con_DPrintf("%s: Couldn't load %s.\n", m_function_name.c_str(), namebuffer.c_str());
-    return std::optional<alure::String>{};
+    return std::nullopt;
   }
 }
 
