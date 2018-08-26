@@ -94,91 +94,27 @@ EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effec
   return interpl_effect.ob_effect;
 }
 
+// Attenuate -2.7dB per meter? Probably should be more.
+
+// Attenuation per wall meter in dB
+constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 2.0f * 0.0254f;
 float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
   float gain = gain_epsilon;
-  vec3_t endpoint;
-  int count = 1;
   pmtrace_s tr;
 
   // set up traceline from player eyes to sound emitting entity origin
-  VectorCopy(ch->origin, endpoint);
+  PlayerTrace(pent->origin, ch->origin, PM_STUDIO_IGNORE, tr);
 
-  PlayerTrace(pent->origin, endpoint, PM_STUDIO_IGNORE, tr);
-
+  // If hit, traceline between ent and player to get solid length.
   if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
   {
-    // can't see center of sound source:
-    // build extents based on dB sndlvl of source,
-    // test to see how many extents are visible,
-    // drop gain by g_snd_obscured_loss_db per extent hidden
-    alure::Array<vec3_t, 4> endpoints;
-    int i;
-    vec3_t vecl, vecr, vecl2, vecr2;
-    vec3_t vsrc_forward;
-    vec3_t vsrc_right;
-    vec3_t vsrc_up;
+    alure::Vector3 obstruction_first_point = tr.endpos;
+    PlayerTrace(ch->origin, pent->origin, PM_STUDIO_IGNORE, tr);
 
-    // get radius
-    float radius = 0;
-    if (sent->model != nullptr)
+    if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
     {
-      if (sent->model->radius > 0)
-      {
-        radius = sent->model->radius;
-      }
-    }
-
-    // Calculate radius based on attenuation
-    if (ch->attenuation && radius == 0)
-    {
-      radius = static_cast<float>((20 * log10(pow(10, 3) / (ch->attenuation * 36 / 1000)))); // sndlvl from dist_mul
-      radius = 24 + (240 - 24) * (radius - 60) / (140 - 60); // radius from min and max sndlvl
-    }
-
-    // set up extent endpoints - on upward or downward diagonals, facing player
-    for (i = 0; i < 4; i++)
-      VectorCopy(endpoint, endpoints[i]);
-
-    // vsrc_forward is normalized vector from sound source to listener
-    VectorSubtract(pent->origin, endpoint, vsrc_forward);
-    VectorNormalize(vsrc_forward);
-    VectorVectors(vsrc_forward, vsrc_right, vsrc_up);
-
-    VectorAdd(vsrc_up, vsrc_right, vecl);
-
-    // if src above listener, force 'up' vector to point down - create diagonals up & down
-    if (endpoint[2] > pent->origin[2] + (10 * 12))
-      vsrc_up[2] = -vsrc_up[2];
-
-    VectorSubtract(vsrc_up, vsrc_right, vecr);
-    VectorNormalize(vecl);
-    VectorNormalize(vecr);
-
-    // get diagonal vectors from sound source
-    VectorScale(vecl, radius, vecl2);
-    VectorScale(vecr, radius, vecr2);
-    VectorScale(vecl, (radius / 2.0f), vecl);
-    VectorScale(vecr, (radius / 2.0f), vecr);
-
-    // endpoints from diagonal vectors
-    VectorAdd(endpoints[0], vecl, endpoints[0]);
-    VectorAdd(endpoints[1], vecr, endpoints[1]);
-    VectorAdd(endpoints[2], vecl2, endpoints[2]);
-    VectorAdd(endpoints[3], vecr2, endpoints[3]);
-
-    // drop gain for each point on radius diagonal that is obscured
-    for (count = 0, i = 0; i < 4; i++)
-    {
-      // UNDONE: some endpoints are in walls - in this case, trace from the wall hit location
-      PlayerTrace(pent->origin, endpoints[i], PM_STUDIO_IGNORE, tr);
-
-      if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
-      {
-        // skip first obscured point: at least 2 points + center should be obscured to hear db loss
-        if (++count > 1)
-          gain = gain * alure::dBToLinear(-2.70f);
-      }
+      gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * obstruction_first_point.getDistance(tr.endpos));
     }
   }
 
