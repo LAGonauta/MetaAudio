@@ -73,20 +73,24 @@ constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 2.0f * 0.0254f;
 float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
   float gain = gain_epsilon;
-  pmtrace_s tr;
 
-  // set up traceline from player eyes to sound emitting entity origin
-  PlayerTrace(pent->origin, ch->origin, PM_STUDIO_IGNORE, tr);
-
-  // If hit, traceline between ent and player to get solid length.
-  if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
+  if (ch->attenuation)
   {
-    alure::Vector3 obstruction_first_point = tr.endpos;
-    PlayerTrace(ch->origin, pent->origin, PM_STUDIO_IGNORE, tr);
+    pmtrace_s tr;
 
-    if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
+    // set up traceline from player eyes to sound emitting entity origin
+    PlayerTrace(pent->origin, ch->origin, PM_STUDIO_IGNORE, tr);
+
+    // If hit, traceline between ent and player to get solid length.
+    if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
     {
-      gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * obstruction_first_point.getDistance(tr.endpos));
+      alure::Vector3 obstruction_first_point = tr.endpos;
+      PlayerTrace(ch->origin, pent->origin, PM_STUDIO_IGNORE, tr);
+
+      if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
+      {
+        gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * obstruction_first_point.getDistance(tr.endpos));
+      }
     }
   }
 
