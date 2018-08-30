@@ -350,7 +350,7 @@ void S_Update(float *origin, float *forward, float *right, float *up)
   // Print buffer and clear it.
   if (dprint_buffer.length())
   {
-    gEngfuncs.Con_DPrintf((char*)(dprint_buffer.c_str()));
+    gEngfuncs.Con_DPrintf(const_cast<char *>((dprint_buffer.c_str())));
     dprint_buffer.clear();
   }
 
