@@ -68,8 +68,8 @@ EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effec
 
 // Attenuate -2.7dB per meter? Probably should be more.
 
-// Attenuation per wall meter in dB
-constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 2.0f * 0.0254f;
+// Attenuation per wall inch in dB
+constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 0.0254f;
 float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
 {
   float gain = gain_epsilon;
@@ -89,7 +89,7 @@ float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entit
 
       if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
       {
-        gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * obstruction_first_point.getDistance(tr.endpos));
+        gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * ch->attenuation * obstruction_first_point.getDistance(tr.endpos));
       }
     }
   }
