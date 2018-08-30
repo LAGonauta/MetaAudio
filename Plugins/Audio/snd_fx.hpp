@@ -6,19 +6,6 @@
 class EnvEffects final
 {
 private:
-  // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
-  // with no adjustment of reverb intensity with distance.
-  // Reverb adjustment with distance is disabled per-source.
-  const float AL_REVERBMIX = 0.38f;
-  const float AL_SND_GAIN_FADE_TIME = 0.25f;
-
-  const float AL_UNDERWATER_LP_GAIN = 0.25f;
-  const float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
-
-  // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
-  // they get stuck.
-  const float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
-
   alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
   // Effect used for interpolation
@@ -75,7 +62,6 @@ private:
 
   // For occlusion
   void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
-  float FadeToNewGain(aud_channel_t *ch, float gain_new);
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
   // For effect interpolation
