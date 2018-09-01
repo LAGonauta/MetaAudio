@@ -1,7 +1,6 @@
 #pragma once
 
 #include "alure/AL/efx-presets.h"
-#include "snd_local.h"
 
 class EnvEffects final
 {

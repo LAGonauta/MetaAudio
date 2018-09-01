@@ -54,7 +54,7 @@ EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effec
   // set up new increment to new target
   change_speed = SX_SubtractEffect(effect_new, interpl_effect.ob_effect);
   SX_MultiplyEffect(change_speed, frametime / AL_SND_GAIN_FADE_TIME);
-  SX_fabs(change_speed);
+  SX_abs(change_speed);
 
   interpl_effect.ob_effect_inc = change_speed;
 

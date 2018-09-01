@@ -1,30 +1,29 @@
 #pragma once
-#include <math.h>
-#include "util.h"
+#include <cmath>
 #include "alure/AL/efx-presets.h"
 
-inline void SX_fabs(EFXEAXREVERBPROPERTIES& effect)
+inline void SX_abs(EFXEAXREVERBPROPERTIES& effect)
 {
-  effect.flDensity = fabs(effect.flDensity);
-  effect.flDiffusion = fabs(effect.flDiffusion);
-  effect.flGain = fabs(effect.flGain);
-  effect.flGainHF = fabs(effect.flGainHF);
-  effect.flGainLF = fabs(effect.flGainLF);
-  effect.flDecayTime = fabs(effect.flDecayTime);
-  effect.flDecayHFRatio = fabs(effect.flDecayHFRatio);
-  effect.flDecayLFRatio = fabs(effect.flDecayLFRatio);
-  effect.flReflectionsGain = fabs(effect.flReflectionsGain);
-  effect.flReflectionsDelay = fabs(effect.flReflectionsDelay);
-  effect.flLateReverbGain = fabs(effect.flLateReverbGain);
-  effect.flLateReverbDelay = fabs(effect.flLateReverbDelay);
-  effect.flEchoTime = fabs(effect.flEchoTime);
-  effect.flEchoDepth = fabs(effect.flEchoDepth);
-  effect.flModulationTime = fabs(effect.flModulationTime);
-  effect.flModulationDepth = fabs(effect.flModulationDepth);
-  effect.flAirAbsorptionGainHF = fabs(effect.flAirAbsorptionGainHF);
-  effect.flHFReference = fabs(effect.flHFReference);
-  effect.flLFReference = fabs(effect.flLFReference);
-  effect.flRoomRolloffFactor = fabs(effect.flRoomRolloffFactor);
+  effect.flDensity = std::abs(effect.flDensity);
+  effect.flDiffusion = std::abs(effect.flDiffusion);
+  effect.flGain = std::abs(effect.flGain);
+  effect.flGainHF = std::abs(effect.flGainHF);
+  effect.flGainLF = std::abs(effect.flGainLF);
+  effect.flDecayTime = std::abs(effect.flDecayTime);
+  effect.flDecayHFRatio = std::abs(effect.flDecayHFRatio);
+  effect.flDecayLFRatio = std::abs(effect.flDecayLFRatio);
+  effect.flReflectionsGain = std::abs(effect.flReflectionsGain);
+  effect.flReflectionsDelay = std::abs(effect.flReflectionsDelay);
+  effect.flLateReverbGain = std::abs(effect.flLateReverbGain);
+  effect.flLateReverbDelay = std::abs(effect.flLateReverbDelay);
+  effect.flEchoTime = std::abs(effect.flEchoTime);
+  effect.flEchoDepth = std::abs(effect.flEchoDepth);
+  effect.flModulationTime = std::abs(effect.flModulationTime);
+  effect.flModulationDepth = std::abs(effect.flModulationDepth);
+  effect.flAirAbsorptionGainHF = std::abs(effect.flAirAbsorptionGainHF);
+  effect.flHFReference = std::abs(effect.flHFReference);
+  effect.flLFReference = std::abs(effect.flLFReference);
+  effect.flRoomRolloffFactor = std::abs(effect.flRoomRolloffFactor);
 }
 
 inline EFXEAXREVERBPROPERTIES SX_SubtractEffect(const EFXEAXREVERBPROPERTIES& effect1, const EFXEAXREVERBPROPERTIES& effect2)
@@ -103,32 +102,45 @@ inline void SX_MultiplyEffect(EFXEAXREVERBPROPERTIES& dest, const float& value)
 
 inline bool SX_CompareEffectDiffToValue(const EFXEAXREVERBPROPERTIES& effect1, const EFXEAXREVERBPROPERTIES& effect2, const float& value)
 {
-  return (fabs(effect1.flDensity - effect2.flDensity) < value &&
-    fabs(effect1.flDiffusion - effect2.flDiffusion) < value &&
-    fabs(effect1.flGain - effect2.flGain) < value &&
-    fabs(effect1.flGainHF - effect2.flGainHF) < value &&
-    fabs(effect1.flGainLF - effect2.flGainLF) < value &&
-    fabs(effect1.flDecayTime - effect2.flDecayTime) < value &&
-    fabs(effect1.flDecayHFRatio - effect2.flDecayHFRatio) < value &&
-    fabs(effect1.flDecayLFRatio - effect2.flDecayLFRatio) < value &&
-    fabs(effect1.flReflectionsGain - effect2.flReflectionsGain) < value &&
-    fabs(effect1.flReflectionsDelay - effect2.flReflectionsDelay) < value &&
-    fabs(effect1.flLateReverbGain - effect2.flLateReverbGain) < value &&
-    fabs(effect1.flLateReverbDelay - effect2.flLateReverbDelay) < value &&
-    fabs(effect1.flEchoTime - effect2.flEchoTime) < value &&
-    fabs(effect1.flEchoDepth - effect2.flEchoDepth) < value &&
-    fabs(effect1.flModulationTime - effect2.flModulationDepth) < value &&
-    fabs(effect1.flModulationDepth - effect2.flModulationDepth) < value &&
-    fabs(effect1.flAirAbsorptionGainHF - effect2.flAirAbsorptionGainHF) < value &&
-    fabs(effect1.flHFReference - effect2.flHFReference) < value &&
-    fabs(effect1.flLFReference - effect2.flLFReference) < value &&
-    fabs(effect1.flRoomRolloffFactor - effect2.flRoomRolloffFactor) < value);
+  return (std::abs(effect1.flDensity - effect2.flDensity) < value &&
+    std::abs(effect1.flDiffusion - effect2.flDiffusion) < value &&
+    std::abs(effect1.flGain - effect2.flGain) < value &&
+    std::abs(effect1.flGainHF - effect2.flGainHF) < value &&
+    std::abs(effect1.flGainLF - effect2.flGainLF) < value &&
+    std::abs(effect1.flDecayTime - effect2.flDecayTime) < value &&
+    std::abs(effect1.flDecayHFRatio - effect2.flDecayHFRatio) < value &&
+    std::abs(effect1.flDecayLFRatio - effect2.flDecayLFRatio) < value &&
+    std::abs(effect1.flReflectionsGain - effect2.flReflectionsGain) < value &&
+    std::abs(effect1.flReflectionsDelay - effect2.flReflectionsDelay) < value &&
+    std::abs(effect1.flLateReverbGain - effect2.flLateReverbGain) < value &&
+    std::abs(effect1.flLateReverbDelay - effect2.flLateReverbDelay) < value &&
+    std::abs(effect1.flEchoTime - effect2.flEchoTime) < value &&
+    std::abs(effect1.flEchoDepth - effect2.flEchoDepth) < value &&
+    std::abs(effect1.flModulationTime - effect2.flModulationDepth) < value &&
+    std::abs(effect1.flModulationDepth - effect2.flModulationDepth) < value &&
+    std::abs(effect1.flAirAbsorptionGainHF - effect2.flAirAbsorptionGainHF) < value &&
+    std::abs(effect1.flHFReference - effect2.flHFReference) < value &&
+    std::abs(effect1.flLFReference - effect2.flLFReference) < value &&
+    std::abs(effect1.flRoomRolloffFactor - effect2.flRoomRolloffFactor) < value);
+}
+
+inline float ApproachVal(float target, float value, float speed)
+{
+  float delta = target - value;
+
+  if (delta > speed)
+    value += speed;
+  else if (delta < -speed)
+    value -= speed;
+  else value = target;
+
+  return value;
 }
 
 inline void SX_Approach(float& ob_gain, const float& ob_gain_target, const float& ob_gain_inc, const float& value)
 {
   // if not hit target, keep approaching
-  if (fabs(ob_gain - ob_gain_target) > value)
+  if (std::abs(ob_gain - ob_gain_target) > value)
   {
     ob_gain = ApproachVal(ob_gain_target, ob_gain, ob_gain_inc);
   }

@@ -70,9 +70,6 @@
     <ClInclude Include="snd_local.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="util.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="aud_int_internal.h">
       <Filter>Interface</Filter>
     </ClInclude>

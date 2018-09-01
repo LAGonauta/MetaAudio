@@ -4,7 +4,6 @@
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-#include "util.h"
 #include "zone.h"
 
 //sfx struct
@@ -51,6 +50,7 @@ std::string dprint_buffer;
 #define AL_UnitToMeters 0.0254f
 #define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
+#define VectorCopy(a, b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
 
 void S_FreeCache(sfx_t *sfx)
 {
