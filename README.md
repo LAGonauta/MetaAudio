@@ -45,9 +45,9 @@ Working games and mods:
 Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
 Tested with MSVC 2017. Remember to install C++ CRT.
 
-You will probably also need to compile Alure2 to use the audio plugin:
+You will also need to compile a custom Alure2 with slightly different API to use the audio plugin:
 
-https://github.com/kcat/alure/
+https://github.com/LAGonauta/alure/tree/hasLoopPoints
 
 # Credits
 nagist, for MetaHook (https://github.com/nagist/metahook)
