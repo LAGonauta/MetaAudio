@@ -4,9 +4,8 @@
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-#include "lru/lru.hpp"
 
-LRU::Cache<alure::String, aud_sfxcache_t *> cache(16384);
+std::unordered_map<alure::String, aud_sfxcache_t *> cache;
 
 //sfx struct
 alure::Array<sfx_t, MAX_SFX> known_sfx{};
@@ -57,9 +56,10 @@ std::string dprint_buffer;
 void S_FreeCache(sfx_t *sfx)
 {
   aud_sfxcache_t *sc = nullptr;
-  if (cache.contains(sfx->name))
+
+  if (cache.find(sfx->name) != cache.end())
   {
-    sc = cache.lookup(sfx->name);
+    sc = cache[sfx->name];
   }
 
   if (!sc)
@@ -107,7 +107,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
     {
       if (pfInCache)
       {
-        *pfInCache = cache.contains(known_sfx[i].name) ? 1 : 0;
+        *pfInCache = cache.find(known_sfx[i].name) != cache.end() ? 1 : 0;
       }
 
       if (known_sfx[i].servercount > 0)
@@ -238,9 +238,9 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
   //for later usage
   aud_sfxcache_t *sc = nullptr;
-  if (cache.contains(ch->sfx->name))
+  if (cache.find(ch->sfx->name) != cache.end())
   {
-    sc = cache.lookup(ch->sfx->name);
+    sc = cache[ch->sfx->name];
   }
 
   //move mouth
@@ -624,9 +624,9 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     }
 
     aud_sfxcache_t *sc = nullptr;
-    if (cache.contains(sfx->name))
+    if (cache.find(sfx->name) != cache.end())
     {
-      sc = cache.lookup(sfx->name);
+      sc = cache[sfx->name];
     }
 
     if (sc == nullptr)
@@ -974,7 +974,7 @@ qboolean OpenAL_Init(void)
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
 #endif
-    }
+  }
 
 #ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
@@ -992,7 +992,7 @@ qboolean OpenAL_Init(void)
     al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
-  }
+}
   catch (...)
   {
     return false;

@@ -5,9 +5,8 @@
 #include "snd_local.h"
 #include "snd_voice.hpp"
 #include "snd_wav.hpp"
-#include "lru/lru.hpp"
 
-extern LRU::Cache<alure::String, aud_sfxcache_t *> cache;
+extern std::unordered_map<alure::String, aud_sfxcache_t *> cache;
 
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
 
@@ -121,9 +120,9 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (ch == nullptr)
     return nullptr;
 
-  if (cache.contains(s->name))
+  if (cache.find(s->name) != cache.end())
   {
-    sc = cache.lookup(s->name);
+    sc = cache[s->name];
   }
 
   if (sc && sc->decoder)
@@ -213,9 +212,9 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  if (cache.contains(s->name))
+  if (cache.find(s->name) != cache.end())
   {
-    sc = cache.lookup(s->name);
+    sc = cache[s->name];
   }
 
   if (sc)
