@@ -5,7 +5,9 @@
 #include "snd_local.h"
 #include "snd_voice.hpp"
 #include "snd_wav.hpp"
-#include "zone.h"
+#include "lru/lru.hpp"
+
+extern LRU::Cache<alure::String, aud_sfxcache_t *> cache;
 
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
 
@@ -109,7 +111,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   ch->entchannel = CHAN_STREAM;
 
   std::vector<byte> data;
-  aud_sfxcache_t *sc;
+  aud_sfxcache_t *sc = nullptr;
 
   bool ffileopened = false;
 
@@ -119,7 +121,11 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (ch == nullptr)
     return nullptr;
 
-  sc = (aud_sfxcache_t *)Cache_Check(&s->cache);
+  if (cache.contains(s->name))
+  {
+    sc = cache.lookup(s->name);
+  }
+
   if (sc && sc->decoder)
   {
     ffileopened = true;
@@ -128,12 +134,11 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   //Alloc cache if we don't have one
   if (sc == nullptr)
   {
-    sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
+    sc = new aud_sfxcache_t();
+    cache.emplace(s->name, sc);
+
     if (sc == nullptr)
       return nullptr;
-
-    //Clear before use
-    memset(sc, 0, sizeof(aud_sfxcache_t));
   }
 
   std::optional<alure::String> file_path;
@@ -180,7 +185,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return gAudEngine.S_LoadSound(s, ch);
   }
 
-  aud_sfxcache_t *sc;
+  aud_sfxcache_t *sc = nullptr;
 
   if (s->name[0] == '*')
     return S_LoadStreamSound(s, ch);
@@ -208,7 +213,11 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  sc = (aud_sfxcache_t *)Cache_Check(&s->cache);
+  if (cache.contains(s->name))
+  {
+    sc = cache.lookup(s->name);
+  }
+
   if (sc)
     return sc;
 
@@ -236,11 +245,11 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return nullptr;
   }
 
-  sc = (aud_sfxcache_t *)Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name);
+  sc = new aud_sfxcache_t();
+  cache.emplace(s->name, sc);
+
   if (sc == nullptr)
     return nullptr;
-
-  memset(sc, 0, sizeof(aud_sfxcache_t));
 
   wavinfo_t info = wavinfo_t();
   //We can't interfere with Alure, so we need a copy of the data for mouth movement.

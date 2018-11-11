@@ -4,7 +4,9 @@
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-#include "zone.h"
+#include "lru/lru.hpp"
+
+LRU::Cache<alure::String, aud_sfxcache_t *> cache(16384);
 
 //sfx struct
 alure::Array<sfx_t, MAX_SFX> known_sfx{};
@@ -54,7 +56,12 @@ std::string dprint_buffer;
 
 void S_FreeCache(sfx_t *sfx)
 {
-  aud_sfxcache_t *sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
+  aud_sfxcache_t *sc = nullptr;
+  if (cache.contains(sfx->name))
+  {
+    sc = cache.lookup(sfx->name);
+  }
+
   if (!sc)
     return;
 
@@ -69,13 +76,10 @@ void S_FreeCache(sfx_t *sfx)
       al_context.removeBuffer(sc->buffer);
     }
 
-    if (sc->decoder)
-    {
-      sc->decoder.reset();
-    }
+    delete sc;
   }
 
-  Cache_Free(&sfx->cache);
+  cache.erase(sfx->name);
 }
 
 void S_FlushCaches(void)
@@ -103,7 +107,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
     {
       if (pfInCache)
       {
-        *pfInCache = Cache_Check(&known_sfx[i].cache) ? 1 : 0;
+        *pfInCache = cache.contains(known_sfx[i].name) ? 1 : 0;
       }
 
       if (known_sfx[i].servercount > 0)
@@ -233,7 +237,11 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   al_efx->ApplyEffect(ch, underwater);
 
   //for later usage
-  aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
+  aud_sfxcache_t *sc = nullptr;
+  if (cache.contains(ch->sfx->name))
+  {
+    sc = cache.lookup(ch->sfx->name);
+  }
 
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
@@ -615,7 +623,12 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    aud_sfxcache_t *sc = (aud_sfxcache_t *)(sfx->cache.data);
+    aud_sfxcache_t *sc = nullptr;
+    if (cache.contains(sfx->name))
+    {
+      sc = cache.lookup(sfx->name);
+    }
+
     if (sc == nullptr)
     {
       first_to_die = ch_idx;
