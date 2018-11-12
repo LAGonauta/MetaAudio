@@ -281,5 +281,6 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
+  s->cache.data = reinterpret_cast<void *>(sc);
   return sc;
 }
