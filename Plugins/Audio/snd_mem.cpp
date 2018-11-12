@@ -120,9 +120,10 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (ch == nullptr)
     return nullptr;
 
-  if (cache.find(s->name) != cache.end())
+  auto sfx_iterator = cache.find(s->name);
+  if (sfx_iterator != cache.end())
   {
-    sc = cache[s->name];
+    sc = sfx_iterator->second;
   }
 
   if (sc && sc->decoder)
@@ -212,9 +213,10 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  if (cache.find(s->name) != cache.end())
+  auto sfx_iterator = cache.find(s->name);
+  if (sfx_iterator != cache.end())
   {
-    sc = cache[s->name];
+    sc = sfx_iterator->second;
   }
 
   if (sc)
