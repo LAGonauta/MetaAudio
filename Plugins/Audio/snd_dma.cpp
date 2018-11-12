@@ -57,9 +57,10 @@ void S_FreeCache(sfx_t *sfx)
 {
   aud_sfxcache_t *sc = nullptr;
 
-  if (cache.find(sfx->name) != cache.end())
+  auto sfx_iterator = cache.find(sfx->name);
+  if (sfx_iterator != cache.end())
   {
-    sc = cache[sfx->name];
+    sc = sfx_iterator->second;
   }
 
   if (!sc)
@@ -238,9 +239,10 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
   //for later usage
   aud_sfxcache_t *sc = nullptr;
-  if (cache.find(ch->sfx->name) != cache.end())
+  auto sfx_iterator = cache.find(ch->sfx->name);
+  if (sfx_iterator != cache.end())
   {
-    sc = cache[ch->sfx->name];
+    sc = sfx_iterator->second;
   }
 
   //move mouth
@@ -624,9 +626,10 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
     }
 
     aud_sfxcache_t *sc = nullptr;
-    if (cache.find(sfx->name) != cache.end())
+    auto sfx_iterator = cache.find(sfx->name);
+    if (sfx_iterator != cache.end())
     {
-      sc = cache[sfx->name];
+      sc = sfx_iterator->second;
     }
 
     if (sc == nullptr)
@@ -974,7 +977,7 @@ qboolean OpenAL_Init(void)
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
 #endif
-  }
+    }
 
 #ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
@@ -992,7 +995,7 @@ qboolean OpenAL_Init(void)
     al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
-}
+  }
   catch (...)
   {
     return false;
