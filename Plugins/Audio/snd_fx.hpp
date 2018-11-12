@@ -61,6 +61,7 @@ private:
 
   // For occlusion
   void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
+  float FadeToNewGain(aud_channel_t * ch, float gain_new);
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
   // For effect interpolation
