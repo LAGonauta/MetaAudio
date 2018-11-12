@@ -10,6 +10,7 @@ extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
 extern cvar_t *sxroom_type;
 static cvar_t *al_occlusion = nullptr;
+static cvar_t *al_occlusion_fade = nullptr;
 
 // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
 // with no adjustment of reverb intensity with distance.
@@ -29,6 +30,52 @@ void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
   // 0 = regular player hull, 1 = ducked player hull, 2 = point hull
   gEngfuncs.pEventAPI->EV_SetTraceHull(2);
   gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
+}
+
+float EnvEffects::FadeToNewGain(aud_channel_t *ch, float gain_new)
+{
+  if (!al_occlusion_fade->value)
+  {
+    return gain_new;
+  }
+
+  float speed, frametime;
+  frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+  if (frametime == 0.0f)
+  {
+    return ch->ob_gain;
+  }
+
+  // if first time updating, store new gain into gain & target, return
+  // if gain_new is close to existing gain, store new gain into gain & target, return
+  if (ch->firstpass || (fabs(gain_new - ch->ob_gain) < 0.01f))
+  {
+    ch->ob_gain = gain_new;
+    ch->ob_gain_target = gain_new;
+    ch->ob_gain_inc = 0.0f;
+    return gain_new;
+  }
+
+  // set up new increment to new target
+  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (gain_new - ch->ob_gain);
+
+  ch->ob_gain_inc = fabs(speed);
+
+  // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
+  ch->ob_gain_target = gain_new;
+
+  // if not hit target, keep approaching
+  if (fabs(ch->ob_gain - ch->ob_gain_target) > 0.01f)
+  {
+    ch->ob_gain = ApproachVal(ch->ob_gain_target, ch->ob_gain, ch->ob_gain_inc);
+  }
+  else
+  {
+    // close enough, set gain = target
+    ch->ob_gain = ch->ob_gain_target;
+  }
+
+  return ch->ob_gain;
 }
 
 EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
@@ -132,8 +179,12 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 
       if (distance < zero_gain_distance)
       {
-        direct_gain = GetGainObscured(ch, pent, sent);
+        direct_gain = FadeToNewGain(ch, GetGainObscured(ch, pent, sent));
       }
+    }
+    else
+    {
+      direct_gain = FadeToNewGain(ch, direct_gain);
     }
   }
 
@@ -153,6 +204,7 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 EnvEffects::EnvEffects(alure::Context al_context)
 {
   al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", 0);
+  al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", 0);
 
   // Disable reverb when room_type = 0:
   presets_room[0].flGain = 0;
