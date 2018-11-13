@@ -9,8 +9,7 @@
 std::map<alure::String, aud_sfxcache_t *> cache;
 
 //sfx struct
-alure::Array<sfx_t, MAX_SFX> known_sfx{};
-int num_sfx;
+std::map<alure::String, sfx_t> known_sfx;
 
 //channels
 alure::Array<aud_channel_t, MAX_CHANNELS> channels{};
@@ -86,9 +85,11 @@ void S_FreeCache(sfx_t *sfx)
 
 void S_FlushCaches(void)
 {
-  for (int i = 0; i < num_sfx; ++i)
+  auto sfx_iterator = known_sfx.begin();
+  while (sfx_iterator != known_sfx.end())
   {
-    S_FreeCache(&known_sfx[i]);
+    S_FreeCache(&(sfx_iterator->second));
+    ++sfx_iterator;
   }
 }
 
@@ -103,38 +104,40 @@ sfx_t *S_FindName(char *name, int *pfInCache)
   if (strlen(name) >= MAX_QPATH)
     Sys_ErrorEx("Sound name too long: %s", name);
 
-  for (i = 0; i < num_sfx; i++)
+  auto sfx_iterator = known_sfx.find(name);
+  if (sfx_iterator != known_sfx.end())
   {
-    if (!_stricmp(known_sfx[i].name, name))
+    if (pfInCache)
     {
-      if (pfInCache)
-      {
-        *pfInCache = cache.find(known_sfx[i].name) != cache.end() ? 1 : 0;
-      }
-
-      if (known_sfx[i].servercount > 0)
-        known_sfx[i].servercount = *gAudEngine.cl_servercount;
-
-      return &known_sfx[i];
+      *pfInCache = cache.find(sfx_iterator->second.name) != cache.end() ? 1 : 0;
     }
 
-    if (!sfx)
+    if (sfx_iterator->second.servercount > 0)
+      sfx_iterator->second.servercount = *gAudEngine.cl_servercount;
+
+    return &(sfx_iterator->second);
+  }
+  else
+  {
+    auto sfx_inner_iterator = known_sfx.begin();
+    while (sfx_inner_iterator != known_sfx.end())
     {
-      if (known_sfx[i].servercount > 0)
+      if (sfx_inner_iterator->second.servercount > 0)
       {
-        if (known_sfx[i].servercount != *gAudEngine.cl_servercount)
-          sfx = &known_sfx[i];
+        if (sfx_inner_iterator->second.servercount != *gAudEngine.cl_servercount)
+        {
+          S_FreeCache(&(sfx_inner_iterator->second));
+          break;
+        }
       }
+      ++sfx_inner_iterator;
     }
   }
 
   if (!sfx)
   {
-    if (num_sfx == MAX_SFX)
-      Sys_ErrorEx("S_FindName: out of sfx_t");
-
-    sfx = &known_sfx[i];
-    num_sfx++;
+    known_sfx[name] = sfx_t();
+    sfx = &known_sfx[name];
   }
   else
   {
@@ -1067,8 +1070,6 @@ void S_Init(void)
   gEngfuncs.pfnAddCommand("al_show_full_devices", AL_DevicesFull_f);
 
   gAudEngine.S_Init();
-
-  num_sfx = 0;
 
   vox = alure::MakeUnique<VOX>();
 
