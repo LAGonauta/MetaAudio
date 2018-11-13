@@ -79,17 +79,14 @@ void S_FreeCache(sfx_t *sfx)
 
 void S_FlushCaches(void)
 {
-  auto sfx_iterator = known_sfx.begin();
-  while (sfx_iterator != known_sfx.end())
+  for (auto& sfx : known_sfx)
   {
-    S_FreeCache(&(sfx_iterator->second));
-    ++sfx_iterator;
+    S_FreeCache(&(sfx.second));
   }
 }
 
 sfx_t *S_FindName(char *name, int *pfInCache)
 {
-  int i = 0;
   sfx_t *sfx = nullptr;
 
   if (!name)
@@ -113,25 +110,21 @@ sfx_t *S_FindName(char *name, int *pfInCache)
   }
   else
   {
-    auto sfx_inner_iterator = known_sfx.begin();
-    while (sfx_inner_iterator != known_sfx.end())
+    for (auto& sfxElement : known_sfx)
     {
-      if (sfx_inner_iterator->second.servercount > 0)
+      if (sfxElement.second.servercount > 0 && sfxElement.second.servercount != *gAudEngine.cl_servercount)
       {
-        if (sfx_inner_iterator->second.servercount != *gAudEngine.cl_servercount)
-        {
-          S_FreeCache(&(sfx_inner_iterator->second));
-          break;
-        }
+        S_FreeCache(&(sfxElement.second));
+        known_sfx.erase(sfxElement.first);
+        break;
       }
-      ++sfx_inner_iterator;
     }
   }
 
   if (!sfx)
   {
-    known_sfx[name] = sfx_t();
-    sfx = &known_sfx[name];
+    auto result = known_sfx.emplace(std::make_pair(name, sfx_t()));
+    sfx = &(result.first->second);
   }
   else
   {
