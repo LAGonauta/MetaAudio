@@ -1,3 +1,4 @@
+#include <map>
 #include <metahook.h>
 
 #include "snd_local.h"
@@ -5,7 +6,7 @@
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
 
-std::unordered_map<alure::String, aud_sfxcache_t *> cache;
+std::map<alure::String, aud_sfxcache_t *> cache;
 
 //sfx struct
 alure::Array<sfx_t, MAX_SFX> known_sfx{};

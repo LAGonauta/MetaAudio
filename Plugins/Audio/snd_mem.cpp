@@ -1,3 +1,4 @@
+#include <map>
 #include <metahook.h>
 #include <optional>
 
@@ -6,7 +7,7 @@
 #include "snd_voice.hpp"
 #include "snd_wav.hpp"
 
-extern std::unordered_map<alure::String, aud_sfxcache_t *> cache;
+extern std::map<alure::String, aud_sfxcache_t *> cache;
 
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
 
