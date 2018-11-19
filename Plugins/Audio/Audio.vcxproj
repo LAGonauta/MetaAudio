@@ -136,6 +136,7 @@
     <ClCompile Include="snd_voice.cpp" />
     <ClCompile Include="snd_vox.cpp" />
     <ClCompile Include="snd_wav.cpp" />
+    <ClCompile Include="zone.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Interface\IAudio.h" />
@@ -151,6 +152,7 @@
     <ClInclude Include="snd_voice.hpp" />
     <ClInclude Include="snd_vox.hpp" />
     <ClInclude Include="snd_wav.hpp" />
+    <ClInclude Include="zone.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

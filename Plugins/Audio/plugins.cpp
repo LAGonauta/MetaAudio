@@ -2,6 +2,7 @@
 #include <IAudio.h>
 
 #include "snd_local.h"
+#include "zone.h"
 
 cl_exportfuncs_t gExportfuncs;
 mh_interface_t *g_pInterface;
@@ -55,6 +56,7 @@ void IPlugins::LoadEngine(void)
   g_dwEngineBase = g_pMetaHookAPI->GetEngineBase();
   g_dwEngineSize = g_pMetaHookAPI->GetEngineSize();
 
+  Memory_Init();
   S_FillAddress();
   S_InstallHook();
 }

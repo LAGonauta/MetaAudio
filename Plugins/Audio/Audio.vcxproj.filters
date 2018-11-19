@@ -44,6 +44,9 @@
     <ClCompile Include="snd_vox.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="zone.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
     <ClCompile Include="snd_wav.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -72,6 +75,9 @@
     </ClInclude>
     <ClInclude Include="..\..\Interface\IAudio.h">
       <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="zone.h">
+      <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="efx-util.h">
       <Filter>Header</Filter>
