@@ -53,7 +53,7 @@ std::string dprint_buffer;
 
 void S_FreeCache(sfx_t *sfx)
 {
-  aud_sfxcache_t *sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
+  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Check(&sfx->cache));
   if (!sc)
     return;
 
@@ -229,7 +229,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   al_efx->ApplyEffect(ch, underwater);
 
   //for later usage
-  aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
+  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(ch->sfx->cache.data);
 
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
@@ -611,7 +611,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    aud_sfxcache_t *sc = (aud_sfxcache_t *)(sfx->cache.data);
+    aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(sfx->cache.data);
     if (sc == nullptr)
     {
       first_to_die = ch_idx;
