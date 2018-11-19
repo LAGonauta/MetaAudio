@@ -1,15 +1,13 @@
-#include <map>
 #include <metahook.h>
 
 #include "snd_local.h"
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-
-std::map<alure::String, aud_sfxcache_t *> cache;
+#include "zone.h"
 
 //sfx struct
-std::map<alure::String, sfx_t> known_sfx;
+std::unordered_map<alure::String, sfx_t> known_sfx;
 
 //channels
 alure::Array<aud_channel_t, MAX_CHANNELS> channels{};
@@ -55,14 +53,7 @@ std::string dprint_buffer;
 
 void S_FreeCache(sfx_t *sfx)
 {
-  aud_sfxcache_t *sc = nullptr;
-
-  auto sfx_iterator = cache.find(sfx->name);
-  if (sfx_iterator != cache.end())
-  {
-    sc = sfx_iterator->second;
-  }
-
+  aud_sfxcache_t *sc = (aud_sfxcache_t *)Cache_Check(&sfx->cache);
   if (!sc)
     return;
 
@@ -77,10 +68,13 @@ void S_FreeCache(sfx_t *sfx)
       al_context.removeBuffer(sc->buffer);
     }
 
-    delete sc;
+    if (sc->decoder)
+    {
+      sc->decoder.reset();
+    }
   }
 
-  cache.erase(sfx->name);
+  Cache_Free(&sfx->cache);
 }
 
 void S_FlushCaches(void)
@@ -109,7 +103,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
   {
     if (pfInCache)
     {
-      *pfInCache = cache.find(sfx_iterator->second.name) != cache.end() ? 1 : 0;
+      *pfInCache = Cache_Check(&sfx_iterator->second.cache) ? 1 : 0;
     }
 
     if (sfx_iterator->second.servercount > 0)
@@ -242,12 +236,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   al_efx->ApplyEffect(ch, underwater);
 
   //for later usage
-  aud_sfxcache_t *sc = nullptr;
-  auto sfx_iterator = cache.find(ch->sfx->name);
-  if (sfx_iterator != cache.end())
-  {
-    sc = sfx_iterator->second;
-  }
+  aud_sfxcache_t *sc = (aud_sfxcache_t *)(ch->sfx->cache.data);
 
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
@@ -629,13 +618,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    aud_sfxcache_t *sc = nullptr;
-    auto sfx_iterator = cache.find(sfx->name);
-    if (sfx_iterator != cache.end())
-    {
-      sc = sfx_iterator->second;
-    }
-
+    aud_sfxcache_t *sc = (aud_sfxcache_t *)(sfx->cache.data);
     if (sc == nullptr)
     {
       first_to_die = ch_idx;
