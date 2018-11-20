@@ -53,7 +53,7 @@ std::string dprint_buffer;
 
 void S_FreeCache(sfx_t *sfx)
 {
-  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Check(&sfx->cache));
+  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(sfx->cache.data);
   if (!sc)
     return;
 
@@ -68,13 +68,10 @@ void S_FreeCache(sfx_t *sfx)
       al_context.removeBuffer(sc->buffer);
     }
 
-    if (sc->decoder)
-    {
-      sc->decoder.reset();
-    }
-  }
+    Cache_Free(sfx->name);
 
-  Cache_Free(&sfx->cache);
+    sfx->cache.data = nullptr;
+  }
 }
 
 void S_FlushCaches(void)
@@ -100,7 +97,7 @@ sfx_t *S_FindName(char *name, int *pfInCache)
   {
     if (pfInCache)
     {
-      *pfInCache = Cache_Check(&sfx_iterator->second.cache) ? 1 : 0;
+      *pfInCache = sfx_iterator->second.cache.data != nullptr ? 1 : 0;
     }
 
     if (sfx_iterator->second.servercount > 0)
@@ -1030,7 +1027,7 @@ void AL_Devices_f(bool basic = true)
 void AL_DevicesBasic_f(void)
 {
   AL_Devices_f(true);
-}
+  }
 
 void AL_DevicesFull_f(void)
 {

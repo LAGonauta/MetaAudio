@@ -56,7 +56,6 @@ void IPlugins::LoadEngine(void)
   g_dwEngineBase = g_pMetaHookAPI->GetEngineBase();
   g_dwEngineSize = g_pMetaHookAPI->GetEngineSize();
 
-  Memory_Init();
   S_FillAddress();
   S_InstallHook();
 }
