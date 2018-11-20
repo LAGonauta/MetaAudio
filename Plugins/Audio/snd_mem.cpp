@@ -119,7 +119,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (ch == nullptr)
     return nullptr;
 
-  sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Check(&s->cache));
+  sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
   if (sc && sc->decoder)
   {
     ffileopened = true;
@@ -128,12 +128,9 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   //Alloc cache if we don't have one
   if (sc == nullptr)
   {
-    sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name));
+    sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
     if (sc == nullptr)
       return nullptr;
-
-    //Clear before use
-    memset(sc, 0, sizeof(aud_sfxcache_t));
   }
 
   std::optional<alure::String> file_path;
@@ -208,7 +205,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     }
   }
 
-  sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Check(&s->cache));
+  sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
   if (sc)
     return sc;
 
@@ -236,11 +233,9 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     return nullptr;
   }
 
-  sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, sizeof(aud_sfxcache_t), s->name));
+  sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
   if (sc == nullptr)
     return nullptr;
-
-  memset(sc, 0, sizeof(aud_sfxcache_t));
 
   wavinfo_t info = wavinfo_t();
   //We can't interfere with Alure, so we need a copy of the data for mouth movement.
