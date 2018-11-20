@@ -172,11 +172,6 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 
 aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 {
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_LoadSound(s, ch);
-  }
-
   aud_sfxcache_t *sc;
 
   if (s->name[0] == '*')
