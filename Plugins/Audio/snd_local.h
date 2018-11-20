@@ -129,6 +129,4 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch); // hooked
 extern aud_engine_t gAudEngine;
 
 //active control
-extern cvar_t *al_enable;
 extern qboolean openal_started;
-extern qboolean openal_enabled;

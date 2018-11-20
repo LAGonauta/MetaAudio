@@ -23,10 +23,8 @@ cvar_t *sxroom_type = nullptr;
 cvar_t *snd_show = nullptr;
 
 //active control
-cvar_t *al_enable = nullptr;
 cvar_t *al_doppler = nullptr;
 qboolean openal_started = false;
-qboolean openal_enabled = false;
 qboolean openal_mute = false;
 
 //other cvars
@@ -61,17 +59,14 @@ void S_FreeCache(sfx_t *sfx)
   if (SND_IsPlaying(sfx))
     return;
 
-  if (openal_enabled)
+  if (sc->buffer)
   {
-    if (sc->buffer)
-    {
-      al_context.removeBuffer(sc->buffer);
-    }
-
-    Cache_Free(sfx->name);
-
-    sfx->cache.data = nullptr;
+    al_context.removeBuffer(sc->buffer);
   }
+
+  Cache_Free(sfx->name);
+
+  sfx->cache.data = nullptr;
 }
 
 void S_FlushCaches(void)
@@ -315,27 +310,6 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 {
   int i, total;
   vec_t orientation[6];
-
-  if (openal_started)
-  {
-    if (openal_enabled && !al_enable->value)
-    {
-      S_StopAllSounds(true);
-      S_FlushCaches();
-      openal_enabled = false;
-    }
-    else if (!openal_enabled && al_enable->value)
-    {
-      S_StopAllSounds(true);
-      S_FlushCaches();
-      openal_enabled = true;
-    }
-  }
-
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_Update(origin, forward, right, up);
-  }
 
   // Update Alure's OpenAL context at the start of processing.
   al_context.update();
@@ -881,31 +855,16 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
 void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
 {
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-  }
-
   S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, false);
 }
 
 void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
 {
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch);
-  }
-
   S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, true);
 }
 
 void S_StopSound(int entnum, int entchannel)
 {
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StopSound(entnum, entchannel);
-  }
-
   for (int i = NUM_AMBIENTS; i < total_channels; ++i)
   {
     if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
@@ -917,11 +876,6 @@ void S_StopSound(int entnum, int entchannel)
 
 void S_StopAllSounds(qboolean clear)
 {
-  if (!openal_enabled)
-  {
-    return gAudEngine.S_StopAllSounds(clear);
-  }
-
   for (int i = 0; i < MAX_CHANNELS; i++)
   {
     if (channels[i].sfx)
@@ -991,7 +945,6 @@ void S_Startup(void)
     if (OpenAL_Init())
     {
       openal_started = true;
-      openal_enabled = (al_enable->value) ? true : false;
     }
   }
 }
@@ -1027,7 +980,7 @@ void AL_Devices_f(bool basic = true)
 void AL_DevicesBasic_f(void)
 {
   AL_Devices_f(true);
-  }
+}
 
 void AL_DevicesFull_f(void)
 {
@@ -1036,7 +989,6 @@ void AL_DevicesFull_f(void)
 
 void S_Init(void)
 {
-  al_enable = gEngfuncs.pfnRegisterVariable("al_enable", "1", 0);
   al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", 0);
   gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
   gEngfuncs.pfnAddCommand("al_show_basic_devices", AL_DevicesBasic_f);
