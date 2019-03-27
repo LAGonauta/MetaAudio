@@ -9,9 +9,10 @@
 
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
 
-// Check if file exists. Order: .wav, .flac, .ogg
+// Check if file exists. Order: original, .wav, .flac, .ogg, .mp3
 static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool is_stream)
 {
+  alure::String original_name = sfx_name;
   alure::String m_function_name;
   if (is_stream)
   {
@@ -98,7 +99,7 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
   }
   else
   {
-    gEngfuncs.Con_DPrintf("%s: Couldn't load %s.\n", m_function_name.c_str(), namebuffer.c_str());
+    gEngfuncs.Con_DPrintf("%s: Couldn't load %s.\n", m_function_name.c_str(), original_name.c_str());
     return std::nullopt;
   }
 }
@@ -172,96 +173,104 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
 
 aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
 {
-  aud_sfxcache_t *sc;
-
-  if (s->name[0] == '*')
-    return S_LoadStreamSound(s, ch);
-
-  if (s->name[0] == '?')
-  {
-    try
-    {
-      alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(VoiceDecoder(s, ch));
-      sc = new aud_sfxcache_t();
-      sc->channels = dec->getChannelConfig();
-      sc->samplerate = dec->getFrequency();
-      sc->length = UINT64_MAX;
-      sc->looping = false;
-      sc->loopstart = 0;
-      sc->loopend = UINT64_MAX;
-      sc->stype = dec->getSampleType();
-      sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
-      return sc;
-    }
-    catch (const std::runtime_error& error)
-    {
-      gEngfuncs.Con_DPrintf("S_LoadSound: Unable to start voice playback. %s.\n", error.what());
-      return nullptr;
-    }
-  }
-
-  sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
-  if (sc)
-    return sc;
-
-  auto context = alure::Context::GetCurrent();
-  if (local_decoder != context.getMessageHandler())
-  {
-    context.setMessageHandler(local_decoder);
-  }
-
-  std::optional<alure::String> file_path = S_GetFilePath(s->name, false);
-  if (!file_path.has_value())
-  {
-    return nullptr;
-  }
-
-  alure::Buffer al_buffer;
   try
   {
-    al_buffer = context.getBuffer(file_path.value());
-  }
-  catch (const std::exception& error)
-  {
-    gEngfuncs.Con_DPrintf("S_LoadSound: %s: %s\n", file_path.value().c_str(), error.what());
-    sc = nullptr;
-    return nullptr;
-  }
+    aud_sfxcache_t *sc;
 
-  sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
-  if (sc == nullptr)
-    return nullptr;
+    if (s->name[0] == '*')
+      return S_LoadStreamSound(s, ch);
 
-  wavinfo_t info = wavinfo_t();
-  //We can't interfere with Alure, so we need a copy of the data for mouth movement.
-  if (!local_decoder->GetWavinfo(info, file_path.value(), sc->data))
-    return nullptr;
+    if (s->name[0] == '?')
+    {
+      try
+      {
+        alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(VoiceDecoder(s, ch));
+        sc = new aud_sfxcache_t();
+        sc->channels = dec->getChannelConfig();
+        sc->samplerate = dec->getFrequency();
+        sc->length = UINT64_MAX;
+        sc->looping = false;
+        sc->loopstart = 0;
+        sc->loopend = UINT64_MAX;
+        sc->stype = dec->getSampleType();
+        sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
+        return sc;
+      }
+      catch (const std::runtime_error& error)
+      {
+        gEngfuncs.Con_DPrintf("S_LoadSound: Unable to start voice playback. %s.\n", error.what());
+        return nullptr;
+      }
+    }
 
-  sc->buffer = al_buffer;
-  sc->length = info.samples; //number of samples ( include channels )
-  sc->looping = info.looping;
-  sc->loopstart = info.loopstart; //-1 or loop start position
-  sc->loopend = info.loopend;
-  sc->samplerate = info.samplerate;
-  sc->stype = info.stype;
-  sc->channels = info.channels;
+    sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
+    if (sc)
+      return sc;
 
-  // Set loop points if needed
-  if (sc->looping)
-  {
+    auto context = alure::Context::GetCurrent();
+    if (local_decoder != context.getMessageHandler())
+    {
+      context.setMessageHandler(local_decoder);
+    }
+
+    std::optional<alure::String> file_path = S_GetFilePath(s->name, false);
+    if (!file_path.has_value())
+    {
+      return nullptr;
+    }
+
+    alure::Buffer al_buffer;
     try
     {
-      auto points = sc->buffer.getLoopPoints();
-      if (points.first != sc->loopstart)
-      {
-        sc->buffer.setLoopPoints(static_cast<ALuint>(sc->loopstart), sc->loopend ? static_cast<ALuint>(sc->loopend) : sc->buffer.getLength());
-      }
+      al_buffer = context.getBuffer(file_path.value());
     }
     catch (const std::exception& error)
     {
-      gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
+      gEngfuncs.Con_DPrintf("S_LoadSound: %s: %s\n", file_path.value().c_str(), error.what());
+      sc = nullptr;
+      return nullptr;
     }
-  }
 
-  return sc;
+    sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
+    if (sc == nullptr)
+      return nullptr;
+
+    wavinfo_t info = wavinfo_t();
+    //We can't interfere with Alure, so we need a copy of the data for mouth movement.
+    if (!local_decoder->GetWavinfo(info, file_path.value(), sc->data))
+      return nullptr;
+
+    sc->buffer = al_buffer;
+    sc->length = info.samples; //number of samples ( include channels )
+    sc->looping = info.looping;
+    sc->loopstart = info.loopstart; //-1 or loop start position
+    sc->loopend = info.loopend;
+    sc->samplerate = info.samplerate;
+    sc->stype = info.stype;
+    sc->channels = info.channels;
+
+    // Set loop points if needed
+    if (sc->looping)
+    {
+      try
+      {
+        auto points = sc->buffer.getLoopPoints();
+        if (points.first != sc->loopstart)
+        {
+          sc->buffer.setLoopPoints(static_cast<ALuint>(sc->loopstart), sc->loopend ? static_cast<ALuint>(sc->loopend) : sc->buffer.getLength());
+        }
+      }
+      catch (const std::exception& error)
+      {
+        gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
+      }
+    }
+
+    return sc;
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_LoadSound", MB_ICONERROR);
+    exit(0);
+  }
 }

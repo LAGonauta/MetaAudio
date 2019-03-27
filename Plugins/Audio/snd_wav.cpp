@@ -2,7 +2,7 @@
 
 #include "snd_wav.hpp"
 
-const alure::Array<alure::String, 3> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg" };
+const alure::Array<alure::String, 4> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg", ".mp3" };
 
 bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output)
 {
