@@ -24,6 +24,7 @@ cvar_t *snd_show = nullptr;
 
 //active control
 cvar_t *al_doppler = nullptr;
+cvar_t *al_xfi_workaround = nullptr;
 qboolean openal_started = false;
 qboolean openal_mute = false;
 
@@ -48,6 +49,56 @@ std::string dprint_buffer;
 #define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 #define VectorCopy(a, b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
+
+static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
+{
+  if (channel.source)
+  {
+    auto offset = channel.source.getSampleOffset();
+    auto is_playing = channel.source.isPlaying();
+    dprint_buffer.append("Sample offset: ").append(std::to_string(offset)).append("/");
+    if (channel.buffer != nullptr)
+    {
+      dprint_buffer.append(std::to_string(channel.buffer.getLength()));
+    }
+    if (al_xfi_workaround->value == 0.0f ||
+      channel.source.getLooping() ||
+      channel.entchannel == CHAN_STREAM ||
+      (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
+      channel.decoder != nullptr ||
+      channel.buffer == nullptr)
+    {
+      if (is_playing)
+      {
+        dprint_buffer.append("\n");
+        return true;
+      }
+      else
+      {
+        dprint_buffer.append(". Not playing!\n");
+        return false;
+      }
+      return channel.source.isPlaying();
+    }
+    else
+    {
+      auto is_playing_string = [is_playing = is_playing]() { if (is_playing) return "true"; else return "false"; }();
+      if (is_playing && offset < channel.buffer.getLength())
+      {
+        dprint_buffer.append(". Playing. According to OpenAL API: ").append(is_playing_string).append("\n");
+        return true;
+      }
+      else
+      {
+        dprint_buffer.append(". Not playing. According to OpenAL API: ").append(is_playing_string).append(".\n");
+        return false;
+      }
+
+      return is_playing && offset < channel.buffer.getLength(); // assume playing if played smaller than size
+    }
+  }
+  return false;
+}
 
 void S_FreeCache(sfx_t *sfx)
 {
@@ -154,7 +205,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 
   qboolean fWaveEnd = false;
 
-  if (!ch->source.isPlaying())
+  if (!ChannelCheckIsPlaying(*ch))
   {
     fWaveEnd = true;
   }
@@ -539,7 +590,7 @@ bool SND_IsPlaying(sfx_t *sfx)
 
   for (ch_idx = 0; ch_idx < MAX_CHANNELS; ch_idx++)
   {
-    if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && channels[ch_idx].source.isPlaying())
+    if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && ChannelCheckIsPlaying(channels[ch_idx]))
     {
       return true;
     }
@@ -568,7 +619,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
   {
     ch = &channels[ch_idx];
-    if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ch->source.isPlaying())
+    if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ChannelCheckIsPlaying(*ch))
     {
       if (entchannel == CHAN_VOICE)
         return nullptr;
@@ -605,7 +656,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    if (!ch->source.isPlaying())
+    if (!ChannelCheckIsPlaying(*ch))
     {
       first_to_die = ch_idx;
       break;
@@ -653,7 +704,7 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
     // bugged Creative drivers.
     if (channels[i].source)
     {
-      if (!channels[i].source.isPlaying())
+      if (!ChannelCheckIsPlaying(channels[i]))
       {
         break;
       }
@@ -956,7 +1007,7 @@ qboolean OpenAL_Init(void)
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
 #endif
-    }
+  }
 
 #ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
@@ -974,12 +1025,12 @@ qboolean OpenAL_Init(void)
     al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
-    }
+}
   catch (...)
   {
     return false;
   }
-  }
+}
 
 void S_Startup(void)
 {
@@ -1037,7 +1088,8 @@ void AL_DevicesFull_f(void)
 
 void S_Init(void)
 {
-  al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", 0);
+  al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
+  al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
   gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
   gEngfuncs.pfnAddCommand("al_show_basic_devices", AL_DevicesBasic_f);
   gEngfuncs.pfnAddCommand("al_show_full_devices", AL_DevicesFull_f);
