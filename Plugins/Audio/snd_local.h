@@ -1,7 +1,5 @@
 #pragma once
 
-#include <chrono>
-
 #include "exportfuncs.h"
 #include "enginedef.h"
 #include "aud_int_internal.h"
@@ -29,9 +27,6 @@ typedef struct
   alure::SharedPtr<alure::Decoder> decoder;
   alure::Buffer buffer;
   alure::Source source;
-
-  //X-Fi workaround
-  std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
 
   // For OpenAL EFX
   bool firstpass;            // true if this is first time sound is spatialized

@@ -56,46 +56,24 @@ static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
   {
     auto offset = channel.source.getSampleOffset();
     auto is_playing = channel.source.isPlaying();
+
     dprint_buffer.append("Sample offset: ").append(std::to_string(offset)).append("/");
     if (channel.buffer != nullptr)
     {
       dprint_buffer.append(std::to_string(channel.buffer.getLength()));
     }
-    if (al_xfi_workaround->value == 0.0f ||
-      channel.source.getLooping() ||
-      channel.entchannel == CHAN_STREAM ||
-      (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
-      channel.decoder != nullptr ||
-      channel.buffer == nullptr)
+
+    if (is_playing)
     {
-      if (is_playing)
-      {
-        dprint_buffer.append("\n");
-        return true;
-      }
-      else
-      {
-        dprint_buffer.append(". Not playing!\n");
-        return false;
-      }
-      return channel.source.isPlaying();
+      dprint_buffer.append("\n");
+      return true;
     }
     else
     {
-      auto is_playing_string = [is_playing = is_playing]() { if (is_playing) return "playing"; else return "not playing"; }();
-      if (is_playing && std::chrono::steady_clock::now() < channel.playback_end_time)
-      {
-        dprint_buffer.append(". Playing. According to OpenAL API: ").append(is_playing_string).append("\n");
-        return true;
-      }
-      else
-      {
-        dprint_buffer.append(". Not playing. According to OpenAL API: ").append(is_playing_string).append(".\n");
-        return false;
-      }
-
-      return is_playing && std::chrono::steady_clock::now() < channel.playback_end_time;
+      dprint_buffer.append(". Not playing!\n");
+      return false;
     }
+    return channel.source.isPlaying();
   }
   return false;
 }
@@ -876,6 +854,10 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   else
   {
     bool force_stream = false;
+    if (al_xfi_workaround->value != 0.0f)
+    {
+      force_stream = true;
+    }
     if (sc->looping)
     {
       ch->source.setLooping(true);
@@ -910,7 +892,6 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       try
       {
         ch->source.setOffset(ch->start);
-        ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
         ch->source.play(ch->buffer);
       }
       catch (const std::runtime_error& error)
@@ -1008,7 +989,7 @@ qboolean OpenAL_Init(void)
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
 #endif
-    }
+  }
 
 #ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
@@ -1026,7 +1007,7 @@ qboolean OpenAL_Init(void)
     al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
-  }
+}
   catch (...)
   {
     return false;
