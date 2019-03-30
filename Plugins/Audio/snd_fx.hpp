@@ -5,16 +5,17 @@
 class EnvEffects final
 {
 private:
-  alure::AuxiliaryEffectSlot alAuxEffectSlots;
 
-  // Effect used for interpolation
-  struct
+  struct effectSlot
   {
-    EFXEAXREVERBPROPERTIES ob_effect;        // Effect change if listener changes environment
-    EFXEAXREVERBPROPERTIES ob_effect_target; // Target effect while crossfading between ob_effect and ob_effect_target
-    EFXEAXREVERBPROPERTIES ob_effect_inc;    // crossfade increment
-    alure::Effect generated_effect;          // Generated effect from crossfade
-  } interpl_effect;
+    alure::AuxiliaryEffectSlot slot;
+    alure::Effect effect;
+    float gain_target;
+    float gain_inc;
+    float gain;
+  };
+
+  alure::Array<effectSlot, 2> alAuxEffectSlots;
 
   // Default effects
   alure::Array<EFXEAXREVERBPROPERTIES, CSXROOM> presets_room = { {
@@ -61,11 +62,8 @@ private:
 
   // For occlusion
   void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
-  float FadeToNewGain(aud_channel_t * ch, float gain_new);
+  float FadeToNewValue(const bool& fade_enabled, const bool& force_new, const float& value_new, float& value_old, float& value_target, float& value_inc);
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
-
-  // For effect interpolation
-  EFXEAXREVERBPROPERTIES FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new);
 
 public:
   EnvEffects(alure::Context al_context);
