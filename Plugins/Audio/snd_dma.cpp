@@ -24,6 +24,7 @@ cvar_t *snd_show = nullptr;
 
 //active control
 cvar_t *al_doppler = nullptr;
+cvar_t *al_xfi_workaround = nullptr;
 qboolean openal_started = false;
 qboolean openal_mute = false;
 
@@ -48,6 +49,28 @@ std::string dprint_buffer;
 #define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
 #define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
 #define VectorCopy(a, b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
+
+static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
+{
+  if (channel.source)
+  {
+    if (al_xfi_workaround->value == 0.0f ||
+      al_xfi_workaround->value == 2.0f ||
+      channel.source.getLooping() ||
+      channel.entchannel == CHAN_STREAM ||
+      (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
+      channel.decoder != nullptr ||
+      channel.buffer == nullptr)
+    {
+      return channel.source.isPlaying();
+    }
+    else
+    {
+      return channel.source.isPlaying() && std::chrono::steady_clock::now() < channel.playback_end_time;
+    }
+  }
+  return false;
+}
 
 void S_FreeCache(sfx_t *sfx)
 {
@@ -79,59 +102,67 @@ void S_FlushCaches(void)
 
 sfx_t *S_FindName(char *name, int *pfInCache)
 {
-  sfx_t *sfx = nullptr;
-
-  if (!name)
-    Sys_ErrorEx("S_FindName: NULL\n");
-
-  if (strlen(name) >= MAX_QPATH)
-    Sys_ErrorEx("Sound name too long: %s", name);
-
-  auto sfx_iterator = known_sfx.find(name);
-  if (sfx_iterator != known_sfx.end())
+  try
   {
-    if (pfInCache)
-    {
-      *pfInCache = sfx_iterator->second.cache.data != nullptr ? 1 : 0;
-    }
+    sfx_t *sfx = nullptr;
 
-    if (sfx_iterator->second.servercount > 0)
-      sfx_iterator->second.servercount = *gAudEngine.cl_servercount;
+    if (!name)
+      Sys_ErrorEx("S_FindName: NULL\n");
 
-    return &(sfx_iterator->second);
-  }
-  else
-  {
-    for (auto& sfxElement : known_sfx)
+    if (strlen(name) >= MAX_QPATH)
+      Sys_ErrorEx("Sound name too long: %s", name);
+
+    auto sfx_iterator = known_sfx.find(name);
+    if (sfx_iterator != known_sfx.end())
     {
-      if (sfxElement.second.servercount > 0 && sfxElement.second.servercount != *gAudEngine.cl_servercount)
+      if (pfInCache)
       {
-        S_FreeCache(&(sfxElement.second));
-        known_sfx.erase(sfxElement.first);
-        break;
+        *pfInCache = sfx_iterator->second.cache.data != nullptr ? 1 : 0;
+      }
+
+      if (sfx_iterator->second.servercount > 0)
+        sfx_iterator->second.servercount = *gAudEngine.cl_servercount;
+
+      return &(sfx_iterator->second);
+    }
+    else
+    {
+      for (auto& sfxElement : known_sfx)
+      {
+        if (sfxElement.second.servercount > 0 && sfxElement.second.servercount != *gAudEngine.cl_servercount)
+        {
+          S_FreeCache(&(sfxElement.second));
+          known_sfx.erase(sfxElement.first);
+          break;
+        }
       }
     }
-  }
 
-  if (!sfx)
+    if (!sfx)
+    {
+      auto result = known_sfx.emplace(name, sfx_t());
+      sfx = &(result.first->second);
+    }
+    else
+    {
+      //free OpenAL buffer and cache
+      S_FreeCache(sfx);
+    }
+
+    strncpy_s(sfx->name, name, sizeof(sfx->name) - 1);
+    sfx->name[sizeof(sfx->name) - 1] = 0;
+
+    if (pfInCache)
+      *pfInCache = 0;
+
+    sfx->servercount = *gAudEngine.cl_servercount;
+    return sfx;
+  }
+  catch (const std::exception& e)
   {
-    auto result = known_sfx.emplace(std::make_pair(name, sfx_t()));
-    sfx = &(result.first->second);
+    MessageBox(NULL, e.what(), "Error on S_FindName", MB_ICONERROR);
+    exit(0);
   }
-  else
-  {
-    //free OpenAL buffer and cache
-    S_FreeCache(sfx);
-  }
-
-  strncpy_s(sfx->name, name, sizeof(sfx->name) - 1);
-  sfx->name[sizeof(sfx->name) - 1] = 0;
-
-  if (pfInCache)
-    *pfInCache = 0;
-
-  sfx->servercount = *gAudEngine.cl_servercount;
-  return sfx;
 }
 
 void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
@@ -146,7 +177,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
 
   qboolean fWaveEnd = false;
 
-  if (!ch->source.isPlaying())
+  if (!ChannelCheckIsPlaying(*ch))
   {
     fWaveEnd = true;
   }
@@ -194,6 +225,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         {
           ch->buffer = sc->buffer;
           ch->source.setOffset(ch->start);
+          ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
           ch->source.play(ch->buffer);
         }
 
@@ -308,99 +340,107 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
 void S_Update(float *origin, float *forward, float *right, float *up)
 {
-  int i, total;
-  vec_t orientation[6];
-
-  // Update Alure's OpenAL context at the start of processing.
-  al_context.update();
-
-  // Print buffer and clear it.
-  if (dprint_buffer.length())
+  try
   {
-    gEngfuncs.Con_DPrintf(const_cast<char *>((dprint_buffer.c_str())));
-    dprint_buffer.clear();
-  }
+    int i, total;
+    vec_t orientation[6];
 
-  AL_CopyVector(forward, orientation);
-  AL_CopyVector(up, orientation + 3);
+    // Update Alure's OpenAL context at the start of processing.
+    al_context.update();
 
-  alure::Listener al_listener = al_context.getListener();
-  if (openal_mute)
-  {
-    al_listener.setGain(0.0f);
-  }
-  else
-  {
-    if (volume)
-      al_listener.setGain(max(min(volume->value, 1), 0));
+    // Print buffer and clear it.
+    if (dprint_buffer.length())
+    {
+      gEngfuncs.Con_DPrintf(const_cast<char *>((dprint_buffer.c_str())));
+      dprint_buffer.clear();
+    }
+
+    AL_CopyVector(forward, orientation);
+    AL_CopyVector(up, orientation + 3);
+
+    alure::Listener al_listener = al_context.getListener();
+    if (openal_mute)
+    {
+      al_listener.setGain(0.0f);
+    }
     else
-      al_listener.setGain(1.0f);
-  }
-
-  if (al_doppler->value >= 0.0f && al_doppler->value <= 10.0f)
-  {
-    al_context.setDopplerFactor(al_doppler->value);
-  }
-
-  std::pair<alure::Vector3, alure::Vector3> alure_orientation(
-    alure::Vector3(orientation[0], orientation[1], orientation[2]),
-    alure::Vector3(orientation[3], orientation[4], orientation[5])
-  );
-
-  // Force unit vector if all zeros (Rapture3D workaround).
-  if (orientation[0] == 0.0f && orientation[1] == 0.0f && orientation[2] == 0.0f)
-  {
-    alure_orientation.first[0] = 1;
-  }
-  if (orientation[3] == 0.0f && orientation[4] == 0.0f && orientation[5] == 0.0f)
-  {
-    alure_orientation.second[0] = 1;
-  }
-
-  cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
-  if (pent != nullptr)
-  {
-    float ratio = 0;
-    if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
     {
-      ratio = static_cast<float>(1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
+      if (volume)
+        al_listener.setGain(max(min(volume->value, 1), 0));
+      else
+        al_listener.setGain(1.0f);
     }
 
-    vec3_t view_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
-      (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
-      (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
-
-    al_listener.setVelocity({ AL_UnpackVector(view_velocity) });
-  }
-  al_listener.setPosition({ AL_UnpackVector(origin) });
-  al_listener.setOrientation(alure_orientation);
-
-  int roomtype = 0;
-  bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
-  if (sxroomwater_type && sxroom_type)
-  {
-    roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
-  }
-  al_efx->InterplEffect(roomtype);
-
-  for (i = NUM_AMBIENTS; i < total_channels; i++)
-  {
-    SND_Spatialize(&channels[i], false);
-  }
-
-  if (snd_show && snd_show->value)
-  {
-    total = 0;
-    for (i = 0; i < total_channels; i++)
+    if (al_doppler->value >= 0.0f && al_doppler->value <= 10.0f)
     {
-      if (channels[i].sfx && channels[i].volume > 0)
+      al_context.setDopplerFactor(al_doppler->value);
+    }
+
+    std::pair<alure::Vector3, alure::Vector3> alure_orientation(
+      alure::Vector3(orientation[0], orientation[1], orientation[2]),
+      alure::Vector3(orientation[3], orientation[4], orientation[5])
+    );
+
+    // Force unit vector if all zeros (Rapture3D workaround).
+    if (orientation[0] == 0.0f && orientation[1] == 0.0f && orientation[2] == 0.0f)
+    {
+      alure_orientation.first[0] = 1;
+    }
+    if (orientation[3] == 0.0f && orientation[4] == 0.0f && orientation[5] == 0.0f)
+    {
+      alure_orientation.second[0] = 1;
+    }
+
+    cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
+    if (pent != nullptr)
+    {
+      float ratio = 0;
+      if ((*gAudEngine.cl_time) != (*gAudEngine.cl_oldtime))
       {
-        gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
-        total++;
+        ratio = static_cast<float>(1 / ((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
       }
+
+      vec3_t view_velocity = { (pent->curstate.origin[0] - pent->prevstate.origin[0]) * ratio,
+        (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
+        (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
+
+      al_listener.setVelocity({ AL_UnpackVector(view_velocity) });
+    }
+    al_listener.setPosition({ AL_UnpackVector(origin) });
+    al_listener.setOrientation(alure_orientation);
+
+    int roomtype = 0;
+    bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
+    if (sxroomwater_type && sxroom_type)
+    {
+      roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
+    }
+    al_efx->InterplEffect(roomtype);
+
+    for (i = NUM_AMBIENTS; i < total_channels; i++)
+    {
+      SND_Spatialize(&channels[i], false);
     }
 
-    gEngfuncs.Con_Printf("----(%i)----\n", total);
+    if (snd_show && snd_show->value)
+    {
+      total = 0;
+      for (i = 0; i < total_channels; i++)
+      {
+        if (channels[i].sfx && channels[i].volume > 0)
+        {
+          gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
+          total++;
+        }
+      }
+
+      gEngfuncs.Con_Printf("----(%i)----\n", total);
+    }
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_Update", MB_ICONERROR);
+    exit(0);
   }
 }
 
@@ -523,7 +563,7 @@ bool SND_IsPlaying(sfx_t *sfx)
 
   for (ch_idx = 0; ch_idx < MAX_CHANNELS; ch_idx++)
   {
-    if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && channels[ch_idx].source.isPlaying())
+    if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && ChannelCheckIsPlaying(channels[ch_idx]))
     {
       return true;
     }
@@ -552,7 +592,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
   for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
   {
     ch = &channels[ch_idx];
-    if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ch->source.isPlaying())
+    if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ChannelCheckIsPlaying(*ch))
     {
       if (entchannel == CHAN_VOICE)
         return nullptr;
@@ -589,7 +629,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    if (!ch->source.isPlaying())
+    if (!ChannelCheckIsPlaying(*ch))
     {
       first_to_die = ch_idx;
       break;
@@ -637,7 +677,7 @@ aud_channel_t *SND_PickStaticChannel(int entnum, int entchannel, sfx_t *sfx)
     // bugged Creative drivers.
     if (channels[i].source)
     {
-      if (!channels[i].source.isPlaying())
+      if (!ChannelCheckIsPlaying(channels[i]))
       {
         break;
       }
@@ -809,6 +849,10 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   else
   {
     bool force_stream = false;
+    if (al_xfi_workaround->value == 2.0f)
+    {
+      force_stream = true;
+    }
     if (sc->looping)
     {
       ch->source.setLooping(true);
@@ -843,6 +887,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       try
       {
         ch->source.setOffset(ch->start);
+        ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
         ch->source.play(ch->buffer);
       }
       catch (const std::runtime_error& error)
@@ -855,37 +900,69 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
 void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
 {
-  S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, false);
+  try
+  {
+    S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, false);
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_StartDynamicSound", MB_ICONERROR);
+    exit(0);
+  }
 }
 
 void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch)
 {
-  S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, true);
+  try
+  {
+    S_StartSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch, true);
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_StartStaticSound", MB_ICONERROR);
+    exit(0);
+  }
 }
 
 void S_StopSound(int entnum, int entchannel)
 {
-  for (int i = NUM_AMBIENTS; i < total_channels; ++i)
+  try
   {
-    if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+    for (int i = NUM_AMBIENTS; i < total_channels; ++i)
     {
-      S_FreeChannel(&channels[i]);
+      if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+      {
+        S_FreeChannel(&channels[i]);
+      }
     }
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_StopSound", MB_ICONERROR);
+    exit(0);
   }
 }
 
 void S_StopAllSounds(qboolean clear)
 {
-  for (int i = 0; i < MAX_CHANNELS; i++)
+  try
   {
-    if (channels[i].sfx)
+    for (int i = 0; i < MAX_CHANNELS; i++)
     {
-      S_FreeChannel(&channels[i]);
+      if (channels[i].sfx)
+      {
+        S_FreeChannel(&channels[i]);
+      }
     }
-  }
 
-  channels.fill(aud_channel_t());
-  total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
+    channels.fill(aud_channel_t());
+    total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
+  }
+  catch (const std::exception& e)
+  {
+    MessageBox(NULL, e.what(), "Error on S_StopAllSounds", MB_ICONERROR);
+    exit(0);
+  }
 }
 
 qboolean OpenAL_Init(void)
@@ -927,8 +1004,31 @@ qboolean OpenAL_Init(void)
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
   }
-  catch (...)
+  catch (const std::exception& e)
   {
+    const size_t size = 4096;
+    char ar[size] = "Unable to load. Reason:\n";
+    int zero_index = 0;
+    for (int i = 0; i < size; ++i)
+    {
+      if (ar[i] == 0)
+      {
+        zero_index = i;
+        break;
+      }
+    }
+
+    for (int i = 0; i < size - zero_index; ++i)
+    {
+      if (e.what()[i] == 0 || i == size - zero_index - 1)
+      {
+        ar[i + zero_index] = '\0';
+        break;
+      }
+
+      ar[i + zero_index] = e.what()[i];
+    }
+    MessageBox(NULL, ar, "OpenAL plugin error", MB_ICONERROR);
     return false;
   }
 }
@@ -955,6 +1055,12 @@ void AL_Version_f(void)
     gEngfuncs.Con_Printf("%s\n OpenAL Device: %s\n OpenAL Version: %d.%d\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
   else
     gEngfuncs.Con_Printf("%s\n Failed to initalize OpenAL device.\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
+}
+
+void AL_ResetEFX(void)
+{
+  al_efx.reset();
+  al_efx = alure::MakeUnique<EnvEffects>(al_context);
 }
 
 void AL_Devices_f(bool basic = true)
@@ -989,8 +1095,10 @@ void AL_DevicesFull_f(void)
 
 void S_Init(void)
 {
-  al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", 0);
+  al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
+  al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
   gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
+  gEngfuncs.pfnAddCommand("al_reset_efx", AL_ResetEFX);
   gEngfuncs.pfnAddCommand("al_show_basic_devices", AL_DevicesBasic_f);
   gEngfuncs.pfnAddCommand("al_show_full_devices", AL_DevicesFull_f);
 

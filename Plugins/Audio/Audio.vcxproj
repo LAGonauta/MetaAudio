@@ -47,8 +47,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
     <CodeAnalysisRuleAssemblies />
-    <PostBuildEventUseInBuild>
-    </PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(Configuration)\</OutDir>
@@ -57,8 +56,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
     <CodeAnalysisRuleAssemblies />
-    <PostBuildEventUseInBuild>
-    </PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -66,7 +64,8 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..;..\..\Interface;..\..\HLSDK\cl_dll;..\..\HLSDK\common;..\..\HLSDK\engine;..\..\HLSDK\pm_shared;..\..\HLSDK\public;..\..\common;.\;..\..\src\Interface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;AUDIO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -87,8 +86,13 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\cstrike\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\czero\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\bshift\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\gearbox\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\asheep\metahook\plugins\audio.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -107,6 +111,8 @@
       <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <OmitFramePointers>true</OmitFramePointers>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile />
@@ -121,8 +127,13 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\valve\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\ns\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\cstrike\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\czero\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\bshift\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\gearbox\metahook\plugins\audio.dll"
+copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\common\Half-Life\asheep\metahook\plugins\audio.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

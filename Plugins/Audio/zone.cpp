@@ -15,7 +15,7 @@ void *Cache_Alloc(cache_user_t *c, alure::String name)
   if (c->data)
     Sys_ErrorEx("Cache_Alloc: already allocated");
 
-  auto result = cache.emplace(std::make_pair(name, aud_sfxcache_t()));
+  auto result = cache.emplace(name, aud_sfxcache_t());
   c->data = reinterpret_cast<void *>(&result.first->second);
 
   return c->data;

@@ -32,85 +32,48 @@ void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
   gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
 }
 
-float EnvEffects::FadeToNewGain(aud_channel_t *ch, float gain_new)
+float EnvEffects::FadeToNewValue(const bool& fade_enabled, const bool& force_new, const float& value_new, float& value_old, float& value_target, float& value_inc)
 {
-  if (!al_occlusion_fade->value)
+  if (!fade_enabled)
   {
-    return gain_new;
+    return value_new;
   }
 
   float speed, frametime;
   frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
-    return ch->ob_gain;
+    return value_old;
   }
 
-  // if first time updating, store new gain into gain & target, return
-  // if gain_new is close to existing gain, store new gain into gain & target, return
-  if (ch->firstpass || (fabs(gain_new - ch->ob_gain) < 0.01f))
+  if (force_new || std::abs(value_new - value_old) < 0.01f)
   {
-    ch->ob_gain = gain_new;
-    ch->ob_gain_target = gain_new;
-    ch->ob_gain_inc = 0.0f;
-    return gain_new;
+    value_old = value_new;
+    value_target = value_new;
+    value_inc = 0.0f;
+    return value_new;
   }
 
   // set up new increment to new target
-  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (gain_new - ch->ob_gain);
+  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (value_new - value_old);
 
-  ch->ob_gain_inc = fabs(speed);
+  value_inc = std::abs(speed);
 
   // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
-  ch->ob_gain_target = gain_new;
+  value_target = value_new;
 
   // if not hit target, keep approaching
-  if (fabs(ch->ob_gain - ch->ob_gain_target) > 0.01f)
+  if (std::abs(value_old - value_target) > 0.01f)
   {
-    ch->ob_gain = ApproachVal(ch->ob_gain_target, ch->ob_gain, ch->ob_gain_inc);
+    value_old = ApproachVal(value_target, value_old, value_inc);
   }
   else
   {
     // close enough, set gain = target
-    ch->ob_gain = ch->ob_gain_target;
+    value_old = value_target;
   }
 
-  return ch->ob_gain;
-}
-
-EFXEAXREVERBPROPERTIES EnvEffects::FadeToNewEffect(EFXEAXREVERBPROPERTIES& effect_new)
-{
-  EFXEAXREVERBPROPERTIES change_speed;
-  float frametime;
-  frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
-  if (frametime == 0.0f)
-  {
-    return interpl_effect.ob_effect;
-  }
-
-  // if first time updating, store new gain into gain & target, return
-  // if gain_new is close to existing gain, store new gain into gain & target, return
-  if (SX_CompareEffectDiffToValue(effect_new, interpl_effect.ob_effect, 0.01f))
-  {
-    interpl_effect.ob_effect = effect_new;
-    interpl_effect.ob_effect_target = effect_new;
-    SX_SetEffect(interpl_effect.ob_effect_inc, 0.0f);
-    return effect_new;
-  }
-
-  // set up new increment to new target
-  change_speed = SX_SubtractEffect(effect_new, interpl_effect.ob_effect);
-  SX_MultiplyEffect(change_speed, frametime / AL_SND_GAIN_FADE_TIME);
-  SX_abs(change_speed);
-
-  interpl_effect.ob_effect_inc = change_speed;
-
-  // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
-  interpl_effect.ob_effect_target = effect_new;
-
-  SX_ApproachEffect(interpl_effect.ob_effect, interpl_effect.ob_effect_target, interpl_effect.ob_effect_inc, 0.01f);
-
-  return interpl_effect.ob_effect;
+  return value_old;
 }
 
 // Attenuate -2.7dB per meter? Probably should be more.
@@ -152,10 +115,45 @@ void EnvEffects::InterplEffect(int roomtype)
     desired = presets_room[roomtype];
   }
 
-  // Interpolate effect
-  desired = FadeToNewEffect(desired);
-  interpl_effect.generated_effect.setReverbProperties(desired);
-  alAuxEffectSlots.applyEffect(interpl_effect.generated_effect);
+  static int effect_slot = 0;
+  static int room_type = 0;
+
+  if (room_type == roomtype)
+  {
+    alAuxEffectSlots[effect_slot].gain =
+      FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
+        alAuxEffectSlots[effect_slot].gain_target,
+        alAuxEffectSlots[effect_slot].gain_inc);
+
+    alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain =
+      FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain,
+        alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_target,
+        alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_inc);
+  }
+  else
+  {
+    room_type = roomtype;
+
+    alAuxEffectSlots[effect_slot].gain =
+      FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[effect_slot].gain,
+        alAuxEffectSlots[effect_slot].gain_target,
+        alAuxEffectSlots[effect_slot].gain_inc);
+
+    effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
+
+    alAuxEffectSlots[effect_slot].gain =
+      FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
+        alAuxEffectSlots[effect_slot].gain_target,
+        alAuxEffectSlots[effect_slot].gain_inc);
+
+    alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
+  }
+
+  for (auto& effectSlot : alAuxEffectSlots)
+  {
+    effectSlot.slot.setGain(effectSlot.gain);
+    effectSlot.slot.applyEffect(effectSlot.effect);
+  }
 }
 
 void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
@@ -179,12 +177,12 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 
       if (distance < zero_gain_distance)
       {
-        direct_gain = FadeToNewGain(ch, GetGainObscured(ch, pent, sent));
+        direct_gain = FadeToNewValue(al_occlusion_fade->value, ch->firstpass, GetGainObscured(ch, pent, sent), ch->ob_gain, ch->ob_gain_target, ch->ob_gain_inc);
       }
     }
     else
     {
-      direct_gain = FadeToNewGain(ch, direct_gain);
+      direct_gain = FadeToNewValue(al_occlusion_fade->value, ch->firstpass, direct_gain, ch->ob_gain, ch->ob_gain_target, ch->ob_gain_inc);
     }
   }
 
@@ -198,13 +196,24 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
     ch->source.setDirectFilter(alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
     ch->source.setDopplerFactor(1.0f);
   }
-  ch->source.setAuxiliarySendFilter(alAuxEffectSlots, 0, alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+
+  for (size_t i = 0; i < alAuxEffectSlots.size(); ++i)
+  {
+    ch->source.setAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+  }
 }
 
 EnvEffects::EnvEffects(alure::Context al_context)
 {
-  al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", 0);
-  al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", 0);
+  if (al_occlusion == nullptr)
+  {
+    al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", FCVAR_EXTDLL);
+  }
+
+  if (al_occlusion_fade == nullptr)
+  {
+    al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
+  }
 
   // Disable reverb when room_type = 0:
   presets_room[0].flGain = 0;
@@ -325,15 +334,24 @@ EnvEffects::EnvEffects(alure::Context al_context)
   presets_room[28].flDecayTime = 17.234f;
   presets_room[28].flDecayHFRatio = 2.0f / 3.0f;
 
-  // Init interpolated effect
-  interpl_effect.generated_effect = al_context.createEffect();
+  for (auto& effectSlot : alAuxEffectSlots) {
+    effectSlot.effect = al_context.createEffect();
+    effectSlot.slot = al_context.createAuxiliaryEffectSlot();
+    effectSlot.gain_inc = 0.0f;
+  }
 
-  alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
-  alAuxEffectSlots.setGain(AL_REVERBMIX);
+  alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
+  alAuxEffectSlots[0].gain = AL_REVERBMIX;
+  alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
+  alAuxEffectSlots[1].slot.setGain(0.0f);
+  alAuxEffectSlots[1].gain = 0.0f;
+  alAuxEffectSlots[1].gain_target = 0.0f;
 }
 
 EnvEffects::~EnvEffects()
 {
-  alAuxEffectSlots.destroy();
-  interpl_effect.generated_effect.destroy();
+  for (auto& effectSlot : alAuxEffectSlots) {
+    effectSlot.slot.destroy();
+    effectSlot.effect.destroy();
+  }
 }
