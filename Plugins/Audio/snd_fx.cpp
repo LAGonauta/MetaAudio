@@ -203,8 +203,15 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 
 EnvEffects::EnvEffects(alure::Context al_context)
 {
-  al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", FCVAR_EXTDLL);
-  al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
+  if (al_occlusion == nullptr)
+  {
+    al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", FCVAR_EXTDLL);
+  }
+
+  if (al_occlusion_fade == nullptr)
+  {
+    al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
+  }
 
   // Disable reverb when room_type = 0:
   presets_room[0].flGain = 0;
@@ -327,6 +334,9 @@ EnvEffects::EnvEffects(alure::Context al_context)
 
   // Init interpolated effect
   interpl_effect.generated_effect = al_context.createEffect();
+  interpl_effect.ob_effect = presets_room[0];
+  interpl_effect.ob_effect_inc = { 0 };
+  interpl_effect.ob_effect_target = { 0 };
 
   alAuxEffectSlots = al_context.createAuxiliaryEffectSlot();
   alAuxEffectSlots.setGain(AL_REVERBMIX);

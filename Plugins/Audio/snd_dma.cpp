@@ -54,26 +54,20 @@ static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
 {
   if (channel.source)
   {
-    auto offset = channel.source.getSampleOffset();
-    auto is_playing = channel.source.isPlaying();
-
-    dprint_buffer.append("Sample offset: ").append(std::to_string(offset)).append("/");
-    if (channel.buffer != nullptr)
+    if (al_xfi_workaround->value == 0.0f ||
+      al_xfi_workaround->value == 2.0f ||
+      channel.source.getLooping() ||
+      channel.entchannel == CHAN_STREAM ||
+      (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
+      channel.decoder != nullptr ||
+      channel.buffer == nullptr)
     {
-      dprint_buffer.append(std::to_string(channel.buffer.getLength()));
-    }
-
-    if (is_playing)
-    {
-      dprint_buffer.append("\n");
-      return true;
+      return channel.source.isPlaying();
     }
     else
     {
-      dprint_buffer.append(". Not playing!\n");
-      return false;
+      return channel.source.isPlaying() && std::chrono::steady_clock::now() < channel.playback_end_time;
     }
-    return channel.source.isPlaying();
   }
   return false;
 }
@@ -231,6 +225,7 @@ void S_CheckWavEnd(aud_channel_t *ch, aud_sfxcache_t *sc)
         {
           ch->buffer = sc->buffer;
           ch->source.setOffset(ch->start);
+          ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
           ch->source.play(ch->buffer);
         }
 
@@ -854,7 +849,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   else
   {
     bool force_stream = false;
-    if (al_xfi_workaround->value != 0.0f)
+    if (al_xfi_workaround->value == 2.0f)
     {
       force_stream = true;
     }
@@ -892,6 +887,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       try
       {
         ch->source.setOffset(ch->start);
+        ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
         ch->source.play(ch->buffer);
       }
       catch (const std::runtime_error& error)
@@ -989,7 +985,7 @@ qboolean OpenAL_Init(void)
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
 #endif
-  }
+    }
 
 #ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
@@ -1007,9 +1003,32 @@ qboolean OpenAL_Init(void)
     al_context.setDistanceModel(alure::DistanceModel::Linear);
     al_efx = alure::MakeUnique<EnvEffects>(al_context);
     return true;
-}
-  catch (...)
+  }
+  catch (const std::exception& e)
   {
+    const size_t size = 4096;
+    char ar[size] = "Unable to load. Reason:\n";
+    int zero_index = 0;
+    for (int i = 0; i < size; ++i)
+    {
+      if (ar[i] == 0)
+      {
+        zero_index = i;
+        break;
+      }
+    }
+
+    for (int i = 0; i < size - zero_index; ++i)
+    {
+      if (e.what()[i] == 0 || i == size - zero_index - 1)
+      {
+        ar[i + zero_index] = '\0';
+        break;
+      }
+
+      ar[i + zero_index] = e.what()[i];
+    }
+    MessageBox(NULL, ar, "OpenAL plugin error", MB_ICONERROR);
     return false;
   }
 }
@@ -1036,6 +1055,12 @@ void AL_Version_f(void)
     gEngfuncs.Con_Printf("%s\n OpenAL Device: %s\n OpenAL Version: %d.%d\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
   else
     gEngfuncs.Con_Printf("%s\n Failed to initalize OpenAL device.\n", META_AUDIO_VERSION, al_device_name, al_device_majorversion, al_device_minorversion);
+}
+
+void AL_ResetEFX(void)
+{
+  al_efx.reset();
+  al_efx = alure::MakeUnique<EnvEffects>(al_context);
 }
 
 void AL_Devices_f(bool basic = true)
@@ -1073,6 +1098,7 @@ void S_Init(void)
   al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
   al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
   gEngfuncs.pfnAddCommand("al_version", AL_Version_f);
+  gEngfuncs.pfnAddCommand("al_reset_efx", AL_ResetEFX);
   gEngfuncs.pfnAddCommand("al_show_basic_devices", AL_DevicesBasic_f);
   gEngfuncs.pfnAddCommand("al_show_full_devices", AL_DevicesFull_f);
 

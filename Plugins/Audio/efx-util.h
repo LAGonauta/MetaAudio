@@ -116,7 +116,7 @@ inline bool SX_CompareEffectDiffToValue(const EFXEAXREVERBPROPERTIES& effect1, c
     std::abs(effect1.flLateReverbDelay - effect2.flLateReverbDelay) < value &&
     std::abs(effect1.flEchoTime - effect2.flEchoTime) < value &&
     std::abs(effect1.flEchoDepth - effect2.flEchoDepth) < value &&
-    std::abs(effect1.flModulationTime - effect2.flModulationDepth) < value &&
+    std::abs(effect1.flModulationTime - effect2.flModulationTime) < value &&
     std::abs(effect1.flModulationDepth - effect2.flModulationDepth) < value &&
     std::abs(effect1.flAirAbsorptionGainHF - effect2.flAirAbsorptionGainHF) < value &&
     std::abs(effect1.flHFReference - effect2.flHFReference) < value &&

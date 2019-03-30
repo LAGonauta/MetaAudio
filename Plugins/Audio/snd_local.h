@@ -28,6 +28,9 @@ typedef struct
   alure::Buffer buffer;
   alure::Source source;
 
+  //X-Fi workaround
+  std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
+
   // For OpenAL EFX
   bool firstpass;            // true if this is first time sound is spatialized
   float ob_gain;             // gain drop if sound source obscured from listener
