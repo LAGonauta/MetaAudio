@@ -53,3 +53,6 @@ https://github.com/LAGonauta/alure/tree/hasLoopPoints
 nagist, for MetaHook (https://github.com/nagist/metahook)
 
 hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
+
+# Support
+Support group available on FreeNode through IRC, come join: #metaaudio
