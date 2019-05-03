@@ -13,9 +13,17 @@ private:
     float gain_target;
     float gain_inc;
     float gain;
+    effectSlot(alure::AuxiliaryEffectSlot _slot, alure::Effect _effect)
+    {
+      slot = _slot;
+      effect = _effect;
+      gain_target = 0.0f;
+      gain_inc = 0.0f;
+      gain = 0.0f;
+    };
   };
 
-  alure::Array<effectSlot, 2> alAuxEffectSlots;
+  alure::Vector<effectSlot> alAuxEffectSlots;
 
   // Default effects
   alure::Array<EFXEAXREVERBPROPERTIES, CSXROOM> presets_room = { {
@@ -66,7 +74,7 @@ private:
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
 public:
-  EnvEffects(alure::Context al_context);
+  EnvEffects(alure::Context al_context, ALCuint max_sends);
   ~EnvEffects();
 
   void InterplEffect(int roomtype);

@@ -118,35 +118,42 @@ void EnvEffects::InterplEffect(int roomtype)
   static int effect_slot = 0;
   static int room_type = 0;
 
-  if (room_type == roomtype)
+  if (alAuxEffectSlots.size() > 1)
   {
-    alAuxEffectSlots[effect_slot].gain =
-      FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
-        alAuxEffectSlots[effect_slot].gain_target,
-        alAuxEffectSlots[effect_slot].gain_inc);
+    if (room_type == roomtype)
+    {
+      alAuxEffectSlots[effect_slot].gain =
+        FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
+          alAuxEffectSlots[effect_slot].gain_target,
+          alAuxEffectSlots[effect_slot].gain_inc);
 
-    alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain =
-      FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain,
-        alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_target,
-        alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_inc);
+      alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain =
+        FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain,
+          alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_target,
+          alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_inc);
+    }
+    else
+    {
+      room_type = roomtype;
+
+      alAuxEffectSlots[effect_slot].gain =
+        FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[effect_slot].gain,
+          alAuxEffectSlots[effect_slot].gain_target,
+          alAuxEffectSlots[effect_slot].gain_inc);
+
+      effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
+
+      alAuxEffectSlots[effect_slot].gain =
+        FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
+          alAuxEffectSlots[effect_slot].gain_target,
+          alAuxEffectSlots[effect_slot].gain_inc);
+
+      alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
+    }
   }
-  else
+  else if (alAuxEffectSlots.size() == 1)
   {
-    room_type = roomtype;
-
-    alAuxEffectSlots[effect_slot].gain =
-      FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[effect_slot].gain,
-        alAuxEffectSlots[effect_slot].gain_target,
-        alAuxEffectSlots[effect_slot].gain_inc);
-
-    effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
-
-    alAuxEffectSlots[effect_slot].gain =
-      FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
-        alAuxEffectSlots[effect_slot].gain_target,
-        alAuxEffectSlots[effect_slot].gain_inc);
-
-    alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
+    alAuxEffectSlots[0].effect.setReverbProperties(desired);
   }
 
   for (auto& effectSlot : alAuxEffectSlots)
@@ -203,7 +210,7 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
   }
 }
 
-EnvEffects::EnvEffects(alure::Context al_context)
+EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
 {
   if (al_occlusion == nullptr)
   {
@@ -213,6 +220,18 @@ EnvEffects::EnvEffects(alure::Context al_context)
   if (al_occlusion_fade == nullptr)
   {
     al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
+  }
+
+  const char* _al_maxsends;
+  CommandLine()->CheckParm("-al_maxsends", &_al_maxsends);
+
+  if (_al_maxsends != nullptr)
+  {
+    auto sends = std::atoi(_al_maxsends);
+    if (sends >= 0 && sends < max_sends)
+    {
+      max_sends = sends;
+    }
   }
 
   // Disable reverb when room_type = 0:
@@ -334,18 +353,27 @@ EnvEffects::EnvEffects(alure::Context al_context)
   presets_room[28].flDecayTime = 17.234f;
   presets_room[28].flDecayHFRatio = 2.0f / 3.0f;
 
-  for (auto& effectSlot : alAuxEffectSlots) {
-    effectSlot.effect = al_context.createEffect();
-    effectSlot.slot = al_context.createAuxiliaryEffectSlot();
-    effectSlot.gain_inc = 0.0f;
+  if (max_sends > 1)
+  {
+    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
+    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
+  }
+  else if (max_sends == 1)
+  {
+    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
   }
 
-  alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
-  alAuxEffectSlots[0].gain = AL_REVERBMIX;
-  alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
-  alAuxEffectSlots[1].slot.setGain(0.0f);
-  alAuxEffectSlots[1].gain = 0.0f;
-  alAuxEffectSlots[1].gain_target = 0.0f;
+  if (alAuxEffectSlots.size() > 0)
+  {
+    alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
+    alAuxEffectSlots[0].gain = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
+
+    if (alAuxEffectSlots.size() > 1)
+    {
+      alAuxEffectSlots[1].slot.setGain(0.0f);
+    }
+  }
 }
 
 EnvEffects::~EnvEffects()

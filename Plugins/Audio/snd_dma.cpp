@@ -424,17 +424,19 @@ void S_Update(float *origin, float *forward, float *right, float *up)
 
     if (snd_show && snd_show->value)
     {
+      std::string output;
       total = 0;
       for (i = 0; i < total_channels; i++)
       {
         if (channels[i].sfx && channels[i].volume > 0)
         {
-          gEngfuncs.Con_Printf("%3i %s\n", static_cast<int>(channels[i].volume * 255.0f), channels[i].sfx->name);
+          output.append(std::to_string(static_cast<int>(channels[i].volume * 255.0f)) + " " + channels[i].sfx->name + "\n");
           total++;
         }
       }
 
-      gEngfuncs.Con_Printf("----(%i)----\n", total);
+      output.append("----(" + std::to_string(total) + ")----\n");
+      gEngfuncs.Con_Printf(const_cast<char *>(output.c_str()));
     }
   }
   catch (const std::exception& e)
@@ -1001,7 +1003,7 @@ qboolean OpenAL_Init(void)
 
     alure::Context::MakeCurrent(al_context);
     al_context.setDistanceModel(alure::DistanceModel::Linear);
-    al_efx = alure::MakeUnique<EnvEffects>(al_context);
+    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
     return true;
   }
   catch (const std::exception& e)
@@ -1060,7 +1062,7 @@ void AL_Version_f(void)
 void AL_ResetEFX(void)
 {
   al_efx.reset();
-  al_efx = alure::MakeUnique<EnvEffects>(al_context);
+  al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
 }
 
 void AL_Devices_f(bool basic = true)
