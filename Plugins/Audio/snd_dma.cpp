@@ -74,7 +74,7 @@ static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
 
 void S_FreeCache(sfx_t *sfx)
 {
-  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(sfx->cache.data);
+  aud_sfxcache_t *sc = static_cast<aud_sfxcache_t *>(sfx->cache.data);
   if (!sc)
     return;
 
@@ -253,7 +253,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
   al_efx->ApplyEffect(ch, underwater);
 
   //for later usage
-  aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(ch->sfx->cache.data);
+  aud_sfxcache_t *sc = static_cast<aud_sfxcache_t *>(ch->sfx->cache.data);
 
   //move mouth
   if (ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
@@ -458,14 +458,6 @@ void S_FreeChannel(aud_channel_t *ch)
 
   if (ch->decoder)
   {
-    if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
-    {
-      auto ptr = std::dynamic_pointer_cast<VoiceDecoder>(ch->decoder);
-      if (ptr)
-      {
-        ptr->destroy();
-      }
-    }
     ch->decoder.reset();
   }
 
@@ -624,7 +616,7 @@ aud_channel_t *SND_PickDynamicChannel(int entnum, int entchannel, sfx_t *sfx)
       break;
     }
 
-    aud_sfxcache_t *sc = reinterpret_cast<aud_sfxcache_t *>(sfx->cache.data);
+    aud_sfxcache_t *sc = static_cast<aud_sfxcache_t *>(sfx->cache.data);
     if (sc == nullptr)
     {
       first_to_die = ch_idx;
@@ -835,7 +827,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
       ch->decoder = sc->decoder;
       if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
       {
-        ch->source.play(ch->decoder, 256, 3);
+        ch->source.play(ch->decoder, 1024, 3);
         delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
       }
       else
