@@ -76,9 +76,6 @@
     <ClInclude Include="..\..\Interface\IAudio.h">
       <Filter>Interface</Filter>
     </ClInclude>
-    <ClInclude Include="efx-util.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="snd_fx.hpp">
       <Filter>Header</Filter>
     </ClInclude>

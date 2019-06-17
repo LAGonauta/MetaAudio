@@ -152,7 +152,6 @@ copy "$(OutDir)$(ProjectName).dll" "D:\Program Files (x86)\Steam\steamapps\commo
   <ItemGroup>
     <ClInclude Include="..\..\Interface\IAudio.h" />
     <ClInclude Include="aud_int_internal.h" />
-    <ClInclude Include="efx-util.h" />
     <ClInclude Include="enginedef.h" />
     <ClInclude Include="exportfuncs.h" />
     <ClInclude Include="FileSystem.h" />

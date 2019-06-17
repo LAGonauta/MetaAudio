@@ -10,16 +10,15 @@ private:
   {
     alure::AuxiliaryEffectSlot slot;
     alure::Effect effect;
-    float gain_target;
-    float gain_inc;
-    float gain;
+    float gain_current{ 0 };
+    float gain_elapsed_time{ 0 };
+    float gain_initial_value{ 0 };
+    float gain_old_target{ 0 };
+    float gain_target{ 0 };
     effectSlot(alure::AuxiliaryEffectSlot _slot, alure::Effect _effect)
     {
       slot = _slot;
       effect = _effect;
-      gain_target = 0.0f;
-      gain_inc = 0.0f;
-      gain = 0.0f;
     };
   };
 
@@ -70,7 +69,14 @@ private:
 
   // For occlusion
   void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
-  float FadeToNewValue(const bool& fade_enabled, const bool& force_new, const float& value_new, float& value_old, float& value_target, float& value_inc);
+  float EnvEffects::FadeToNewValue(const bool fade_enabled,
+    const bool force_final,
+    float& elapsed_time,
+    float& initial_value,
+    const float current_value,
+    float& old_final_value,
+    const float final_value);
+  float Lerp(float initial_value, float final_value, float fraction);
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
 public:
