@@ -1,6 +1,5 @@
 #include <metahook.h>
 
-#include "efx-util.h"
 #include "event_api.h"
 #include "pm_defs.h"
 #include "snd_local.h"
@@ -32,52 +31,48 @@ void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
   gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
 }
 
-float EnvEffects::FadeToNewValue(const bool& fade_enabled, const bool& force_new, const float& value_new, float& value_old, float& value_target, float& value_inc)
+float EnvEffects::Lerp(float inital_value, float final_value, float fraction)
 {
-  if (!fade_enabled)
+  return (inital_value * (1.0f - fraction)) + (final_value * fraction);
+}
+
+float EnvEffects::FadeToNewValue(const bool fade_enabled,
+  const bool force_final,
+  float& elapsed_time,
+  float& initial_value,
+  const float current_value,
+  float& old_final_value,
+  const float final_value)
+{
+  if (fade_enabled == false || force_final)
   {
-    return value_new;
+    return final_value;
   }
 
-  float speed, frametime;
-  frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
+  if (old_final_value != final_value)
+  {
+    elapsed_time = 0;
+    initial_value = current_value;
+    old_final_value = final_value;
+  }
+
+  float frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
   if (frametime == 0.0f)
   {
-    return value_old;
+    return current_value;
   }
+  elapsed_time += frametime;
 
-  if (force_new || std::abs(value_new - value_old) < 0.01f)
+  if (elapsed_time >= AL_SND_GAIN_FADE_TIME)
   {
-    value_old = value_new;
-    value_target = value_new;
-    value_inc = 0.0f;
-    return value_new;
+    elapsed_time = AL_SND_GAIN_FADE_TIME;
+    return final_value;
   }
 
-  // set up new increment to new target
-  speed = (frametime / AL_SND_GAIN_FADE_TIME) * (value_new - value_old);
-
-  value_inc = std::abs(speed);
-
-  // ch->ob_gain_inc = fabs( gain_new - ch->ob_gain ) / 10.0f;
-  value_target = value_new;
-
-  // if not hit target, keep approaching
-  if (std::abs(value_old - value_target) > 0.01f)
-  {
-    value_old = ApproachVal(value_target, value_old, value_inc);
-  }
-  else
-  {
-    // close enough, set gain = target
-    value_old = value_target;
-  }
-
-  return value_old;
+  return Lerp(initial_value, final_value, elapsed_time / AL_SND_GAIN_FADE_TIME);
 }
 
 // Attenuate -2.7dB per meter? Probably should be more.
-
 // Attenuation per wall inch in dB
 constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 0.0254f;
 float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
@@ -122,31 +117,48 @@ void EnvEffects::InterplEffect(int roomtype)
   {
     if (room_type == roomtype)
     {
-      alAuxEffectSlots[effect_slot].gain =
-        FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
-          alAuxEffectSlots[effect_slot].gain_target,
-          alAuxEffectSlots[effect_slot].gain_inc);
+      alAuxEffectSlots[effect_slot].gain_target = AL_REVERBMIX;
+      alAuxEffectSlots[effect_slot].gain_current =
+        FadeToNewValue(true, false,
+          alAuxEffectSlots[effect_slot].gain_elapsed_time,
+          alAuxEffectSlots[effect_slot].gain_initial_value,
+          alAuxEffectSlots[effect_slot].gain_current,
+          alAuxEffectSlots[effect_slot].gain_old_target,
+          alAuxEffectSlots[effect_slot].gain_target);
 
-      alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain =
-        FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain,
-          alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_target,
-          alAuxEffectSlots[(effect_slot + 1) % alAuxEffectSlots.size()].gain_inc);
+      auto other_effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
+      alAuxEffectSlots[other_effect_slot].gain_target = 0.0f;
+      alAuxEffectSlots[other_effect_slot].gain_current =
+        FadeToNewValue(true, false,
+          alAuxEffectSlots[other_effect_slot].gain_elapsed_time,
+          alAuxEffectSlots[other_effect_slot].gain_initial_value,
+          alAuxEffectSlots[other_effect_slot].gain_current,
+          alAuxEffectSlots[other_effect_slot].gain_old_target,
+          alAuxEffectSlots[other_effect_slot].gain_target);
     }
     else
     {
       room_type = roomtype;
 
-      alAuxEffectSlots[effect_slot].gain =
-        FadeToNewValue(true, false, 0.0f, alAuxEffectSlots[effect_slot].gain,
-          alAuxEffectSlots[effect_slot].gain_target,
-          alAuxEffectSlots[effect_slot].gain_inc);
+      alAuxEffectSlots[effect_slot].gain_target = 0.0f;
+      alAuxEffectSlots[effect_slot].gain_current =
+        FadeToNewValue(true, false,
+          alAuxEffectSlots[effect_slot].gain_elapsed_time,
+          alAuxEffectSlots[effect_slot].gain_initial_value,
+          alAuxEffectSlots[effect_slot].gain_current,
+          alAuxEffectSlots[effect_slot].gain_old_target,
+          alAuxEffectSlots[effect_slot].gain_target);
 
       effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
 
-      alAuxEffectSlots[effect_slot].gain =
-        FadeToNewValue(true, false, AL_REVERBMIX, alAuxEffectSlots[effect_slot].gain,
-          alAuxEffectSlots[effect_slot].gain_target,
-          alAuxEffectSlots[effect_slot].gain_inc);
+      alAuxEffectSlots[effect_slot].gain_target = AL_REVERBMIX;
+      alAuxEffectSlots[effect_slot].gain_current =
+        FadeToNewValue(true, false,
+          alAuxEffectSlots[effect_slot].gain_elapsed_time,
+          alAuxEffectSlots[effect_slot].gain_initial_value,
+          alAuxEffectSlots[effect_slot].gain_current,
+          alAuxEffectSlots[effect_slot].gain_old_target,
+          alAuxEffectSlots[effect_slot].gain_target);
 
       alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
     }
@@ -158,7 +170,7 @@ void EnvEffects::InterplEffect(int roomtype)
 
   for (auto& effectSlot : alAuxEffectSlots)
   {
-    effectSlot.slot.setGain(effectSlot.gain);
+    effectSlot.slot.setGain(effectSlot.gain_current);
     effectSlot.slot.applyEffect(effectSlot.effect);
   }
 }
@@ -184,13 +196,22 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 
       if (distance < zero_gain_distance)
       {
-        direct_gain = FadeToNewValue(al_occlusion_fade->value, ch->firstpass, GetGainObscured(ch, pent, sent), ch->ob_gain, ch->ob_gain_target, ch->ob_gain_inc);
+        ch->ob_gain_target = GetGainObscured(ch, pent, sent);
       }
     }
     else
     {
-      direct_gain = FadeToNewValue(al_occlusion_fade->value, ch->firstpass, direct_gain, ch->ob_gain, ch->ob_gain_target, ch->ob_gain_inc);
+      ch->ob_gain_target = direct_gain;
     }
+
+    ch->ob_gain_current = FadeToNewValue(al_occlusion_fade->value,
+      ch->firstpass,
+      ch->ob_gain_elapsed_time,
+      ch->ob_gain_initial_value,
+      ch->ob_gain_current,
+      ch->ob_gain_old_target,
+      ch->ob_gain_target);
+    direct_gain = ch->ob_gain_current;
   }
 
   if (underwater)
@@ -355,18 +376,20 @@ EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
 
   if (max_sends > 1)
   {
-    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
-    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
   }
   else if (max_sends == 1)
   {
-    alAuxEffectSlots.push_back(effectSlot(al_context.createAuxiliaryEffectSlot(), al_context.createEffect()));
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
   }
 
   if (alAuxEffectSlots.size() > 0)
   {
     alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
-    alAuxEffectSlots[0].gain = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_current = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_initial_value = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_old_target = AL_REVERBMIX;
     alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
 
     if (alAuxEffectSlots.size() > 1)

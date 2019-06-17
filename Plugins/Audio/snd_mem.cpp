@@ -120,7 +120,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   if (ch == nullptr)
     return nullptr;
 
-  sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
+  sc = static_cast<aud_sfxcache_t *>(s->cache.data);
   if (sc && sc->decoder)
   {
     ffileopened = true;
@@ -129,7 +129,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   //Alloc cache if we don't have one
   if (sc == nullptr)
   {
-    sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
+    sc = Cache_Alloc(&s->cache, s->name);
     if (sc == nullptr)
       return nullptr;
   }
@@ -184,7 +184,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     {
       try
       {
-        alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(VoiceDecoder(s, ch));
+        alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(s, ch);
         sc = new aud_sfxcache_t();
         sc->channels = dec->getChannelConfig();
         sc->samplerate = dec->getFrequency();
@@ -193,7 +193,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
         sc->loopstart = 0;
         sc->loopend = UINT64_MAX;
         sc->stype = dec->getSampleType();
-        sc->decoder = std::static_pointer_cast<alure::Decoder>(dec);
+        sc->decoder = dec;
         return sc;
       }
       catch (const std::runtime_error& error)
@@ -203,7 +203,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       }
     }
 
-    sc = reinterpret_cast<aud_sfxcache_t *>(s->cache.data);
+    sc = static_cast<aud_sfxcache_t *>(s->cache.data);
     if (sc)
       return sc;
 
@@ -231,7 +231,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       return nullptr;
     }
 
-    sc = reinterpret_cast<aud_sfxcache_t *>(Cache_Alloc(&s->cache, s->name));
+    sc = Cache_Alloc(&s->cache, s->name);
     if (sc == nullptr)
       return nullptr;
 

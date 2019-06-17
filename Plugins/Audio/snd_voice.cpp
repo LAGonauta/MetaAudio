@@ -38,7 +38,10 @@ VoiceDecoder::VoiceDecoder(sfx_t *sound, aud_channel_t *ch)
 }
 
 //not done
-VoiceDecoder::~VoiceDecoder() {}
+VoiceDecoder::~VoiceDecoder()
+{
+  destroy();
+}
 
 void VoiceDecoder::destroy()
 {
@@ -55,7 +58,7 @@ ALuint VoiceDecoder::read(ALvoid *ptr, ALuint count) noexcept
   if (!m_ch->voicecache)
     return 0;
 
-  size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, reinterpret_cast<char *>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
+  size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, static_cast<char *>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
 
   return ulRecvedFrames;
 }
@@ -77,7 +80,7 @@ alure::SampleType VoiceDecoder::getSampleType() const noexcept
 
 uint64_t VoiceDecoder::getLength() const noexcept
 {
-  return UINT64_MAX;
+  return 0;
 }
 
 bool VoiceDecoder::seek(uint64_t pos) noexcept

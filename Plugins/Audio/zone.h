@@ -9,5 +9,5 @@ typedef struct cache_user_s
 cache_user_t;
 #endif
 
-void *Cache_Alloc(cache_user_t *c, alure::String name);
+aud_sfxcache_t* Cache_Alloc(cache_user_t *c, alure::String name);
 void Cache_Free(alure::String name);

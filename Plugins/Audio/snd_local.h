@@ -32,10 +32,12 @@ typedef struct
   std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
 
   // For OpenAL EFX
-  bool firstpass;            // true if this is first time sound is spatialized
-  float ob_gain;             // gain drop if sound source obscured from listener
-  float ob_gain_target;      // target gain while crossfading between ob_gain & ob_gain_target
-  float ob_gain_inc;         // crossfade increment
+  bool firstpass{ true };
+  float ob_gain_current{ 0 };
+  float ob_gain_elapsed_time{ 0 };
+  float ob_gain_initial_value{ 0 };
+  float ob_gain_old_target{ 0 };
+  float ob_gain_target{ 0 };
 }aud_channel_t;
 
 typedef struct
