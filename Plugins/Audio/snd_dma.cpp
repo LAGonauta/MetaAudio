@@ -366,15 +366,12 @@ void S_Update(float *origin, float *forward, float *right, float *up)
     else
     {
       if (volume)
-        al_listener.setGain(max(min(volume->value, 1), 0));
+        al_listener.setGain(std::clamp(volume->value, 0.0f, 1.0f));
       else
         al_listener.setGain(1.0f);
     }
 
-    if (al_doppler->value >= 0.0f && al_doppler->value <= 10.0f)
-    {
-      al_context.setDopplerFactor(al_doppler->value);
-    }
+    al_context.setDopplerFactor(std::clamp(al_doppler->value, 0.0f, 10.0f));
 
     std::pair<alure::Vector3, alure::Vector3> alure_orientation(
       alure::Vector3(orientation[0], orientation[1], orientation[2]),

@@ -1,3 +1,7 @@
+#include <fstream>
+#include <string>
+#include <algorithm>
+
 #include "metahook.h"
 #include "LoadBlob.h"
 #include "Detours\detours.h"
@@ -85,7 +89,7 @@ bool HM_LoadPlugins(char *filename, HINTERFACEMODULE hModule)
   plug->module = hModule;
 
   CreateInterfaceFn fnCreateInterface = Sys_GetFactory(plug->module);
-  plug->pPluginAPI = fnCreateInterface(METAHOOK_PLUGIN_API_VERSION, NULL);
+  plug->pPluginAPI = fnCreateInterface(METAHOOK_PLUGIN_API_VERSION, nullptr);
 
   if (plug->pPluginAPI)
   {
@@ -94,7 +98,7 @@ bool HM_LoadPlugins(char *filename, HINTERFACEMODULE hModule)
   }
   else
   {
-    plug->pPluginAPI = fnCreateInterface(METAHOOK_PLUGIN_API_VERSION_V1, NULL);
+    plug->pPluginAPI = fnCreateInterface(METAHOOK_PLUGIN_API_VERSION_V1, nullptr);
 
     if (plug->pPluginAPI)
       plug->iInterfaceVersion = 1;
@@ -110,14 +114,14 @@ bool HM_LoadPlugins(char *filename, HINTERFACEMODULE hModule)
 
 void MH_Init(const char *pszGameName)
 {
-  g_pfnbuild_number = NULL;
-  g_pfnClientDLL_Init = NULL;
-  g_phClientDLL_Init = NULL;
+  g_pfnbuild_number = nullptr;
+  g_pfnClientDLL_Init = nullptr;
+  g_phClientDLL_Init = nullptr;
 
   g_dwEngineBase = 0;
   g_dwEngineSize = 0;
-  g_pHookBase = NULL;
-  g_pExportFuncs = NULL;
+  g_pHookBase = nullptr;
+  g_pExportFuncs = nullptr;
   g_bSaveVideo = false;
   g_szTempFile[0] = 0;
 
@@ -125,41 +129,47 @@ void MH_Init(const char *pszGameName)
   gInterface.FileSystem = g_pFileSystem;
   gInterface.Registry = registry;
 
-  char metapath[MAX_PATH], filename[MAX_PATH];
-  sprintf(metapath, "%s/metahook", pszGameName);
-  sprintf(filename, "%s/configs/plugins.lst", metapath);
+  std::string metapath(pszGameName);
+  metapath += "/metahook";
 
-  FILE *fp = fopen(filename, "rt");
+  std::string filename(metapath);
+  filename += "/configs/plugins.lst";
 
-  if (fp)
+  std::ifstream plugin_list(filename);
+
+  std::string plugin;
+  while (std::getline(plugin_list, plugin))
   {
-    static char line[1024];
-
-    while (!feof(fp))
+    if (!plugin.empty() && !std::all_of(plugin.begin(), plugin.end(), ::isspace))
     {
-      static char plugins[64];
-      fgets(line, sizeof(line), fp);
+      filename = metapath + "/plugins/" + plugin;
 
-      if (line[0] == '\0' || line[0] == ';')
-        continue;
-
-      sscanf(line, "%s ", plugins);
-
-      if (!isalnum(plugins[0]))
-        continue;
-
-      sprintf(filename, "%s/plugins/%s", metapath, plugins);
-
-      HINTERFACEMODULE hModule = Sys_LoadModule(filename);
-
+      HINTERFACEMODULE hModule = Sys_LoadModule(filename.c_str());
       if (!hModule)
-        continue;
+      {
+        DWORD dw = GetLastError();
+        LPVOID lpMsgBuf;
+        FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          dw,
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          (LPTSTR)&lpMsgBuf,
+          0, NULL);
 
-      if (!HM_LoadPlugins(line, hModule))
+        MessageBox(NULL, ("Module name: " + filename + ". Error code: " + std::to_string(dw) + ". Message: " + static_cast<LPCTSTR>(lpMsgBuf)).c_str(), "Problem loading module", MB_ICONWARNING);
+        LocalFree(lpMsgBuf);
         continue;
+      }
+
+      if (!HM_LoadPlugins(const_cast<char*>(filename.c_str()), hModule))
+      {
+        MessageBox(NULL, ("Plugin name: " + filename).c_str(), "Problem loading plugin", MB_ICONWARNING);
+        continue;
+      }
     }
-
-    fclose(fp);
   }
 }
 
@@ -405,7 +415,7 @@ void MH_FreeHook(hook_t *pHook)
 
 void MH_FreeAllHook(void)
 {
-  hook_t *next = NULL;
+  hook_t *next = nullptr;
 
   for (hook_t *h = g_pHookBase; h; h = next)
   {
@@ -413,13 +423,13 @@ void MH_FreeAllHook(void)
     MH_FreeHook(h);
   }
 
-  g_pHookBase = NULL;
+  g_pHookBase = nullptr;
 }
 
 BOOL MH_UnHook(hook_t *pHook)
 {
   if (!g_pHookBase)
-    return FALSE;
+    return false;
 
   hook_t *h, **back;
   back = &g_pHookBase;
@@ -435,13 +445,13 @@ BOOL MH_UnHook(hook_t *pHook)
     {
       *back = h->pNext;
       MH_FreeHook(h);
-      return TRUE;
+      return true;
     }
 
     back = &h->pNext;
   }
 
-  return FALSE;
+  return false;
 }
 
 hook_t *MH_InlineHook(void *pOldFuncAddr, void *pNewFuncAddr, void *&pCallBackFuncAddr)
