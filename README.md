@@ -34,6 +34,47 @@ Working games and mods:
 - Significantly lower audio latency (especially if used with hardware acceleration)
 - "Unlimited" heap size for audio
 
+# Console variables
+- al_doppler (sets the doppler effect intensity, 0.3 recommended)
+- al_occlusion (enables or disables occlusion)
+- al_occlusion_fade (enables or disables the smoothening of volumes changes of occluded sources)
+- al_xfi_workaround (can be 0, 1 or 2. Fixes missing sounds when using a X-Fi with buggy OpenAL drivers.)
+-- 0: Disabled.
+-- 1: MetaAudio will also use the system clock to estimate when the sound effect ended. (preferred)
+-- 2: MetaAudio will force all sound effects to be played as a stream.
+
+# Console commands
+- al_version (shows current MetaAudio version, along with the current OpenAL device and the OpenAL version)
+- al_show_basic_devices (shows all basic OpenAL, such as just _OpenAL Soft_)
+- al_show_full_devices (shows the full name of all OpenAL devices, such as _Generic Software on Realtek Speakers_)
+- al_reset_efx (resets and re-creates all EFX sends, useful for buggy OpenAL drivers that were unable to enable a effect send for some unknown reason)
+
+# Executable arguments
+- al_maxsends (sets the max number of simultaneous EFX effects, MetaAudio uses a maximum of 2 but this can limit it to less)
+- al_device (sets the OpenAL device to use, can be _OpenAL Soft_ or _OpenAL Soft on Realtek_, for example)
+
+# Installing
+Copy the "metahook" folder to your mod dir.
+Copy the other files to Steam's Half-Life dir.
+
+Example folder structure, where <game> can be "valve", "cstrike", "ns", "gearbox" or any other mod:
+|%STEAM%\steamapps\common\Half-Life\
+|----> Metahook.exe
+|----> alure2.dll
+|----> libsndfile-1.dll
+|----> OpenAL32.dll (remove to use X-Fi hardware acceleration)
+|----> <game>\
+  |----> metahook\
+    |----> plugins\
+      |----> audio.dll
+    |----> configs\
+      |----> plugins.lst
+
+One should load the game through "MetaHook.exe". It is recommended to create a shortcut with at least the following launch options:
+"-steam -game <game> -insecure". There are two sample shorcut files included, "OpenAL Half-Life" and "OpenAL Natural-Selection".
+
+There should be an "audio.dll" entry in "plugins.lst".
+
 # Known bugs
 - Some sounds are too quiet
 - Some sounds does not use the correct source origin

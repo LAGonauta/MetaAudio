@@ -330,7 +330,7 @@ void VOX::ParseString(const alure::String& psz)
         ++word_index;
         break;
       }
-      charscan_initial_index = charscan_last_index;
+      charscan_initial_index = charscan_last_index + 1;
     }
     ++charscan_last_index;
 
@@ -353,12 +353,10 @@ bool VOX::ParseWordParams(alure::String& initial_string, voxword_t *pvoxword, in
   // init to defaults if this is the first word in string.
   if (fFirst)
   {
+    voxwordDefault = voxword_t{ 0 };
     voxwordDefault.pitch = -1;
     voxwordDefault.volume = 100;
-    voxwordDefault.start = 0;
     voxwordDefault.end = 100;
-    voxwordDefault.fKeepCached = 0;
-    voxwordDefault.timecompress = 0;
   }
 
   *pvoxword = voxwordDefault;
