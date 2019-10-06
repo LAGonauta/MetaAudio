@@ -1,4 +1,5 @@
 #include <metahook.h>
+#include <cctype>
 
 #include "snd_local.h"
 #include "snd_vox.hpp"
@@ -224,7 +225,7 @@ void VOX::SetChanVolPitch(aud_channel_t *ch, float *fvol, float *fpitch)
   }
 }
 
-std::optional<alure::String> VOX::LookupString(char *pszin, int *psentencenum)
+std::optional<alure::String> VOX::LookupString(const alure::String& pszin, int *psentencenum)
 {
   int i;
   char *cptr;
@@ -232,10 +233,7 @@ std::optional<alure::String> VOX::LookupString(char *pszin, int *psentencenum)
 
   if (pszin[0] == '#')
   {
-    const char *indexAsString;
-
-    indexAsString = pszin + 1;
-    sentenceEntry = gAudEngine.SequenceGetSentenceByIndex(atoi(indexAsString));
+    sentenceEntry = gAudEngine.SequenceGetSentenceByIndex(std::atoi(pszin.c_str() + 1));
 
     if (sentenceEntry)
       return alure::String(sentenceEntry->data);
@@ -243,7 +241,7 @@ std::optional<alure::String> VOX::LookupString(char *pszin, int *psentencenum)
 
   for (i = 0; i < *gAudEngine.cszrawsentences; i++)
   {
-    if (!_stricmp(pszin, (*gAudEngine.rgpszrawsentence)[i]))
+    if (!_stricmp(pszin.c_str(), (*gAudEngine.rgpszrawsentence)[i]))
     {
       if (psentencenum)
         *psentencenum = i;
@@ -260,6 +258,10 @@ std::optional<alure::String> VOX::LookupString(char *pszin, int *psentencenum)
 
 alure::String VOX::GetDirectory(alure::String& szpath, alure::String& psz)
 {
+  if (psz.length() == 0)
+  {
+    return alure::String();
+  }
   int charscan_index = psz.length() - 1;
 
   // scan backwards until first '/' or start of string
@@ -443,10 +445,12 @@ int VOX::IFindEmptySentence(void)
   return -1;
 }
 
-aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
+aud_sfxcache_t* VOX::LoadSound(aud_channel_t* pchan, const alure::String& pszin)
 {
-  if (!pszin)
+  if (pszin.empty() || std::all_of(pszin.begin(), pszin.end(), std::isspace))
+  {
     return nullptr;
+  }
 
   int i, j, k, cword;
   alure::String pathbuffer;
@@ -508,6 +512,12 @@ aud_sfxcache_t *VOX::LoadSound(aud_channel_t *pchan, char *pszin)
   pchan->isentence = k;
   pchan->iword = 0;
   pchan->sfx = rgvoxword[0].sfx;
+
+  if (!pchan->sfx)
+  {
+    S_FreeChannel(pchan);
+    return nullptr;
+  }
 
   sc = S_LoadSound(pchan->sfx, pchan);
   if (!sc)
