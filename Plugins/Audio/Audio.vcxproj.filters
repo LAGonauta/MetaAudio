@@ -50,6 +50,9 @@
     <ClCompile Include="zone.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="snd_loader.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="enginedef.h">
@@ -89,6 +92,9 @@
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="zone.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="snd_loader.h">
       <Filter>Header</Filter>
     </ClInclude>
   </ItemGroup>

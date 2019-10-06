@@ -24,22 +24,11 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
     m_function_name = "S_LoadSound";
   }
   bool valid_file = false;
-  FileHandle_t hFile;
   alure::String namebuffer;
-  char final_file_path[MAX_PATH];
 
-  // Search for "." from right to left
-  int char_index = sfx_name.size() - 1;
-  while (sfx_name[char_index] != '.')
-  {
-    char_index--;
-    if (char_index < 0)
-    {
-      break;
-    }
-  }
+  int char_index = sfx_name.rfind('.', sfx_name.length());
 
-  if (char_index > 0)
+  if (char_index != sfx_name.npos)
   {
     auto context = alure::Context::GetCurrent();
     for (const alure::String& extension : LocalAudioDecoder::SupportedExtensions)
@@ -54,9 +43,8 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
 
       namebuffer.append(sfx_name);
 
-      hFile = g_pFileSystem->Open(namebuffer.c_str(), "rb");
-
-      if (!hFile)
+      auto fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
+      if (!fileExists)
       {
         namebuffer.clear();
         if (sfx_name[0] != '/')
@@ -65,17 +53,14 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
         }
         namebuffer.append(sfx_name);
 
-        hFile = g_pFileSystem->Open(namebuffer.c_str(), "rb");
+        fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
       }
 
-      if (hFile)
+      if (fileExists)
       {
-        g_pFileSystem->Close(hFile);
-        hFile = nullptr;
         try
         {
-          g_pFileSystem->GetLocalPath(namebuffer.c_str(), final_file_path, sizeof(final_file_path));
-          auto dec = context.createDecoder(final_file_path);
+          auto dec = context.createDecoder(namebuffer);
           valid_file = true;
           break;
         }
@@ -95,7 +80,7 @@ static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool i
 
   if (valid_file)
   {
-    return alure::String(final_file_path);
+    return namebuffer;
   }
   else
   {

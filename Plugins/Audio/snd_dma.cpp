@@ -4,6 +4,7 @@
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
+#include "snd_loader.h"
 #include "zone.h"
 
 //sfx struct
@@ -16,7 +17,6 @@ int total_channels;
 //engine cvars
 cvar_t *nosound = nullptr;
 cvar_t *volume = nullptr;
-cvar_t *loadas8bit = nullptr;
 cvar_t *sxroom_off = nullptr;
 cvar_t *sxroomwater_type = nullptr;
 cvar_t *sxroom_type = nullptr;
@@ -708,9 +708,8 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     _function_name = "S_StartDynamicSound";
   }
 
-  aud_channel_t *ch;
-  aud_sfxcache_t *sc;
-  qboolean fsentence;
+  aud_channel_t* ch;
+  aud_sfxcache_t* sc;
   float fpitch;
 
   if (!sfx)
@@ -763,7 +762,9 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
   }
 
   if (!ch)
+  {
     return;
+  }
 
   VectorCopy(origin, ch->origin);
   ch->attenuation = attenuation;
@@ -775,17 +776,12 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   if (sfx->name[0] == '!' || sfx->name[0] == '#')
   {
-    char name[MAX_QPATH];
-    strncpy_s(name, sfx->name + 1, sizeof(name) - 1);
-    name[sizeof(name) - 1] = 0;
-    sc = vox->LoadSound(ch, name);
-    fsentence = true;
+    sc = vox->LoadSound(ch, sfx->name + 1);
   }
   else
   {
     sc = S_LoadSound(sfx, ch);
     ch->sfx = sfx;
-    fsentence = false;
   }
 
   if (!sc)
@@ -960,6 +956,8 @@ qboolean OpenAL_Init(void)
 {
   try
   {
+    alure::FileIOFactory::set(alure::MakeUnique<GoldSrcFileFactory>());
+
     al_dev_manager = alure::DeviceManager::getInstance();
 
     const char *_al_set_device;
@@ -1101,7 +1099,6 @@ void S_Init(void)
   {
     nosound = gEngfuncs.pfnGetCvarPointer("nosound");
     volume = gEngfuncs.pfnGetCvarPointer("volume");
-    loadas8bit = gEngfuncs.pfnGetCvarPointer("loadas8bit");
     sxroom_off = gEngfuncs.pfnGetCvarPointer("room_off");
     sxroomwater_type = gEngfuncs.pfnGetCvarPointer("waterroom_type");
     sxroom_type = gEngfuncs.pfnGetCvarPointer("room_type");
@@ -1114,6 +1111,7 @@ void S_Init(void)
 void OpenAL_Shutdown(void)
 {
   // Should also clear all buffers and sources.
+  alure::FileIOFactory::set(nullptr);
   alure::Context::MakeCurrent(nullptr);
   al_context.destroy();
 

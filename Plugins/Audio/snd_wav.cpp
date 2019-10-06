@@ -18,25 +18,27 @@ bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alu
     return false;
   }
 
+  auto audioData = m_data[full_path];
+  info = audioData.info;
+
   auto loop_points = dec->getLoopPoints();
   info.looping = dec->hasLoopPoints();
   info.loopstart = loop_points.first;
   info.loopend = loop_points.second;
 
-  info.channels = m_channels;
-  info.samplerate = m_samplerate;
-  info.stype = m_type;
-  info.samples = m_data.size() / alure::FramesToBytes(1, m_channels, m_type);
-
-  data_output.swap(m_data);
+  data_output.swap(audioData.data);
+  m_data.erase(full_path);
   return true;
 }
 
-void LocalAudioDecoder::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept {
-  m_name = name;
-  m_type = type;
-  m_samplerate = samplerate;
-
+void LocalAudioDecoder::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept
+{
   auto temp_view = data.reinterpret_as<ALubyte>();
-  m_data = alure::Vector<ALubyte>(temp_view.begin(), temp_view.end());
+  Audio audio{};
+  audio.data = alure::Vector<ALubyte>(temp_view.begin(), temp_view.end());
+  audio.info.channels = channels;
+  audio.info.samplerate = samplerate;
+  audio.info.stype = type;
+  audio.info.samples = audio.data.size() / alure::FramesToBytes(1, audio.info.channels, audio.info.stype);
+  m_data.emplace(alure::String(name.data()), audio);
 }

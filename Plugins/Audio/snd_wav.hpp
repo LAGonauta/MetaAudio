@@ -9,10 +9,11 @@ public:
   void bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept override;
 
 private:
-  // To return the data to the application we copy the information here
-  alure::StringView m_name;
-  alure::ChannelConfig m_channels;
-  alure::SampleType m_type;
-  ALuint m_samplerate;
-  alure::Vector<ALubyte> m_data;
+  struct Audio
+  {
+    wavinfo_t info;
+    alure::Vector<ALubyte> data;
+  };
+
+  std::unordered_map<alure::String, Audio> m_data;
 };
