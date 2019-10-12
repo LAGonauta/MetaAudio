@@ -6,7 +6,7 @@
 
 // Based on Alure's Stream class
 class GoldSrcFileBuf final : public std::streambuf {
-  alure::Array<char_type, 16384> mBuffer;
+  alure::Array<char_type, 4096> mBuffer;
   FileHandle_t mFile{ nullptr };
 
   int_type underflow() override
@@ -64,7 +64,7 @@ class GoldSrcFileBuf final : public std::streambuf {
       break;
 
     case std::ios_base::end:
-      offset += g_pFileSystem->Size(mFile) - 1;
+      offset += g_pFileSystem->Size(mFile);
       break;
 
     default:
@@ -73,10 +73,6 @@ class GoldSrcFileBuf final : public std::streambuf {
 
     g_pFileSystem->Seek(mFile, static_cast<int>(offset), seekType);
     auto curPosition = g_pFileSystem->Tell(mFile);
-    if (g_pFileSystem->EndOfFile(mFile))
-    {
-      return traits_type::eof();
-    }
 
     setg(nullptr, nullptr, nullptr);
     return curPosition;
