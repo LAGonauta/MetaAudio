@@ -1,6 +1,3 @@
-# MetaHook
-GoldSrc engine plugin extensions
-
 # Warning
 While the plugin is not a cheat, VAC may flag MetaHook and ban the user.
 Do not use with Steam in online mode, we are not responsible if your account is banned.
@@ -97,3 +94,4 @@ hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
 
 # Support
 Support group available on FreeNode through IRC, come join: #metaaudio
+Prefers Jabber/XMPP? metaaudio@conference.xmpp.zone
