@@ -36,9 +36,9 @@ Working games and mods:
 - al_occlusion (enables or disables occlusion)
 - al_occlusion_fade (enables or disables the smoothening of volumes changes of occluded sources)
 - al_xfi_workaround (can be 0, 1 or 2. Fixes missing sounds when using a X-Fi with buggy OpenAL drivers.)
--- 0: Disabled.
--- 1: MetaAudio will also use the system clock to estimate when the sound effect ended. (preferred)
--- 2: MetaAudio will force all sound effects to be played as a stream.
+  - 0: Disabled.
+  - 1: MetaAudio will also use the system clock to estimate when the sound effect ended. (preferred)
+  - 2: MetaAudio will force all sound effects to be played as a stream.
 
 # Console commands
 - al_version (shows current MetaAudio version, along with the current OpenAL device and the OpenAL version)
@@ -52,9 +52,11 @@ Working games and mods:
 
 # Installing
 Copy the "metahook" folder to your mod dir.
+
 Copy the other files to Steam's Half-Life dir.
 
 Example folder structure, where <game> can be "valve", "cstrike", "ns", "gearbox" or any other mod:
+```
 |%STEAM%\steamapps\common\Half-Life\
 |----> Metahook.exe
 |----> alure2.dll
@@ -66,7 +68,7 @@ Example folder structure, where <game> can be "valve", "cstrike", "ns", "gearbox
       |----> audio.dll
     |----> configs\
       |----> plugins.lst
-
+```
 One should load the game through "MetaHook.exe". It is recommended to create a shortcut with at least the following launch options:
 "-steam -game <game> -insecure". There are two sample shorcut files included, "OpenAL Half-Life" and "OpenAL Natural-Selection".
 
@@ -94,4 +96,5 @@ hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
 
 # Support
 Support group available on FreeNode through IRC, come join: #metaaudio
-Prefers Jabber/XMPP? metaaudio@conference.xmpp.zone
+
+Prefers Jabber/XMPP? xmpp:metaaudio@conference.xmpp.zone?join
