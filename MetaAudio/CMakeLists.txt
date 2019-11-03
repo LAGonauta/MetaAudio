@@ -14,6 +14,7 @@ set(SOURCES
     src/snd_vox.cpp
     src/snd_wav.cpp
     src/zone.cpp
+    src/interface.cpp
 )
 
 add_library(MetaAudio SHARED ${SOURCES})
