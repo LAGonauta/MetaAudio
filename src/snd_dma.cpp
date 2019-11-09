@@ -968,19 +968,11 @@ qboolean OpenAL_Init(void)
 
     if (!al_device)
     {
-#ifdef _DEBUG
-      al_device = al_dev_manager.openPlayback("");
-#else
       auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
       al_device = al_dev_manager.openPlayback(default_device);
-#endif
     }
 
-#ifndef _DEBUG
     strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
-#else
-    strncpy_s(al_device_name, "Unable to get name in debug mode.", sizeof(al_device_name));
-#endif
 
     al_context = al_device.createContext();
 
@@ -1054,7 +1046,6 @@ void AL_ResetEFX(void)
 
 void AL_Devices_f(bool basic = true)
 {
-#ifndef _DEBUG
   alure::Vector<alure::String> devices;
   if (basic)
   {
@@ -1069,7 +1060,6 @@ void AL_Devices_f(bool basic = true)
   {
     gEngfuncs.Con_Printf("  %s\n", device.c_str());
   }
-#endif
 }
 
 void AL_DevicesBasic_f(void)
