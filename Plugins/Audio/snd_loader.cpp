@@ -6,7 +6,7 @@
 
 // Based on Alure's Stream class
 class GoldSrcFileBuf final : public std::streambuf {
-  alure::Array<char_type, 4096> mBuffer;
+  alure::Array<char_type, 2048> mBuffer;
   FileHandle_t mFile{ nullptr };
 
   int_type underflow() override
