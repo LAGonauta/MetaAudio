@@ -1,0 +1,11 @@
+[submodule "externals/alure"]
+	path = externals/alure
+	url = https://github.com/LAGonauta/alure
+	branch = hasLoopPoints
+[submodule "externals/metahook"]
+	path = externals/metahook
+	url = https://github.com/LAGonauta/metahook
+	branch = cmake
+[submodule "externals/openal-soft"]
+	path = externals/openal-soft
+	url = https://github.com/kcat/openal-soft

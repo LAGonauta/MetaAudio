@@ -1,0 +1,30 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x86-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
+      "cmakeCommandArgs": "-DOPENAL_LIBRARY=${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}\\externals\\openal-soft\\OpenAL32.lib",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "x86-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
+      "cmakeCommandArgs": "-DOPENAL_LIBRARY=${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}\\externals\\openal-soft\\OpenAL32.lib",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": ""
+    }
+  ]
+}
