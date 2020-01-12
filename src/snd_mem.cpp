@@ -10,81 +10,55 @@
 static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
 
 // Check if file exists. Order: original, .wav, .flac, .ogg, .mp3
-static std::optional<alure::String> S_GetFilePath(alure::String sfx_name, bool is_stream)
+static std::optional<alure::String> S_GetFilePath(const alure::String& sfx_name, bool is_stream)
 {
-  alure::String original_name = sfx_name;
+  alure::String new_name(sfx_name);
   alure::String m_function_name;
   if (is_stream)
   {
     m_function_name = "S_LoadStreamSound";
-    sfx_name.erase(sfx_name.begin());
+    new_name.erase(new_name.begin());
   }
   else
   {
     m_function_name = "S_LoadSound";
   }
   bool valid_file = false;
-  alure::String namebuffer;
 
-  int char_index = sfx_name.rfind('.', sfx_name.length());
+  int char_index = new_name.rfind('.', new_name.length());
 
-  if (char_index != sfx_name.npos)
+  if (char_index != new_name.npos)
   {
     auto context = alure::Context::GetCurrent();
     for (const alure::String& extension : LocalAudioDecoder::SupportedExtensions)
     {
-      sfx_name.replace(char_index, sfx_name.npos, extension);
-
-      namebuffer = "sound";
-      if (sfx_name[0] != '/')
+      new_name.replace(char_index, new_name.npos, extension);
+      try
       {
-        namebuffer.append("/");
+        auto dec = context.createDecoder(new_name);
+        valid_file = true;
+        break;
       }
-
-      namebuffer.append(sfx_name);
-
-      auto fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
-      if (!fileExists)
+      catch (const std::runtime_error& error)
       {
-        namebuffer.clear();
-        if (sfx_name[0] != '/')
-        {
-          namebuffer.append("/");
-        }
-        namebuffer.append(sfx_name);
-
-        fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
-      }
-
-      if (fileExists)
-      {
-        try
-        {
-          auto dec = context.createDecoder(namebuffer);
-          valid_file = true;
-          break;
-        }
-        catch (const std::runtime_error& error)
-        {
-          gEngfuncs.Con_DPrintf("%s: Couldn't load %s. %s.\n", m_function_name.c_str(), namebuffer.c_str(), error.what());
-          valid_file = false;
-        }
+        gEngfuncs.Con_DPrintf("%s: Couldn't load %s. %s.\n", m_function_name.c_str(), new_name.c_str(), error.what());
+        valid_file = false;
       }
     }
   }
   else
   {
-    gEngfuncs.Con_DPrintf("%s: Couldn't load %s. Invalid file name.\n", m_function_name.c_str(), namebuffer.c_str());
+    gEngfuncs.Con_DPrintf("%s: Couldn't load %s. Invalid file name.\n", m_function_name.c_str(), sfx_name.c_str());
     return std::optional<alure::String>{};
   }
 
   if (valid_file)
   {
-    return namebuffer;
+    return new_name;
   }
   else
   {
-    gEngfuncs.Con_DPrintf("%s: Couldn't load %s.\n", m_function_name.c_str(), original_name.c_str());
+    gEngfuncs.Con_DPrintf("%s: Couldn't load %s.\n", m_function_name.c_str(), sfx_name.c_str());
     return std::nullopt;
   }
 }

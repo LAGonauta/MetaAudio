@@ -9,7 +9,7 @@
       ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DOPENAL_LIBRARY=${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}\\externals\\openal-soft\\OpenAL32.lib",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": ""
     },
@@ -22,7 +22,7 @@
       ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DOPENAL_LIBRARY=${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\build\\${name}\\externals\\openal-soft\\OpenAL32.lib",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": ""
     }
