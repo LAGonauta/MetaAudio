@@ -4,7 +4,7 @@
 #include "snd_fx.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-#include "snd_loader.h"
+#include "snd_loader.hpp"
 #include "zone.h"
 
 //sfx struct

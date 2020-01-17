@@ -1,8 +1,9 @@
 #include <iostream>
+#include <fstream>
 
 #include "FileSystem.h"
 #include "alure2.h"
-#include "snd_loader.h"
+#include "snd_loader.hpp"
 
 // Based on Alure's Stream class
 class GoldSrcFileBuf final : public std::streambuf {
@@ -90,19 +91,16 @@ class GoldSrcFileBuf final : public std::streambuf {
     {
       return traits_type::eof();
     }
+    auto curPosition = g_pFileSystem->Tell(mFile);
 
     setg(nullptr, nullptr, nullptr);
-    return pos;
+    return curPosition;
   }
 
 public:
   bool open(const char *filename) noexcept
   {
-    mFile = g_pFileSystem->OpenFromCacheForRead(filename, "rb");
-    if (!mFile)
-    {
-      mFile = g_pFileSystem->Open(filename, "rb");
-    }
+    mFile = g_pFileSystem->Open(filename, "rb");
     if (!mFile)
     {
       return false;
@@ -135,10 +133,47 @@ public:
 
 alure::UniquePtr<std::istream> GoldSrcFileFactory::openFile(const alure::String &name) noexcept
 {
-  auto stream = alure::MakeUnique<GoldSrcFileStream>(name.c_str());
-  if (stream->fail())
+  alure::String namebuffer = "sound";
+
+  if (name[0] != '/')
   {
-    stream = nullptr;
+    namebuffer.append("/");
   }
-  return std::move(stream);
+
+  namebuffer.append(name);
+
+  auto fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
+  if (!fileExists)
+  {
+    namebuffer.clear();
+    if (name[0] != '/')
+    {
+      namebuffer.append("/");
+    }
+    namebuffer.append(name);
+
+    fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
+  }
+
+  alure::UniquePtr<std::istream> file;
+  if (fileExists)
+  {
+    char final_file_path[260]; // MAX_PATH
+    g_pFileSystem->GetLocalPath(namebuffer.c_str(), final_file_path, sizeof(final_file_path));
+    file = alure::MakeUnique<std::ifstream>(final_file_path, std::ios::binary);
+    if (file->fail())
+    {
+      file = alure::MakeUnique<GoldSrcFileStream>(namebuffer.c_str());
+      if (file->fail())
+      {
+        file = nullptr;
+      }
+      else
+      {
+        *file >> std::noskipws;
+      }
+    }
+  }
+
+  return std::move(file);
 }
