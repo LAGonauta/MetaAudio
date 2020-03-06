@@ -80,6 +80,9 @@ private:
   float Lerp(float initial_value, float final_value, float fraction);
   float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
+  void ConfigureDefaultEffects();
+  void OverrideEffects();
+
 public:
   EnvEffects(alure::Context al_context, ALCuint max_sends);
   ~EnvEffects();

@@ -21,6 +21,7 @@ set(SOURCES
     src/snd_wav.cpp
     src/zone.cpp
     src/interface.cpp
+    src/snd_efx_reader.cpp
 )
 
 add_library(MetaAudio SHARED ${SOURCES})

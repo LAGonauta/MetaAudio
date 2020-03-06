@@ -1,7 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include <optional>
+#include <unordered_map>
 
 #include "picojson.h"
 #include "efx-presets.h"
@@ -9,7 +9,7 @@
 class EfxReader final
 {
 private:
-  std::unordered_map<alure::String, size_t> name_to_index =
+  std::unordered_map<std::string, size_t> name_to_index =
   {
     {"off", 0},
     {"generic", 1},
@@ -41,11 +41,6 @@ private:
     {"weirdo_2", 27},
     {"weirdo_3", 28},
   };
-
-  std::tuple<size_t, EFXEAXREVERBPROPERTIES> BuildTuple(size_t index, EFXEAXREVERBPROPERTIES prop)
-  {
-    return std::tuple<size_t, EFXEAXREVERBPROPERTIES>{index, prop};
-  }
 
   template<class T>
   T Get(const picojson::value& value, const std::string& effectName)
@@ -95,82 +90,30 @@ private:
       const picojson::array &values = vals.get<picojson::array>();
       for (const picojson::value& val : values)
       {
-        ret.push_back(Get<float>(val, effectName));
+        ret.emplace_back(Get<float>(val, effectName));
       }
     }
 
     return ret;
   }
+
+  template<class T>
+  picojson::value SerializeSimpleVector(std::vector<T> vector)
+  {
+    picojson::array ret;
+
+    for (const auto& value : vector)
+    {
+      ret.emplace_back(picojson::value(value));
+    }
+
+    return picojson::value(ret);
+  }
+
+  picojson::value SerializeEfxProps(EFXEAXREVERBPROPERTIES props, size_t index);
 
 public:
-  alure::Vector<std::tuple<size_t, EFXEAXREVERBPROPERTIES>> GetProperties(std::string filePath)
-  {
-    alure::Vector<std::tuple<size_t, EFXEAXREVERBPROPERTIES>> ret;
+  std::vector<std::tuple<size_t, EFXEAXREVERBPROPERTIES>> GetProperties(std::string filePath);
 
-    std::string fileName = "C:\\json-test\\test.json";
-    std::ifstream fileStream(fileName.c_str(), std::ios::in);
-
-    picojson::value json;
-    std::string err = picojson::parse(json, fileStream);
-    if (err.empty() && json.is<picojson::array>())
-    {
-      const picojson::array &values = json.get<picojson::array>();
-      for(const picojson::value& jsonObject : values)
-      {
-        if (jsonObject.is<picojson::object>())
-        {
-          auto effectName = Get<std::string>(jsonObject.get("name"), "");
-          if (!effectName.empty())
-          {
-            auto index = name_to_index.find(effectName);
-            if (index != name_to_index.end())
-            {
-              auto reflectionsPan = GetVector<float>(jsonObject.get("reflectionsPan"), effectName);
-              if (reflectionsPan.size() < 3)
-              {
-                reflectionsPan.resize(3);
-              };
-
-              auto lateReverbPan = GetVector<float>(jsonObject.get("lateReverbPan"), effectName);
-              if (lateReverbPan.size() < 3)
-              {
-                lateReverbPan.resize(3);
-              };
-
-              EFXEAXREVERBPROPERTIES prop
-              {
-                Get<float>(jsonObject.get("density"), effectName),
-                Get<float>(jsonObject.get("diffusion"), effectName),
-                Get<float>(jsonObject.get("gain"), effectName),
-                Get<float>(jsonObject.get("gainHF"), effectName),
-                Get<float>(jsonObject.get("gainLF"), effectName),
-                Get<float>(jsonObject.get("decayTime"), effectName),
-                Get<float>(jsonObject.get("decayHFRatio"), effectName),
-                Get<float>(jsonObject.get("decayLFRatio"), effectName),
-                Get<float>(jsonObject.get("reflectionsGain"), effectName),
-                Get<float>(jsonObject.get("reflectionsDelay"), effectName),
-                { reflectionsPan[0], reflectionsPan[1], reflectionsPan[2] },
-                Get<float>(jsonObject.get("lateReverbGain"), effectName),
-                Get<float>(jsonObject.get("lateReverbDelay"), effectName),
-                { lateReverbPan[0], lateReverbPan[1], lateReverbPan[2] },
-                Get<float>(jsonObject.get("echoTime"), effectName),
-                Get<float>(jsonObject.get("echoDepth"), effectName),
-                Get<float>(jsonObject.get("modulationTime"), effectName),
-                Get<float>(jsonObject.get("modulationDepth"), effectName),
-                Get<float>(jsonObject.get("airAbsorptionGainHF"), effectName),
-                Get<float>(jsonObject.get("hfReference"), effectName),
-                Get<float>(jsonObject.get("lfReference"), effectName),
-                Get<float>(jsonObject.get("roomRolloffFactor"), effectName),
-                Get<int>(jsonObject.get("decayHFLimit"), effectName)
-              };
-
-              ret.emplace_back(BuildTuple(index->second, prop));
-            }
-          }
-        }
-      }
-    }
-
-    return ret;
-  }
+  std::string VectorToJson(std::vector<EFXEAXREVERBPROPERTIES> vector);
 };
