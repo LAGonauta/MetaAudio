@@ -63,7 +63,7 @@ private:
     return static_cast<int>(
       std::clamp(
         Get<int64_t>(value, effectName),
-        static_cast<int64_t>(std::numeric_limits<int>::min()),
+        static_cast<int64_t>(std::numeric_limits<int>::lowest()),
         static_cast<int64_t>(std::numeric_limits<int>::max())
         )
       );
@@ -75,7 +75,7 @@ private:
     return static_cast<float>(
       std::clamp(
         Get<double>(value, effectName),
-        static_cast<double>(std::numeric_limits<float>::min()),
+        static_cast<double>(std::numeric_limits<float>::lowest()),
         static_cast<double>(std::numeric_limits<float>::max())
         )
       );
