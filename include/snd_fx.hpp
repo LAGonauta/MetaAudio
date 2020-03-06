@@ -25,7 +25,8 @@ private:
   alure::Vector<effectSlot> alAuxEffectSlots;
 
   // Default effects
-  alure::Array<EFXEAXREVERBPROPERTIES, CSXROOM> presets_room = { {
+  alure::Array<EFXEAXREVERBPROPERTIES, CSXROOM> presets_room =
+  { {
     EFX_REVERB_PRESET_GENERIC,                    //  0
     //SXROOM_GENERIC
     EFX_REVERB_PRESET_ROOM,                       //  1
@@ -65,7 +66,7 @@ private:
     EFX_REVERB_PRESET_DIZZY,                      // 26
     EFX_REVERB_PRESET_DIZZY,                      // 27
     EFX_REVERB_PRESET_DIZZY                       // 28
-} };
+  } };
 
   // For occlusion
   void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
