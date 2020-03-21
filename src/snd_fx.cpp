@@ -1,9 +1,11 @@
 #include <metahook.h>
+#include <filesystem>
 
 #include "event_api.h"
 #include "pm_defs.h"
 #include "snd_local.h"
 #include "snd_fx.hpp"
+#include "snd_efx_reader.hpp"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
@@ -255,6 +257,37 @@ EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
     }
   }
 
+  ConfigureDefaultEffects();
+
+  OverrideEffects();
+
+  if (max_sends > 1)
+  {
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
+  }
+  else if (max_sends == 1)
+  {
+    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
+  }
+
+  if (alAuxEffectSlots.size() > 0)
+  {
+    alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
+    alAuxEffectSlots[0].gain_current = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_initial_value = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_old_target = AL_REVERBMIX;
+    alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
+
+    if (alAuxEffectSlots.size() > 1)
+    {
+      alAuxEffectSlots[1].slot.setGain(0.0f);
+    }
+  }
+}
+
+void EnvEffects::ConfigureDefaultEffects()
+{
   // Disable reverb when room_type = 0:
   presets_room[0].flGain = 0;
 
@@ -373,28 +406,23 @@ EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
   presets_room[28].flGain = 0.4f;
   presets_room[28].flDecayTime = 17.234f;
   presets_room[28].flDecayHFRatio = 2.0f / 3.0f;
+}
 
-  if (max_sends > 1)
-  {
-    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
-    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
-  }
-  else if (max_sends == 1)
-  {
-    alAuxEffectSlots.emplace_back(al_context.createAuxiliaryEffectSlot(), al_context.createEffect());
-  }
+void EnvEffects::OverrideEffects()
+{
+  std::array<char, 256> directory;
+  g_pInterface->FileSystem->GetCurrentDirectoryA(directory.data(), directory.size());
+  std::filesystem::path filePath = directory.data();
+  filePath.append("efx-reverb.json");
 
-  if (alAuxEffectSlots.size() > 0)
+  EfxReader reader;
+  auto reverbFromJson = reader.GetProperties(filePath.string());
+  for (const auto& reverb : reverbFromJson)
   {
-    alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
-    alAuxEffectSlots[0].gain_current = AL_REVERBMIX;
-    alAuxEffectSlots[0].gain_initial_value = AL_REVERBMIX;
-    alAuxEffectSlots[0].gain_old_target = AL_REVERBMIX;
-    alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
-
-    if (alAuxEffectSlots.size() > 1)
+    auto index = std::get<0>(reverb);
+    if (index < presets_room.size())
     {
-      alAuxEffectSlots[1].slot.setGain(0.0f);
+      presets_room[index] = std::get<1>(reverb);
     }
   }
 }

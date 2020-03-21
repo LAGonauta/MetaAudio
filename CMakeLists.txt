@@ -21,14 +21,17 @@ set(SOURCES
     src/snd_wav.cpp
     src/zone.cpp
     src/interface.cpp
+    src/snd_efx_reader.cpp
 )
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
+add_compile_definitions(NOMINMAX PICOJSON_USE_INT64)
 
 target_include_directories(MetaAudio
     PRIVATE
         ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/externals/picojson
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
         ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/metahook/include

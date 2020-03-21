@@ -602,7 +602,7 @@ void VOX::MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     auto temp_viewer = data_viewer.reinterpret_as<int16>();
     while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = min(max(temp_viewer[i] >> 8, SCHAR_MIN), SCHAR_MAX);
+      data = std::clamp(temp_viewer[i] >> 8, SCHAR_MIN, SCHAR_MAX);
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
@@ -615,7 +615,7 @@ void VOX::MoveMouth(aud_channel_t *ch, aud_sfxcache_t *sc)
     auto temp_viewer = data_viewer.reinterpret_as<float>();
     while (i < sc->length && scount < CAVGSAMPLES)
     {
-      data = static_cast<int>(min(max(temp_viewer[i] * 128, SCHAR_MIN), SCHAR_MAX));
+      data = std::clamp(static_cast<int>(temp_viewer[i] * 128), SCHAR_MIN, SCHAR_MAX);
       savg += abs(data);
 
       i += 80 + ((byte)data & 0x1F);
