@@ -43,13 +43,13 @@ typedef struct
 typedef struct
 {
   //wave info
-  uint64_t length;
-  uint64_t loopstart;
-  uint64_t loopend;
-  ALuint samplerate;
-  bool looping;
-  alure::SampleType stype;
-  alure::ChannelConfig channels;
+  uint64_t length{};
+  uint64_t loopstart{};
+  uint64_t loopend{};
+  ALuint samplerate{};
+  bool looping{};
+  alure::SampleType stype{};
+  alure::ChannelConfig channels{};
 
   //OpenAL buffer
   alure::SharedPtr<alure::Decoder> decoder;

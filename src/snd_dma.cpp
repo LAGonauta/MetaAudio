@@ -45,10 +45,26 @@ std::string dprint_buffer;
 
 // translates from AL coordinate system to quake
 // HL seems to use inches, convert to meters.
-#define AL_UnitToMeters 0.0254f
-#define AL_UnpackVector(v) -v[1] * AL_UnitToMeters, v[2] * AL_UnitToMeters, -v[0] * AL_UnitToMeters
-#define AL_CopyVector(a, b) ((b)[0] = -(a)[1], (b)[1] = (a)[2], (b)[2] = -(a)[0])
-#define VectorCopy(a, b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
+static constexpr float AL_UnitToMeters = 0.0254f;
+
+static constexpr alure::Vector3 AL_UnpackVector(float* vector)
+{
+  return { -vector[1] * AL_UnitToMeters, vector[2] * AL_UnitToMeters, -vector[0] * AL_UnitToMeters };
+}
+
+static constexpr void AL_CopyVector(float* from, float* to)
+{
+  to[0] = -from[1];
+  to[1] = from[2];
+  to[2] = -from[0];
+}
+
+static constexpr void VectorCopy(float* from, float* to)
+{
+  to[0] = from[0];
+  to[1] = from[1];
+  to[2] = from[2];
+}
 
 static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
 {
@@ -299,7 +315,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
           (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
           (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
-        ch->source.setVelocity({ AL_UnpackVector(sent_velocity) });
+        ch->source.setVelocity(AL_UnpackVector(sent_velocity));
         ch->source.setRadius(sent->model->radius * AL_UnitToMeters);
       }
     }
@@ -311,7 +327,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
         ch->source.setRelative(true);
       }
     }
-    alure_position = { AL_UnpackVector(ch->origin) };
+    alure_position = AL_UnpackVector(ch->origin);
   }
   else
   {
@@ -401,9 +417,9 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
         (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
 
-      al_listener.setVelocity({ AL_UnpackVector(view_velocity) });
+      al_listener.setVelocity(AL_UnpackVector(view_velocity));
     }
-    al_listener.setPosition({ AL_UnpackVector(origin) });
+    al_listener.setPosition(AL_UnpackVector(origin));
     al_listener.setOrientation(alure_orientation);
 
     int roomtype = 0;
