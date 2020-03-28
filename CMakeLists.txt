@@ -13,6 +13,7 @@ set(SOURCES
     src/plugins.cpp
     src/snd_dma.cpp
     src/snd_fx.cpp
+    src/snd_fx_manager.cpp
     src/snd_hook.cpp
     src/snd_loader.cpp
     src/snd_mem.cpp
