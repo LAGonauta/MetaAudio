@@ -23,16 +23,16 @@ namespace MetaAudio
             auto index = name_to_index.find(effect_name);
             if (index != name_to_index.end())
             {
-              auto reflectionsPan = GetVector<float>(jsonObject.get("reflectionsPan"), effect_name);
-              if (reflectionsPan.size() < 3)
+              auto reflections_pan = GetVector<float>(jsonObject.get("reflectionsPan"), effect_name);
+              if (reflections_pan.size() < 3)
               {
-                reflectionsPan.resize(3);
+                reflections_pan.resize(3);
               };
 
-              auto lateReverbPan = GetVector<float>(jsonObject.get("lateReverbPan"), effect_name);
-              if (lateReverbPan.size() < 3)
+              auto late_reverb_pan = GetVector<float>(jsonObject.get("lateReverbPan"), effect_name);
+              if (late_reverb_pan.size() < 3)
               {
-                lateReverbPan.resize(3);
+                late_reverb_pan.resize(3);
               };
 
               EFXEAXREVERBPROPERTIES prop
@@ -47,10 +47,10 @@ namespace MetaAudio
                 Get<float>(jsonObject.get("decayLFRatio"), effect_name),
                 Get<float>(jsonObject.get("reflectionsGain"), effect_name),
                 Get<float>(jsonObject.get("reflectionsDelay"), effect_name),
-                { reflectionsPan[0], reflectionsPan[1], reflectionsPan[2] },
+                { reflections_pan[0], reflections_pan[1], reflections_pan[2] },
                 Get<float>(jsonObject.get("lateReverbGain"), effect_name),
                 Get<float>(jsonObject.get("lateReverbDelay"), effect_name),
-                { lateReverbPan[0], lateReverbPan[1], lateReverbPan[2] },
+                { late_reverb_pan[0], late_reverb_pan[1], late_reverb_pan[2] },
                 Get<float>(jsonObject.get("echoTime"), effect_name),
                 Get<float>(jsonObject.get("echoDepth"), effect_name),
                 Get<float>(jsonObject.get("modulationTime"), effect_name),
@@ -74,20 +74,20 @@ namespace MetaAudio
 
   std::string EfxJsonReader::VectorToJson(std::vector<EFXEAXREVERBPROPERTIES> vector)
   {
-    picojson::array jsonArray;
+    picojson::array json_array;
     for (size_t i = 0; i < vector.size(); ++i)
     {
-      jsonArray.emplace_back(SerializeEfxProps(vector[i], i));
+      json_array.emplace_back(SerializeEfxProps(vector[i], i));
     }
 
-    return picojson::value(jsonArray).serialize();
+    return picojson::value(json_array).serialize();
   }
 
   picojson::value EfxJsonReader::SerializeEfxProps(EFXEAXREVERBPROPERTIES props, size_t index)
   {
     picojson::object ret;
 
-    auto name = std::find_if(name_to_index.begin(), name_to_index.end(), [&index](const auto& vt) { return vt.second == index; });
+    auto name = std::find_if(name_to_index.begin(), name_to_index.end(), [=](const auto& vt) { return vt.second == index; });
     if (name != name_to_index.end())
     {
       ret["name"] = picojson::value(name->first);

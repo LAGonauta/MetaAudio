@@ -45,7 +45,7 @@ namespace MetaAudio
     };
 
     template<class T>
-    T Get(const picojson::value& value, const std::string& effectName)
+    T Get(const picojson::value& value, const std::string& effect_name)
     {
       if (value.is<T>())
       {
@@ -53,18 +53,18 @@ namespace MetaAudio
       }
       else
       {
-        // console.log("Property " + propName + " for " + effectName + " not set. Setting it to zero.")
+        // console.log("Property " + propName + " for " + effect_name + " not set. Setting it to zero.")
       }
 
       return T();
     }
 
     template<>
-    int Get<int>(const picojson::value& value, const std::string& effectName)
+    int Get<int>(const picojson::value& value, const std::string& effect_name)
     {
       return static_cast<int>(
         std::clamp(
-          Get<int64_t>(value, effectName),
+          Get<int64_t>(value, effect_name),
           static_cast<int64_t>(std::numeric_limits<int>::lowest()),
           static_cast<int64_t>(std::numeric_limits<int>::max())
           )
@@ -72,11 +72,11 @@ namespace MetaAudio
     }
 
     template<>
-    float Get<float>(const picojson::value& value, const std::string& effectName)
+    float Get<float>(const picojson::value& value, const std::string& effect_name)
     {
       return static_cast<float>(
         std::clamp(
-          Get<double>(value, effectName),
+          Get<double>(value, effect_name),
           static_cast<double>(std::numeric_limits<float>::lowest()),
           static_cast<double>(std::numeric_limits<float>::max())
           )
@@ -84,7 +84,7 @@ namespace MetaAudio
     }
 
     template<class T>
-    std::vector<T> GetVector(const picojson::value& vals, const std::string& effectName)
+    std::vector<T> GetVector(const picojson::value& vals, const std::string& effect_name)
     {
       std::vector<T> ret;
       if (vals.is<picojson::array>())
@@ -92,7 +92,7 @@ namespace MetaAudio
         const picojson::array& values = vals.get<picojson::array>();
         for (const picojson::value& val : values)
         {
-          ret.emplace_back(Get<float>(val, effectName));
+          ret.emplace_back(Get<float>(val, effect_name));
         }
       }
 
