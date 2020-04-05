@@ -12,7 +12,7 @@ set(SOURCES
     src/exportfuncs.cpp
     src/plugins.cpp
     src/snd_dma.cpp
-    src/snd_fx.cpp
+    src/Effects/EnvEffects.cpp
     src/snd_fx_manager.cpp
     src/snd_hook.cpp
     src/snd_loader.cpp

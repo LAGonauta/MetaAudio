@@ -1,7 +1,7 @@
 #include <metahook.h>
 
 #include "snd_local.h"
-#include "snd_fx.hpp"
+#include "Effects/EnvEffects.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
 #include "snd_loader.hpp"
@@ -35,7 +35,7 @@ qboolean openal_mute = false;
 static alure::DeviceManager al_dev_manager;
 static alure::Device al_device;
 static alure::Context al_context;
-static alure::UniquePtr<EnvEffects> al_efx;
+static alure::UniquePtr<MetaAudio::EnvEffects> al_efx;
 static alure::UniquePtr<VOX> vox;
 char al_device_name[1024] = "";
 int al_device_majorversion = 0;
@@ -976,7 +976,7 @@ qboolean OpenAL_Init(void)
 
     alure::Context::MakeCurrent(al_context);
     al_context.setDistanceModel(alure::DistanceModel::Linear);
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
+    al_efx = alure::MakeUnique<MetaAudio::EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
     return true;
   }
   catch (const std::exception& e)
@@ -1035,7 +1035,7 @@ void AL_Version_f(void)
 void AL_ResetEFX(void)
 {
   al_efx.reset();
-  al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
+  al_efx = alure::MakeUnique<MetaAudio::EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
 }
 
 void AL_Devices_f(bool basic = true)
