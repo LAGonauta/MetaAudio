@@ -24,7 +24,10 @@ set(SOURCES
     src/interface.cpp
     src/snd_efx_reader.cpp
     src/Effects/GoldSrcOcclusionCalculator.cpp
-    )
+    src/Effects/SteamAudioOcclusionCalculator.cpp
+    src/Utilities/Fade.cpp
+    src/Workarounds/NoWorkarounds.cpp
+    src/Workarounds/XFiWorkarounds.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
