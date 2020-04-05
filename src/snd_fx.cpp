@@ -6,6 +6,9 @@
 #include "snd_fx.hpp"
 #include "snd_efx_reader.hpp"
 #include "Effects/GoldSrcOcclusionCalculator.hpp"
+#include "Effects/SteamAudioOcclusionCalculator.hpp"
+#include "Workarounds/NoWorkarounds.hpp"
+#include "Workarounds/XFiWorkarounds.hpp"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
@@ -17,19 +20,9 @@ static cvar_t *al_occlusion_fade = nullptr;
 // with no adjustment of reverb intensity with distance.
 // Reverb adjustment with distance is disabled per-source.
 static constexpr float AL_REVERBMIX = 0.38f;
-static constexpr float AL_SND_GAIN_FADE_TIME = 0.25f;
 
 static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
 static constexpr float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
-
-// Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
-// they get stuck.
-static constexpr float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
-
-float EnvEffects::Lerp(float inital_value, float final_value, float fraction)
-{
-  return (inital_value * (1.0f - fraction)) + (final_value * fraction);
-}
 
 float EnvEffects::FadeToNewValue(const bool fade_enabled,
   const bool force_final,
@@ -44,27 +37,13 @@ float EnvEffects::FadeToNewValue(const bool fade_enabled,
     return final_value;
   }
 
-  if (old_final_value != final_value)
-  {
-    elapsed_time = 0;
-    initial_value = current_value;
-    old_final_value = final_value;
-  }
-
-  float frametime = static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime));
-  if (frametime == 0.0f)
-  {
-    return current_value;
-  }
-  elapsed_time += frametime;
-
-  if (elapsed_time >= AL_SND_GAIN_FADE_TIME)
-  {
-    elapsed_time = AL_SND_GAIN_FADE_TIME;
-    return final_value;
-  }
-
-  return Lerp(initial_value, final_value, elapsed_time / AL_SND_GAIN_FADE_TIME);
+  return fader->ToNewValue(force_final,
+    elapsed_time,
+    initial_value,
+    current_value,
+    old_final_value,
+    final_value,
+    static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
 }
 
 void EnvEffects::InterplEffect(int roomtype)
@@ -142,7 +121,10 @@ void EnvEffects::InterplEffect(int roomtype)
 
 void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 {
-  float direct_gain = gain_epsilon;
+  fx_manager.update();
+  auto f = fx_manager.get_current_data();
+
+  float direct_gain = 1.0f;
   cl_entity_t *pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
   cl_entity_t *sent = gEngfuncs.GetEntityByIndex(ch->entnum);
   if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
@@ -183,6 +165,7 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
     direct_gain = ch->ob_gain_current;
   }
 
+  direct_gain = workarounds->GainWorkaround(direct_gain);
   if (underwater)
   {
     ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
@@ -252,7 +235,26 @@ EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
     }
   }
 
-  occlusion_calculator = std::make_unique<MetaAudio::GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+  if (true /*GoldSrc*/)
+  {
+    occlusion_calculator = std::make_unique<MetaAudio::GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+  }
+  else
+  {
+    occlusion_calculator = std::make_unique<MetaAudio::SteamAudioOcclusionCalculator>();
+  }
+
+  fader = std::make_unique<MetaAudio::Fade>();
+
+  auto deviceName = al_context.getDevice().getName(alure::PlaybackName::Basic);
+  if (deviceName.find("X-Fi") != std::string::npos)
+  {
+    workarounds = std::make_unique<MetaAudio::XFiWorkarounds>();
+  }
+  else
+  {
+    workarounds = std::make_unique<MetaAudio::NoWorkarounds>();
+  }
 }
 
 void EnvEffects::ConfigureDefaultEffects()

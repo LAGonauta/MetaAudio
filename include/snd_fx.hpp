@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Effects/IOcclusionCalculator.hpp"
+#include "Utilities/Fade.hpp"
+#include "Workarounds/IWorkarounds.hpp"
 #include "efx-presets.h"
 
 class EnvEffects final
@@ -71,6 +73,8 @@ private:
 
   // For occlusion
   std::unique_ptr<MetaAudio::IOcclusionCalculator> occlusion_calculator;
+  std::unique_ptr<MetaAudio::Fade> fader;
+  std::unique_ptr<MetaAudio::IWorkarounds> workarounds;
   float EnvEffects::FadeToNewValue(const bool fade_enabled,
     const bool force_final,
     float& elapsed_time,
@@ -78,7 +82,6 @@ private:
     const float current_value,
     float& old_final_value,
     const float final_value);
-  float Lerp(float initial_value, float final_value, float fraction);
 
   void ConfigureDefaultEffects();
   void OverrideEffects();

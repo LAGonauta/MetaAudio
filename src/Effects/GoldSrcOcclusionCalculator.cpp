@@ -21,7 +21,7 @@ namespace MetaAudio
 
   OcclusionFilter GoldSrcOcclusionCalculator::GetParameters(Position listener, Position audioSource, float attenuationMultiplier)
   {
-    float gain = gain_epsilon;
+    float gain = 1.0f;
 
     if (attenuationMultiplier)
     {
