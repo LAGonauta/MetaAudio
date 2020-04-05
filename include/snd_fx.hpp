@@ -3,6 +3,7 @@
 #include "Effects/IOcclusionCalculator.hpp"
 #include "Utilities/Fade.hpp"
 #include "Workarounds/IWorkarounds.hpp"
+#include "snd_fx_manager.hpp"
 #include "efx-presets.h"
 
 class EnvEffects final
@@ -24,6 +25,8 @@ private:
       effect = _effect;
     };
   };
+
+  FxManager fx_manager;
 
   alure::Vector<effectSlot> alAuxEffectSlots;
 

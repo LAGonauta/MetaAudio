@@ -4,7 +4,7 @@
 #include "event_api.h"
 #include "snd_local.h"
 #include "snd_fx.hpp"
-#include "snd_efx_reader.hpp"
+#include "Config/EfxJsonReader.hpp"
 #include "Effects/GoldSrcOcclusionCalculator.hpp"
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
 #include "Workarounds/NoWorkarounds.hpp"
@@ -386,7 +386,7 @@ void EnvEffects::OverrideEffects()
   std::filesystem::path filePath = directory.data();
   filePath.append("efx-reverb.json");
 
-  EfxReader reader;
+  MetaAudio::EfxJsonReader reader;
   auto reverbFromJson = reader.GetProperties(filePath.string());
   for (const auto& reverb : reverbFromJson)
   {
