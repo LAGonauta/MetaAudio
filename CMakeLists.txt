@@ -23,7 +23,8 @@ set(SOURCES
     src/zone.cpp
     src/interface.cpp
     src/snd_efx_reader.cpp
-)
+    src/Effects/GoldSrcOcclusionCalculator.cpp
+    )
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

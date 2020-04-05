@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Effects/IOcclusionCalculator.hpp"
 #include "efx-presets.h"
 
 class EnvEffects final
@@ -69,7 +70,7 @@ private:
   } };
 
   // For occlusion
-  void PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr);
+  std::unique_ptr<MetaAudio::IOcclusionCalculator> occlusion_calculator;
   float EnvEffects::FadeToNewValue(const bool fade_enabled,
     const bool force_final,
     float& elapsed_time,
@@ -78,7 +79,6 @@ private:
     float& old_final_value,
     const float final_value);
   float Lerp(float initial_value, float final_value, float fraction);
-  float GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent);
 
   void ConfigureDefaultEffects();
   void OverrideEffects();

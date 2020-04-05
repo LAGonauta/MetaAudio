@@ -2,10 +2,10 @@
 #include <filesystem>
 
 #include "event_api.h"
-#include "pm_defs.h"
 #include "snd_local.h"
 #include "snd_fx.hpp"
 #include "snd_efx_reader.hpp"
+#include "Effects/GoldSrcOcclusionCalculator.hpp"
 
 extern cvar_t *sxroom_off;
 extern cvar_t *sxroomwater_type;
@@ -25,13 +25,6 @@ static constexpr float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
 // Creative X-Fi's are buggy with the direct filter gain set to 1.0f,
 // they get stuck.
 static constexpr float gain_epsilon = 1.0f - std::numeric_limits<float>::epsilon();
-
-void EnvEffects::PlayerTrace(vec3_t start, vec3_t end, int flags, pmtrace_s& tr)
-{
-  // 0 = regular player hull, 1 = ducked player hull, 2 = point hull
-  gEngfuncs.pEventAPI->EV_SetTraceHull(2);
-  gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, -1, &tr);
-}
 
 float EnvEffects::Lerp(float inital_value, float final_value, float fraction)
 {
@@ -72,36 +65,6 @@ float EnvEffects::FadeToNewValue(const bool fade_enabled,
   }
 
   return Lerp(initial_value, final_value, elapsed_time / AL_SND_GAIN_FADE_TIME);
-}
-
-// Attenuate -2.7dB per meter? Probably should be more.
-// Attenuation per wall inch in dB
-constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * 0.0254f;
-float EnvEffects::GetGainObscured(aud_channel_t *ch, cl_entity_t *pent, cl_entity_t *sent)
-{
-  float gain = gain_epsilon;
-
-  if (ch->attenuation)
-  {
-    pmtrace_s tr;
-
-    // set up traceline from player eyes to sound emitting entity origin
-    PlayerTrace(pent->origin, ch->origin, PM_STUDIO_IGNORE, tr);
-
-    // If hit, traceline between ent and player to get solid length.
-    if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
-    {
-      alure::Vector3 obstruction_first_point = tr.endpos;
-      PlayerTrace(ch->origin, pent->origin, PM_STUDIO_IGNORE, tr);
-
-      if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
-      {
-        gain = gain * alure::dBToLinear(TRANSMISSION_ATTN_PER_INCH * ch->attenuation * obstruction_first_point.getDistance(tr.endpos));
-      }
-    }
-  }
-
-  return gain;
 }
 
 void EnvEffects::InterplEffect(int roomtype)
@@ -198,7 +161,11 @@ void EnvEffects::ApplyEffect(aud_channel_t *ch, qboolean underwater)
 
       if (distance < zero_gain_distance)
       {
-        ch->ob_gain_target = GetGainObscured(ch, pent, sent);
+        ch->ob_gain_target = occlusion_calculator->GetParameters(
+            MetaAudio::Position { pent->origin[0], pent->origin[1], pent->origin[2] },
+            MetaAudio::Position {ch->origin[0], ch->origin[1], ch->origin[2] },
+            ch->attenuation
+          ).Mid;
       }
     }
     else
@@ -284,6 +251,8 @@ EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
       alAuxEffectSlots[1].slot.setGain(0.0f);
     }
   }
+
+  occlusion_calculator = std::make_unique<MetaAudio::GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
 }
 
 void EnvEffects::ConfigureDefaultEffects()
@@ -429,7 +398,8 @@ void EnvEffects::OverrideEffects()
 
 EnvEffects::~EnvEffects()
 {
-  for (auto& effectSlot : alAuxEffectSlots) {
+  for (auto& effectSlot : alAuxEffectSlots)
+  {
     effectSlot.slot.destroy();
     effectSlot.effect.destroy();
   }
