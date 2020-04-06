@@ -1,16 +1,9 @@
-#include <iostream>
-#include <fstream>
-
+#include "Loaders/GoldSrcFileBuf.hpp"
 #include "FileSystem.h"
-#include "alure2.h"
-#include "snd_loader.hpp"
 
-// Based on Alure's Stream class
-class GoldSrcFileBuf final : public std::streambuf {
-  alure::Array<char_type, 2048> mBuffer;
-  FileHandle_t mFile{ nullptr };
-
-  int_type underflow() override
+namespace MetaAudio
+{
+  GoldSrcFileBuf::int_type GoldSrcFileBuf::underflow()
   {
     if (mFile && gptr() == egptr())
     {
@@ -28,9 +21,9 @@ class GoldSrcFileBuf final : public std::streambuf {
     return traits_type::to_int_type(*gptr());
   }
 
-  pos_type seekoff(off_type offset, std::ios_base::seekdir whence, std::ios_base::openmode mode) override
+  GoldSrcFileBuf::pos_type GoldSrcFileBuf::seekoff(off_type offset, std::ios_base::seekdir whence, std::ios_base::openmode mode)
   {
-    if (!mFile || (mode&std::ios_base::out) || !(mode&std::ios_base::in))
+    if (!mFile || (mode & std::ios_base::out) || !(mode & std::ios_base::in))
     {
       return traits_type::eof();
     }
@@ -79,9 +72,9 @@ class GoldSrcFileBuf final : public std::streambuf {
     return curPosition;
   }
 
-  pos_type seekpos(pos_type pos, std::ios_base::openmode mode) override
+  GoldSrcFileBuf::pos_type GoldSrcFileBuf::seekpos(pos_type pos, std::ios_base::openmode mode)
   {
-    if (!mFile || (mode&std::ios_base::out) || !(mode&std::ios_base::in))
+    if (!mFile || (mode & std::ios_base::out) || !(mode & std::ios_base::in))
     {
       return traits_type::eof();
     }
@@ -97,8 +90,7 @@ class GoldSrcFileBuf final : public std::streambuf {
     return curPosition;
   }
 
-public:
-  bool open(const char *filename) noexcept
+  bool GoldSrcFileBuf::open(const char* filename) noexcept
   {
     mFile = g_pFileSystem->Open(filename, "rb");
     if (!mFile)
@@ -108,72 +100,9 @@ public:
     return true;
   }
 
-  GoldSrcFileBuf() = default;
-  ~GoldSrcFileBuf() override
+  GoldSrcFileBuf::~GoldSrcFileBuf()
   {
     g_pFileSystem->Close(mFile);
     mFile = nullptr;
   }
-};
-
-class GoldSrcFileStream final : public std::istream {
-  GoldSrcFileBuf mStreamBuf;
-
-public:
-  GoldSrcFileStream(const char *filename) : std::istream(nullptr)
-  {
-    init(&mStreamBuf);
-
-    if (!mStreamBuf.open(filename))
-    {
-      clear(failbit);
-    }
-  }
-};
-
-alure::UniquePtr<std::istream> GoldSrcFileFactory::openFile(const alure::String &name) noexcept
-{
-  alure::String namebuffer = "sound";
-
-  if (name[0] != '/')
-  {
-    namebuffer.append("/");
-  }
-
-  namebuffer.append(name);
-
-  auto fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
-  if (!fileExists)
-  {
-    namebuffer.clear();
-    if (name[0] != '/')
-    {
-      namebuffer.append("/");
-    }
-    namebuffer.append(name);
-
-    fileExists = g_pFileSystem->FileExists(namebuffer.c_str());
-  }
-
-  alure::UniquePtr<std::istream> file;
-  if (fileExists)
-  {
-    char final_file_path[260]; // MAX_PATH
-    g_pFileSystem->GetLocalPath(namebuffer.c_str(), final_file_path, sizeof(final_file_path));
-    file = alure::MakeUnique<std::ifstream>(final_file_path, std::ios::binary);
-    if (file->fail())
-    {
-      file = alure::MakeUnique<GoldSrcFileStream>(namebuffer.c_str());
-      if (file->fail())
-      {
-        file = nullptr;
-      }
-      else
-      {
-        *file >> std::noskipws;
-      }
-    }
-  }
-
-  return std::move(file);
 }

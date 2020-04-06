@@ -15,7 +15,6 @@ set(SOURCES
     src/Effects/EnvEffects.cpp
     src/snd_fx_manager.cpp
     src/snd_hook.cpp
-    src/snd_loader.cpp
     src/snd_mem.cpp
     src/snd_voice.cpp
     src/snd_vox.cpp
@@ -28,7 +27,9 @@ set(SOURCES
     src/Utilities/Fade.cpp
     src/Workarounds/NoWorkarounds.cpp
     src/Workarounds/XFiWorkarounds.cpp
-)
+    src/Loaders/GoldSrcFileBuf.cpp
+    src/Loaders/GoldSrcFileStream.cpp
+    src/Loaders/GoldSrcFileFactory.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

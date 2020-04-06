@@ -2,9 +2,9 @@
 
 #include "snd_local.h"
 #include "Effects/EnvEffects.hpp"
+#include "Loaders/GoldSrcFileFactory.hpp"
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
-#include "snd_loader.hpp"
 #include "Utilities/VectorUtils.hpp"
 #include "zone.h"
 
@@ -950,7 +950,7 @@ qboolean OpenAL_Init(void)
 {
   try
   {
-    alure::FileIOFactory::set(alure::MakeUnique<GoldSrcFileFactory>());
+    alure::FileIOFactory::set(alure::MakeUnique<MetaAudio::GoldSrcFileFactory>());
 
     al_dev_manager = alure::DeviceManager::getInstance();
 
