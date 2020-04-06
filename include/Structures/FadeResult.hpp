@@ -5,7 +5,8 @@ namespace MetaAudio
   struct FadeResult
   {
     float TotalElapsedTime;
-    float Mid;
-    float High;
+    float Initial;
+    float Target;
+    float Current;
   };
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Structures/FadeResult.hpp"
+
 namespace MetaAudio
 {
   class Fade
@@ -10,12 +12,6 @@ namespace MetaAudio
     float Lerp(float inital_value, float final_value, float fraction);
 
   public:
-    float ToNewValue(bool force_final,
-                      float& elapsed_time,
-                      float& initial_value,
-                      float current_value,
-                      float& last_final_value,
-                      float final_value,
-                      float frametime);
+    FadeResult ToNewValue(FadeResult input, float final_value, float frametime);
   };
 }

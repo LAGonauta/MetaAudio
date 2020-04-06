@@ -32,21 +32,24 @@ namespace MetaAudio
     float& elapsed_time,
     float& initial_value,
     const float current_value,
-    float& old_final_value,
-    const float final_value)
+    float& last_target,
+    const float current_target)
   {
-    if (fade_enabled == false || force_final)
+    if (!fade_enabled || force_final)
     {
-      return final_value;
+      return current_target;
     }
 
-    return fader->ToNewValue(force_final,
-      elapsed_time,
-      initial_value,
-      current_value,
-      old_final_value,
-      final_value,
-      static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime)));
+    auto result = fader->ToNewValue(
+      FadeResult{ elapsed_time, initial_value, last_target, current_value },
+      current_target,
+      static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime))
+      );
+    elapsed_time = result.TotalElapsedTime;
+    initial_value = result.Initial;
+    last_target = result.Target;
+
+    return result.Current;
   }
 
   void EnvEffects::InterplEffect(int roomtype)
