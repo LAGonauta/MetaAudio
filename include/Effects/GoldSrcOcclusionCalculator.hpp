@@ -3,7 +3,7 @@
 #include <limits>
 
 #include "IOcclusionCalculator.hpp"
-#include "snd_utilities.hpp"
+#include "Utilities/VectorUtils.hpp"
 #include "event_api.h"
 
 namespace MetaAudio

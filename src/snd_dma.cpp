@@ -5,7 +5,7 @@
 #include "snd_voice.hpp"
 #include "snd_vox.hpp"
 #include "snd_loader.hpp"
-#include "snd_utilities.hpp"
+#include "Utilities/VectorUtils.hpp"
 #include "zone.h"
 
 //sfx struct
@@ -269,7 +269,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
 
       if (sent && sent->model && sent->curstate.messagenum == *gAudEngine.cl_parsecount)
       {
-        VectorCopy(sent->origin, ch->origin);
+        MetaAudio::VectorCopy(sent->origin, ch->origin);
 
         if (sent->model->type == mod_brush)
         {
@@ -293,8 +293,8 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
           (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
           (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
-        ch->source.setVelocity(AL_UnpackVector(sent_velocity));
-        ch->source.setRadius(sent->model->radius * AL_UnitToMeters);
+        ch->source.setVelocity(MetaAudio::AL_UnpackVector(sent_velocity));
+        ch->source.setRadius(sent->model->radius * MetaAudio::AL_UnitToMeters);
       }
     }
     else
@@ -305,7 +305,7 @@ void SND_Spatialize(aud_channel_t *ch, qboolean init)
         ch->source.setRelative(true);
       }
     }
-    alure_position = AL_UnpackVector(ch->origin);
+    alure_position = MetaAudio::AL_UnpackVector(ch->origin);
   }
   else
   {
@@ -349,8 +349,8 @@ void S_Update(float *origin, float *forward, float *right, float *up)
       dprint_buffer.clear();
     }
 
-    AL_CopyVector(forward, orientation);
-    AL_CopyVector(up, orientation + 3);
+    MetaAudio::AL_CopyVector(forward, orientation);
+    MetaAudio::AL_CopyVector(up, orientation + 3);
 
     alure::Listener al_listener = al_context.getListener();
     if (openal_mute)
@@ -395,9 +395,9 @@ void S_Update(float *origin, float *forward, float *right, float *up)
         (pent->curstate.origin[1] - pent->prevstate.origin[1]) * ratio,
         (pent->curstate.origin[2] - pent->prevstate.origin[2]) * ratio };
 
-      al_listener.setVelocity(AL_UnpackVector(view_velocity));
+      al_listener.setVelocity(MetaAudio::AL_UnpackVector(view_velocity));
     }
-    al_listener.setPosition(AL_UnpackVector(origin));
+    al_listener.setPosition(MetaAudio::AL_UnpackVector(origin));
     al_listener.setOrientation(alure_orientation);
 
     int roomtype = 0;
@@ -760,7 +760,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
     return;
   }
 
-  VectorCopy(origin, ch->origin);
+  MetaAudio::VectorCopy(origin, ch->origin);
   ch->attenuation = attenuation;
   ch->volume = fvol;
   ch->entnum = entnum;
@@ -801,7 +801,7 @@ void S_StartSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float f
 
   ch->source.setPitch(ch->pitch);
   ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
-  ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
+  ch->source.setDistanceRange(0.0f, 1000.0f * MetaAudio::AL_UnitToMeters);
   ch->source.setAirAbsorptionFactor(1.0f);
 
   // Should also set source priority

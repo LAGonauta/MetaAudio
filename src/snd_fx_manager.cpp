@@ -1,6 +1,6 @@
 #include <metahook.h>
 
-#include "snd_utilities.hpp"
+#include "Utilities/VectorUtils.hpp"
 #include "snd_local.h"
 #include "snd_fx_manager.hpp"
 
@@ -88,7 +88,7 @@ void FxManager::update()
 
           for (int j = 0; j < poly->numverts; j++)
           {
-            surfaceVerts.emplace_back(AL_UnpackVector(poly->verts[j]));
+            surfaceVerts.emplace_back(MetaAudio::AL_UnpackVector(poly->verts[j]));
           }
 
           poly = poly->next;
@@ -142,7 +142,7 @@ void FxManager::update()
 
         { // generate indices
           int indexoffset = triangulatedVerts.size();
-          auto actualNormal = AL_CopyVector(surface.plane->normal);
+          auto actualNormal = MetaAudio::AL_CopyVector(surface.plane->normal);
 
           for (size_t i = 0; i < newVerts.size() - 2; ++i)
           {
