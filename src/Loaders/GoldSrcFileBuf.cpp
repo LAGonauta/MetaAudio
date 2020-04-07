@@ -93,11 +93,7 @@ namespace MetaAudio
   bool GoldSrcFileBuf::open(const char* filename) noexcept
   {
     mFile = g_pFileSystem->Open(filename, "rb");
-    if (!mFile)
-    {
-      return false;
-    }
-    return true;
+    return mFile;
   }
 
   GoldSrcFileBuf::~GoldSrcFileBuf()
