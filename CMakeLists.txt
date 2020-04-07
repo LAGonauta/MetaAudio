@@ -17,7 +17,7 @@ set(SOURCES
     src/snd_hook.cpp
     src/snd_mem.cpp
     src/Voice/VoiceDecoder.cpp
-    src/snd_vox.cpp
+    src/Vox/VoxManager.cpp
     src/snd_wav.cpp
     src/zone.cpp
     src/interface.cpp

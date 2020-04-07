@@ -143,7 +143,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     {
       try
       {
-        alure::SharedPtr<MetaAudio::VoiceDecoder> dec = alure::MakeShared<MetaAudio::VoiceDecoder>(s, ch);
+        auto dec = alure::MakeShared<MetaAudio::VoiceDecoder>(s, ch);
         sc = new aud_sfxcache_t();
         sc->channels = dec->getChannelConfig();
         sc->samplerate = dec->getFrequency();

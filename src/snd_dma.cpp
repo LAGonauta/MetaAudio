@@ -3,7 +3,7 @@
 #include "snd_local.h"
 #include "Effects/EnvEffects.hpp"
 #include "Loaders/GoldSrcFileFactory.hpp"
-#include "snd_vox.hpp"
+#include "Vox/VoxManager.hpp"
 #include "Utilities/VectorUtils.hpp"
 #include "zone.h"
 
@@ -35,7 +35,7 @@ static alure::DeviceManager al_dev_manager;
 static alure::Device al_device;
 static alure::Context al_context;
 static alure::UniquePtr<MetaAudio::EnvEffects> al_efx;
-static alure::UniquePtr<VOX> vox;
+static alure::UniquePtr<MetaAudio::VoxManager> vox;
 char al_device_name[1024] = "";
 int al_device_majorversion = 0;
 int al_device_minorversion = 0;
@@ -1076,7 +1076,7 @@ void S_Init(void)
 
   gAudEngine.S_Init();
 
-  vox = alure::MakeUnique<VOX>();
+  vox = alure::MakeUnique<MetaAudio::VoxManager>();
 
   if (!gEngfuncs.CheckParm("-nosound", NULL))
   {
