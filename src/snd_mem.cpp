@@ -3,7 +3,7 @@
 
 #include "FileSystem.h"
 #include "snd_local.h"
-#include "snd_voice.hpp"
+#include "Voice/VoiceDecoder.hpp"
 #include "snd_wav.hpp"
 #include "zone.h"
 
@@ -143,7 +143,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
     {
       try
       {
-        alure::SharedPtr<VoiceDecoder> dec = alure::MakeShared<VoiceDecoder>(s, ch);
+        alure::SharedPtr<MetaAudio::VoiceDecoder> dec = alure::MakeShared<MetaAudio::VoiceDecoder>(s, ch);
         sc = new aud_sfxcache_t();
         sc->channels = dec->getChannelConfig();
         sc->samplerate = dec->getFrequency();

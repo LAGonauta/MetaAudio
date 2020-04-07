@@ -3,7 +3,6 @@
 #include "snd_local.h"
 #include "Effects/EnvEffects.hpp"
 #include "Loaders/GoldSrcFileFactory.hpp"
-#include "snd_voice.hpp"
 #include "snd_vox.hpp"
 #include "Utilities/VectorUtils.hpp"
 #include "zone.h"
