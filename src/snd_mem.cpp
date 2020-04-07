@@ -4,10 +4,10 @@
 #include "FileSystem.h"
 #include "snd_local.h"
 #include "Voice/VoiceDecoder.hpp"
-#include "snd_wav.hpp"
+#include "Loaders/LocalAudioDecoder.hpp"
 #include "zone.h"
 
-static auto local_decoder = alure::MakeShared<LocalAudioDecoder>();
+static auto local_decoder = alure::MakeShared<MetaAudio::LocalAudioDecoder>();
 
 // Check if file exists. Order: original, .wav, .flac, .ogg, .mp3
 static std::optional<alure::String> S_GetFilePath(const alure::String& sfx_name, bool is_stream)
@@ -30,7 +30,7 @@ static std::optional<alure::String> S_GetFilePath(const alure::String& sfx_name,
   if (char_index != new_name.npos)
   {
     auto context = alure::Context::GetCurrent();
-    for (const alure::String& extension : LocalAudioDecoder::SupportedExtensions)
+    for (const alure::String& extension : MetaAudio::LocalAudioDecoder::SupportedExtensions)
     {
       new_name.replace(char_index, new_name.npos, extension);
       try

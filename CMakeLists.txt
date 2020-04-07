@@ -18,7 +18,7 @@ set(SOURCES
     src/snd_mem.cpp
     src/Voice/VoiceDecoder.cpp
     src/Vox/VoxManager.cpp
-    src/snd_wav.cpp
+    src/Loaders/LocalAudioDecoder.cpp
     src/zone.cpp
     src/interface.cpp
     src/Config/EfxJsonReader.cpp
