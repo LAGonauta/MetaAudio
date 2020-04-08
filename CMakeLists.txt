@@ -13,7 +13,7 @@ set(SOURCES
     src/plugins.cpp
     src/snd_dma.cpp
     src/Effects/EnvEffects.cpp
-    src/snd_fx_manager.cpp
+    src/Loaders/SteamAudioMapMeshLoader.cpp
     src/snd_hook.cpp
     src/snd_mem.cpp
     src/Voice/VoiceDecoder.cpp

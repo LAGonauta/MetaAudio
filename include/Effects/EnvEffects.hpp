@@ -3,7 +3,7 @@
 #include "Effects/IOcclusionCalculator.hpp"
 #include "Utilities/Fade.hpp"
 #include "Workarounds/IWorkarounds.hpp"
-#include "snd_fx_manager.hpp"
+#include "Loaders/SteamAudioMapMeshLoader.hpp"
 #include "efx-presets.h"
 
 namespace MetaAudio
@@ -28,7 +28,7 @@ namespace MetaAudio
       };
     };
 
-    FxManager fx_manager;
+    SteamAudioMapMeshLoader mesh_loader;
 
     alure::Vector<effectSlot> alAuxEffectSlots;
 

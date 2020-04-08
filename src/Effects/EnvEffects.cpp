@@ -127,8 +127,8 @@ namespace MetaAudio
 
   void EnvEffects::ApplyEffect(aud_channel_t* ch, qboolean underwater)
   {
-    fx_manager.update();
-    auto f = fx_manager.get_current_data();
+    mesh_loader.update();
+    auto f = mesh_loader.get_current_data();
 
     float direct_gain = 1.0f;
     cl_entity_t* pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
