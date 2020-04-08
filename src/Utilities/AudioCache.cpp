@@ -2,7 +2,7 @@
 
 namespace MetaAudio
 {
-  aud_sfxcache_t* AudioCache::Cache_Alloc(cache_user_t* c, alure::String name)
+  aud_sfxcache_t* AudioCache::Cache_Alloc(cache_user_t* c, const alure::String& name)
   {
     if (c->data)
     {
@@ -15,7 +15,7 @@ namespace MetaAudio
     return &result.first->second;
   }
 
-  void AudioCache::Cache_Free(alure::String name)
+  void AudioCache::Cache_Free(const alure::String& name)
   {
     cache.erase(name);
   }
