@@ -29,7 +29,8 @@ set(SOURCES
     src/Workarounds/XFiWorkarounds.cpp
     src/Loaders/GoldSrcFileBuf.cpp
     src/Loaders/GoldSrcFileStream.cpp
-    src/Loaders/GoldSrcFileFactory.cpp)
+    src/Loaders/GoldSrcFileFactory.cpp
+    src/Loaders/SoundLoader.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

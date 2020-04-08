@@ -43,7 +43,7 @@ int al_device_minorversion = 0;
 //Print buffer
 std::string dprint_buffer;
 
-extern MetaAudio::AudioCache cache; // from snd_mem.cpp.
+extern std::shared_ptr<MetaAudio::AudioCache> cache; // from snd_mem.cpp.
 
 static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
 {
@@ -82,7 +82,7 @@ void S_FreeCache(sfx_t *sfx)
     al_context.removeBuffer(sc->buffer);
   }
 
-  cache.Cache_Free(sfx->name);
+  cache->Cache_Free(sfx->name);
 
   sfx->cache.data = nullptr;
 }
