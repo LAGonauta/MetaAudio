@@ -5,9 +5,10 @@
 #include "snd_local.h"
 #include "Voice/VoiceDecoder.hpp"
 #include "Loaders/LocalAudioDecoder.hpp"
-#include "zone.h"
+#include "Utilities/AudioCache.hpp"
 
 static auto local_decoder = alure::MakeShared<MetaAudio::LocalAudioDecoder>();
+MetaAudio::AudioCache cache;
 
 // Check if file exists. Order: original, .wav, .flac, .ogg, .mp3
 static std::optional<alure::String> S_GetFilePath(const alure::String& sfx_name, bool is_stream)
@@ -88,7 +89,7 @@ aud_sfxcache_t *S_LoadStreamSound(sfx_t *s, aud_channel_t *ch)
   //Alloc cache if we don't have one
   if (sc == nullptr)
   {
-    sc = Cache_Alloc(&s->cache, s->name);
+    sc = cache.Cache_Alloc(&s->cache, s->name);
     if (sc == nullptr)
       return nullptr;
   }
@@ -190,7 +191,7 @@ aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch)
       return nullptr;
     }
 
-    sc = Cache_Alloc(&s->cache, s->name);
+    sc = cache.Cache_Alloc(&s->cache, s->name);
     if (sc == nullptr)
       return nullptr;
 

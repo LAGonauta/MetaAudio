@@ -19,7 +19,7 @@ set(SOURCES
     src/Voice/VoiceDecoder.cpp
     src/Vox/VoxManager.cpp
     src/Loaders/LocalAudioDecoder.cpp
-    src/zone.cpp
+    src/Utilities/AudioCache.cpp
     src/interface.cpp
     src/Config/EfxJsonReader.cpp
     src/Effects/GoldSrcOcclusionCalculator.cpp

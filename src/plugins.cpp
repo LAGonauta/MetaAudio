@@ -2,7 +2,6 @@
 #include <IAudio.h>
 
 #include "snd_local.h"
-#include "zone.h"
 
 cl_exportfuncs_t gExportfuncs;
 mh_interface_t *g_pInterface;

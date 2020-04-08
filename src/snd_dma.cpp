@@ -5,7 +5,7 @@
 #include "Loaders/GoldSrcFileFactory.hpp"
 #include "Vox/VoxManager.hpp"
 #include "Utilities/VectorUtils.hpp"
-#include "zone.h"
+#include "Utilities/AudioCache.hpp"
 
 //sfx struct
 std::unordered_map<alure::String, sfx_t> known_sfx;
@@ -42,6 +42,8 @@ int al_device_minorversion = 0;
 
 //Print buffer
 std::string dprint_buffer;
+
+extern MetaAudio::AudioCache cache; // from snd_mem.cpp.
 
 static bool ChannelCheckIsPlaying(const aud_channel_t& channel)
 {
@@ -80,7 +82,7 @@ void S_FreeCache(sfx_t *sfx)
     al_context.removeBuffer(sc->buffer);
   }
 
-  Cache_Free(sfx->name);
+  cache.Cache_Free(sfx->name);
 
   sfx->cache.data = nullptr;
 }
