@@ -1,4 +1,5 @@
 #pragma once
+#include <metahook.h>
 
 #include "exportfuncs.h"
 #include "enginedef.h"
@@ -109,29 +110,14 @@ typedef struct
 
 //snd_hook.cpp
 void S_FillAddress(void);
-void S_InstallHook(void);
 
-//snd_dma.cpp
-void S_Startup(void); // hooked
-void S_Init(void); // hooked
-void S_Shutdown(void); // hooked
-void S_ShutdownAL(void);
-sfx_t *S_FindName(char *name, int *pfInCache); // hooked
-void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
-void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
-void S_StopSound(int entnum, int entchannel); // hooked
-void S_StopAllSounds(qboolean clear); // hooked
-void S_Update(float *origin, float *forward, float *right, float *up); // hooked
-void S_FreeChannel(aud_channel_t *ch);
-void S_FreeCache(sfx_t *sfx);
-void S_FlushCaches(void);
-bool SND_IsPlaying(sfx_t *sfx);
+namespace MetaAudio
+{
+  class AudioEngine;
+  class SoundLoader;
+}
 
-//snd_mem.cpp
-aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch); // hooked
+void S_InstallHook(MetaAudio::AudioEngine* engine, MetaAudio::SoundLoader* loader);
 
 //common
 extern aud_engine_t gAudEngine;
-
-//active control
-extern qboolean openal_started;

@@ -5,7 +5,7 @@
 
 namespace MetaAudio
 {
-  VoxManager::VoxManager() : rgrgvoxword{} {}
+  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader) : rgrgvoxword{}, m_engine(engine), m_loader(loader) {}
 
   VoxManager::~VoxManager() {}
 
@@ -493,7 +493,7 @@ namespace MetaAudio
 
         // find name, if already in cache, mark voxword
         // so we don't discard when word is done playing
-        rgvoxword[cword].sfx = S_FindName(const_cast<char*>(pathbuffer.c_str()), &(rgvoxword[cword].fKeepCached));
+        rgvoxword[cword].sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &(rgvoxword[cword].fKeepCached));
         cword++;
       }
       i++;
@@ -516,14 +516,14 @@ namespace MetaAudio
 
     if (!pchan->sfx)
     {
-      S_FreeChannel(pchan);
+      m_engine->S_FreeChannel(pchan);
       return nullptr;
     }
 
-    sc = S_LoadSound(pchan->sfx, pchan);
+    sc = m_loader->S_LoadSound(pchan->sfx, pchan);
     if (!sc)
     {
-      S_FreeChannel(pchan);
+      m_engine->S_FreeChannel(pchan);
       return nullptr;
     }
 

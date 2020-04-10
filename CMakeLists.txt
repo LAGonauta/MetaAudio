@@ -10,12 +10,10 @@ project(MetaAudio)
 
 set(SOURCES
     src/exportfuncs.cpp
-    src/plugins.cpp
-    src/snd_dma.cpp
+    src/metaaudio.cpp
     src/Effects/EnvEffects.cpp
     src/Loaders/SteamAudioMapMeshLoader.cpp
     src/snd_hook.cpp
-    src/snd_mem.cpp
     src/Voice/VoiceDecoder.cpp
     src/Vox/VoxManager.cpp
     src/Loaders/LocalAudioDecoder.cpp
@@ -30,7 +28,8 @@ set(SOURCES
     src/Loaders/GoldSrcFileBuf.cpp
     src/Loaders/GoldSrcFileStream.cpp
     src/Loaders/GoldSrcFileFactory.cpp
-    src/Loaders/SoundLoader.cpp)
+    src/Loaders/SoundLoader.cpp
+    src/AudioEngine.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

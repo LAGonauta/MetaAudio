@@ -1,6 +1,7 @@
 #include <metahook.h>
 #include <filesystem>
 
+#include "pm_defs.h"
 #include "event_api.h"
 #include "snd_local.h"
 #include "Config/EfxJsonReader.hpp"
@@ -10,7 +11,6 @@
 #include "Workarounds/NoWorkarounds.hpp"
 #include "Workarounds/XFiWorkarounds.hpp"
 
-extern cvar_t* sxroom_off;
 extern cvar_t* sxroomwater_type;
 extern cvar_t* sxroom_type;
 
@@ -18,6 +18,7 @@ namespace MetaAudio
 {
   static cvar_t* al_occlusion = nullptr;
   static cvar_t* al_occlusion_fade = nullptr;
+  static cvar_t* sxroom_off = nullptr;
 
   // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
   // with no adjustment of reverb intensity with distance.
@@ -199,6 +200,11 @@ namespace MetaAudio
     if (al_occlusion_fade == nullptr)
     {
       al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
+    }
+
+    if (sxroom_off == nullptr)
+    {
+      sxroom_off = gEngfuncs.pfnGetCvarPointer("room_off");
     }
 
     const char* _al_maxsends;
