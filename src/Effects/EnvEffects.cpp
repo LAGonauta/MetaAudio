@@ -1,5 +1,6 @@
 #include <metahook.h>
 #include <filesystem>
+#include <algorithm>
 
 #include "pm_defs.h"
 #include "event_api.h"
@@ -28,29 +29,25 @@ namespace MetaAudio
   static constexpr float AL_UNDERWATER_LP_GAIN = 0.25f;
   static constexpr float AL_UNDERWATER_DOPPLER_FACTOR_RATIO = 343.3f / 1484.0f;
 
-  float EnvEffects::FadeToNewValue(const bool fade_enabled,
+  void EnvEffects::FadeToNewValue(const bool fade_enabled,
     const bool force_final,
-    float& elapsed_time,
-    float& initial_value,
-    const float current_value,
-    float& last_target,
-    const float current_target)
+    GainFading& value)
   {
     if (!fade_enabled || force_final)
     {
-      return current_target;
+      value.current = value.target;
+      return;
     }
 
     auto result = fader->ToNewValue(
-      FadeResult{ elapsed_time, initial_value, last_target, current_value },
-      current_target,
+      FadeResult{ value.elapsed_time, value.initial_value, value.last_target, value.current },
+      value.target,
       static_cast<float>((*gAudEngine.cl_time) - (*gAudEngine.cl_oldtime))
       );
-    elapsed_time = result.TotalElapsedTime;
-    initial_value = result.Initial;
-    last_target = result.Target;
-
-    return result.Current;
+    value.elapsed_time = result.TotalElapsedTime;
+    value.initial_value = result.Initial;
+    value.last_target = result.Target;
+    value.current = result.Current;
   }
 
   void EnvEffects::InterplEffect(int roomtype)
@@ -68,48 +65,24 @@ namespace MetaAudio
     {
       if (room_type == roomtype)
       {
-        alAuxEffectSlots[effect_slot].gain_fading_target = AL_REVERBMIX;
-        alAuxEffectSlots[effect_slot].gain_fading_current =
-          FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
-            alAuxEffectSlots[effect_slot].gain_fading_current,
-            alAuxEffectSlots[effect_slot].gain_fading_last_target,
-            alAuxEffectSlots[effect_slot].gain_fading_target);
+        alAuxEffectSlots[effect_slot].gain.target = AL_REVERBMIX;
+        FadeToNewValue(true, false, alAuxEffectSlots[effect_slot].gain);
 
         auto other_effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
-        alAuxEffectSlots[other_effect_slot].gain_fading_target = 0.0f;
-        alAuxEffectSlots[other_effect_slot].gain_fading_current =
-          FadeToNewValue(true, false,
-            alAuxEffectSlots[other_effect_slot].gain_fading_elapsed_time,
-            alAuxEffectSlots[other_effect_slot].gain_fading_initial_value,
-            alAuxEffectSlots[other_effect_slot].gain_fading_current,
-            alAuxEffectSlots[other_effect_slot].gain_fading_last_target,
-            alAuxEffectSlots[other_effect_slot].gain_fading_target);
+        alAuxEffectSlots[other_effect_slot].gain.target = 0.0f;
+        FadeToNewValue(true, false, alAuxEffectSlots[other_effect_slot].gain);
       }
       else
       {
         room_type = roomtype;
 
-        alAuxEffectSlots[effect_slot].gain_fading_target = 0.0f;
-        alAuxEffectSlots[effect_slot].gain_fading_current =
-          FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
-            alAuxEffectSlots[effect_slot].gain_fading_current,
-            alAuxEffectSlots[effect_slot].gain_fading_last_target,
-            alAuxEffectSlots[effect_slot].gain_fading_target);
+        alAuxEffectSlots[effect_slot].gain.target = 0.0f;
+        FadeToNewValue(true, false, alAuxEffectSlots[effect_slot].gain);
 
         effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
 
-        alAuxEffectSlots[effect_slot].gain_fading_target = AL_REVERBMIX;
-        alAuxEffectSlots[effect_slot].gain_fading_current =
-          FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
-            alAuxEffectSlots[effect_slot].gain_fading_current,
-            alAuxEffectSlots[effect_slot].gain_fading_last_target,
-            alAuxEffectSlots[effect_slot].gain_fading_target);
+        alAuxEffectSlots[effect_slot].gain.target = AL_REVERBMIX;
+        FadeToNewValue(true, false, alAuxEffectSlots[effect_slot].gain);
 
         alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
       }
@@ -121,7 +94,7 @@ namespace MetaAudio
 
     for (auto& effectSlot : alAuxEffectSlots)
     {
-      effectSlot.slot.setGain(effectSlot.gain_fading_current);
+      effectSlot.slot.setGain(effectSlot.gain.current);
       effectSlot.slot.applyEffect(effectSlot.effect);
     }
   }
@@ -134,6 +107,8 @@ namespace MetaAudio
   void EnvEffects::ApplyEffect(aud_channel_t* ch, qboolean underwater)
   {
     float direct_gain = 1.0f;
+    alure::FilterParams params{1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN };
+
     cl_entity_t* pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
     cl_entity_t* sent = gEngfuncs.GetEntityByIndex(ch->entnum);
     if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
@@ -152,7 +127,7 @@ namespace MetaAudio
 
         if (distance < zero_gain_distance)
         {
-          auto radius = sent->model != nullptr ? sent->model->radius : 1.0f;
+          auto radius = sent->model != nullptr ? sent->model->radius * AL_UnitToMeters : 1.0f;
           auto getVector = [](float* from)
           {
             auto ret = AL_UnpackVector(from);
@@ -163,46 +138,60 @@ namespace MetaAudio
           {
             auto k = 1;
           }
-          ch->gain_fading_target = occlusion_calculator->GetParameters(
+
+          auto occlusion = occlusion_calculator->GetParameters(
             getVector(pent->origin),
             Vector3{ listener_orientation.first[0], listener_orientation.first[1], listener_orientation.first[2] },
             Vector3{ listener_orientation.second[0], listener_orientation.second[1], listener_orientation.second[2] },
             getVector(ch->origin),
-            radius * AL_UnitToMeters,
+            radius,
             ch->attenuation
-            ).Mid;
+            );
+
+          ch->LowGain.target = occlusion.Low;
+          ch->MidGain.target = occlusion.Mid;
+          ch->HighGain.target = occlusion.High;
         }
       }
       else
       {
-        ch->gain_fading_target = direct_gain;
+        ch->LowGain.target = direct_gain;
+        ch->MidGain.target = direct_gain;
+        ch->HighGain.target = direct_gain;
       }
 
-      ch->gain_fading_current = FadeToNewValue(al_occlusion_fade->value,
-        ch->firstpass,
-        ch->gain_fading_elapsed_time,
-        ch->gain_fading_initial_value,
-        ch->gain_fading_current,
-        ch->gain_fading_last_target,
-        ch->gain_fading_target);
-      direct_gain = ch->gain_fading_current;
+      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->LowGain);
+      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->MidGain);
+      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->HighGain);
+
+      direct_gain = ch->MidGain.current;
+
+      params.mGain = (ch->LowGain.current + ch->MidGain.current + ch->HighGain.current) / 3;
+      params.mGainHF = ch->HighGain.current;
+      params.mGainLF = ch->LowGain.current;
     }
 
     direct_gain = workarounds->GainWorkaround(direct_gain);
+
+    params.mGain = workarounds->GainWorkaround(params.mGain);
+    params.mGainHF = workarounds->GainWorkaround(params.mGainHF);
+    params.mGainLF = workarounds->GainWorkaround(params.mGainLF);
+
     if (underwater)
     {
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, AL_UNDERWATER_LP_GAIN * direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+      params.mGainHF *= AL_UNDERWATER_LP_GAIN;
+      ch->source.setDirectFilter(params);
       ch->source.setDopplerFactor(AL_UNDERWATER_DOPPLER_FACTOR_RATIO);
     }
     else
     {
-      ch->source.setDirectFilter(alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setDirectFilter(params);
       ch->source.setDopplerFactor(1.0f);
     }
 
     for (size_t i = 0; i < alAuxEffectSlots.size(); ++i)
     {
-      ch->source.setAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, alure::FilterParams{ direct_gain, direct_gain, AL_HIGHPASS_DEFAULT_GAIN });
+      ch->source.setAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, params);
     }
   }
 
@@ -252,10 +241,10 @@ namespace MetaAudio
     if (alAuxEffectSlots.size() > 0)
     {
       alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
-      alAuxEffectSlots[0].gain_fading_current = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_fading_initial_value = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_fading_last_target = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_fading_target = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain.current = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain.initial_value = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain.last_target = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain.target = AL_REVERBMIX;
 
       if (alAuxEffectSlots.size() > 1)
       {

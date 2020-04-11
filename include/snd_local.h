@@ -9,6 +9,15 @@
 
 typedef struct
 {
+  float current{ 0 };
+  float elapsed_time{ 0 };
+  float initial_value{ 0 };
+  float last_target{ 0 };
+  float target{ 0 };
+} GainFading;
+
+typedef struct
+{
   sfx_t *sfx;
   float volume;
   float pitch;
@@ -34,12 +43,10 @@ typedef struct
 
   // For OpenAL EFX
   bool firstpass{ true };
-  float gain_fading_current{ 0 };
-  float gain_fading_elapsed_time{ 0 };
-  float gain_fading_initial_value{ 0 };
-  float gain_fading_last_target{ 0 };
-  float gain_fading_target{ 0 };
-}aud_channel_t;
+  GainFading LowGain;
+  GainFading MidGain;
+  GainFading HighGain;
+} aud_channel_t;
 
 typedef struct
 {

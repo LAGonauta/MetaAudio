@@ -34,14 +34,18 @@ namespace MetaAudio
     {
       pmtrace_s tr;
 
+      // Convert to GoldSrc coordinates system
+      auto listener_position = GoldSrc_UnpackVector(listenerPosition);
+      auto audio_source_position = GoldSrc_UnpackVector(audioSourcePosition);
+
       // set up traceline from player eyes to sound emitting entity origin
-      PlayerTrace(listenerPosition, audioSourcePosition, tr);
+      PlayerTrace(listener_position, audio_source_position, tr);
 
       // If hit, traceline between ent and player to get solid length.
       if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
       {
         alure::Vector3 obstruction_first_point(tr.endpos);
-        PlayerTrace(audioSourcePosition, listenerPosition, tr);
+        PlayerTrace(audio_source_position, listener_position, tr);
 
         if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
         {

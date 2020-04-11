@@ -16,11 +16,7 @@ namespace MetaAudio
     {
       alure::AuxiliaryEffectSlot slot;
       alure::Effect effect;
-      float gain_fading_current{ 0 };
-      float gain_fading_elapsed_time{ 0 };
-      float gain_fading_initial_value{ 0 };
-      float gain_fading_last_target{ 0 };
-      float gain_fading_target{ 0 };
+      GainFading gain;
       effectSlot(alure::AuxiliaryEffectSlot _slot, alure::Effect _effect)
       {
         slot = _slot;
@@ -79,13 +75,7 @@ namespace MetaAudio
     std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
     std::unique_ptr<Fade> fader;
     std::unique_ptr<IWorkarounds> workarounds;
-    float EnvEffects::FadeToNewValue(const bool fade_enabled,
-      const bool force_final,
-      float& elapsed_time,
-      float& initial_value,
-      const float current_value,
-      float& old_final_value,
-      const float final_value);
+    void EnvEffects::FadeToNewValue(const bool fade_enabled, const bool force_final, GainFading& value);
 
     void ConfigureDefaultEffects();
     void OverrideEffects();

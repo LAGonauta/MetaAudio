@@ -8,7 +8,7 @@ namespace MetaAudio
 
   static IPLVector3 ToIPLVector3(const Vector3& vector)
   {
-    return IPLVector3{ vector.X, vector.Y, vector.Z };
+    return { vector.X, vector.Y, vector.Z };
   }
 
   OcclusionFilter SteamAudioOcclusionCalculator::GetParameters(
@@ -22,7 +22,7 @@ namespace MetaAudio
   {
     if (attenuationMultiplier == 0.0f)
     {
-      return OcclusionFilter{ 1.0f,1.0f,1.0f };
+      return OcclusionFilter{ 1.0f, 1.0f, 1.0f };
     }
 
     IPLSource source{ToIPLVector3(audioSourcePosition)};
@@ -39,7 +39,7 @@ namespace MetaAudio
       IPLDirectOcclusionMethod::IPL_DIRECTOCCLUSION_VOLUMETRIC
       );
 
-    auto getFactor = [](const IPLDirectSoundPath& path, size_t index) { return path.occlusionFactor + (1 - path.occlusionFactor) * path.transmissionFactor[index]; };
+    auto getFactor = [=](const IPLDirectSoundPath& path, size_t index) { return std::clamp((path.occlusionFactor + (1 - path.occlusionFactor) * path.transmissionFactor[index]) * attenuationMultiplier, 0.0f, 1.0f); };
     auto ret = OcclusionFilter{ getFactor(result, 0), getFactor(result, 1), getFactor(result, 2) };
     return ret;
   }

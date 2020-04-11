@@ -1047,10 +1047,10 @@ namespace MetaAudio
     sa_simulationSettings.bakingBatchSize = 1;
     sa_simulationSettings.irDuration = 1;
     sa_simulationSettings.irradianceMinDistance = 0.1f;
-    sa_simulationSettings.maxConvolutionSources = 32;
+    sa_simulationSettings.maxConvolutionSources = 1;
     sa_simulationSettings.numBounces = 2;
     sa_simulationSettings.numDiffuseSamples = 1024;
-    sa_simulationSettings.numOcclusionSamples = 32;
+    sa_simulationSettings.numOcclusionSamples = 512;
     sa_simulationSettings.numRays = 4096;
     sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
     sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
