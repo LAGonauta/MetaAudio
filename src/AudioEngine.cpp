@@ -1,6 +1,8 @@
 #include "AudioEngine.hpp"
-#include <Utilities\VectorUtils.hpp>
-#include <Loaders\GoldSrcFileFactory.hpp>
+#include "Utilities\VectorUtils.hpp"
+#include "Loaders\GoldSrcFileFactory.hpp"
+#include "Effects\GoldSrcOcclusionCalculator.hpp"
+#include "Effects\SteamAudioOcclusionCalculator.hpp"
 
 namespace MetaAudio
 {
@@ -305,6 +307,7 @@ namespace MetaAudio
 
       // Update Alure's OpenAL context at the start of processing.
       al_context.update();
+      sa_meshloader->update();
 
       // Print buffer and clear it.
       if (dprint_buffer.length())
@@ -345,6 +348,8 @@ namespace MetaAudio
       {
         alure_orientation.second[0] = 1;
       }
+
+      al_efx->SetListenerOrientation(alure_orientation);
 
       cl_entity_t* pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
       if (pent != nullptr)
@@ -998,7 +1003,16 @@ namespace MetaAudio
   void AudioEngine::AL_ResetEFX()
   {
     al_efx.reset();
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
+    std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
+    if (false /*GoldSrc*/)
+    {
+      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+    }
+    else
+    {
+      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader);
+    }
+    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
   }
 
   void AudioEngine::AL_Devices(bool basic)
@@ -1019,15 +1033,47 @@ namespace MetaAudio
     }
   }
 
+  void AudioEngine::SteamAudio_Init()
+  {
+    if (sa_context == nullptr)
+    {
+      auto error = iplCreateContext(nullptr, nullptr, nullptr, &sa_context);
+      if (error)
+      {
+        throw std::exception("Error creating SA context: " + error);
+      }
+    }
+    sa_simulationSettings.ambisonicsOrder = 1;
+    sa_simulationSettings.bakingBatchSize = 1;
+    sa_simulationSettings.irDuration = 1;
+    sa_simulationSettings.irradianceMinDistance = 0.1f;
+    sa_simulationSettings.maxConvolutionSources = 32;
+    sa_simulationSettings.numBounces = 2;
+    sa_simulationSettings.numDiffuseSamples = 1024;
+    sa_simulationSettings.numOcclusionSamples = 32;
+    sa_simulationSettings.numRays = 4096;
+    sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
+    sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
+    sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(sa_context, sa_simulationSettings);
+  }
+
+  void AudioEngine::SteamAudio_Shutdown()
+  {
+    sa_meshloader.reset();
+    if (sa_context)
+    {
+      iplDestroyContext(&sa_context);
+      sa_context = nullptr;
+    }
+    iplCleanup();
+  }
+
   void AudioEngine::S_Init()
   {
     al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
     al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
 
     gAudEngine.S_Init();
-
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends());
-    vox = alure::MakeUnique<VoxManager>(this, loader);
 
     if (!gEngfuncs.CheckParm("-nosound", NULL))
     {
@@ -1039,6 +1085,21 @@ namespace MetaAudio
 
       S_StopAllSounds(true);
     }
+
+    SteamAudio_Init();
+
+    std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
+    if (false /*GoldSrc*/)
+    {
+      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+    }
+    else
+    {
+      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader);
+    }
+
+    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
+    vox = alure::MakeUnique<VoxManager>(this, loader);
   }
 
   void AudioEngine::OpenAL_Shutdown()
@@ -1060,6 +1121,8 @@ namespace MetaAudio
       vox.reset();
       OpenAL_Shutdown();
       openal_started = false;
+
+      SteamAudio_Shutdown();
     }
   }
 

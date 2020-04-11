@@ -34,11 +34,11 @@ typedef struct
 
   // For OpenAL EFX
   bool firstpass{ true };
-  float ob_gain_current{ 0 };
-  float ob_gain_elapsed_time{ 0 };
-  float ob_gain_initial_value{ 0 };
-  float ob_gain_old_target{ 0 };
-  float ob_gain_target{ 0 };
+  float gain_fading_current{ 0 };
+  float gain_fading_elapsed_time{ 0 };
+  float gain_fading_initial_value{ 0 };
+  float gain_fading_last_target{ 0 };
+  float gain_fading_target{ 0 };
 }aud_channel_t;
 
 typedef struct

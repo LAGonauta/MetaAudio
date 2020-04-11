@@ -68,48 +68,48 @@ namespace MetaAudio
     {
       if (room_type == roomtype)
       {
-        alAuxEffectSlots[effect_slot].gain_target = AL_REVERBMIX;
-        alAuxEffectSlots[effect_slot].gain_current =
+        alAuxEffectSlots[effect_slot].gain_fading_target = AL_REVERBMIX;
+        alAuxEffectSlots[effect_slot].gain_fading_current =
           FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_initial_value,
-            alAuxEffectSlots[effect_slot].gain_current,
-            alAuxEffectSlots[effect_slot].gain_old_target,
-            alAuxEffectSlots[effect_slot].gain_target);
+            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
+            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
+            alAuxEffectSlots[effect_slot].gain_fading_current,
+            alAuxEffectSlots[effect_slot].gain_fading_last_target,
+            alAuxEffectSlots[effect_slot].gain_fading_target);
 
         auto other_effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
-        alAuxEffectSlots[other_effect_slot].gain_target = 0.0f;
-        alAuxEffectSlots[other_effect_slot].gain_current =
+        alAuxEffectSlots[other_effect_slot].gain_fading_target = 0.0f;
+        alAuxEffectSlots[other_effect_slot].gain_fading_current =
           FadeToNewValue(true, false,
-            alAuxEffectSlots[other_effect_slot].gain_elapsed_time,
-            alAuxEffectSlots[other_effect_slot].gain_initial_value,
-            alAuxEffectSlots[other_effect_slot].gain_current,
-            alAuxEffectSlots[other_effect_slot].gain_old_target,
-            alAuxEffectSlots[other_effect_slot].gain_target);
+            alAuxEffectSlots[other_effect_slot].gain_fading_elapsed_time,
+            alAuxEffectSlots[other_effect_slot].gain_fading_initial_value,
+            alAuxEffectSlots[other_effect_slot].gain_fading_current,
+            alAuxEffectSlots[other_effect_slot].gain_fading_last_target,
+            alAuxEffectSlots[other_effect_slot].gain_fading_target);
       }
       else
       {
         room_type = roomtype;
 
-        alAuxEffectSlots[effect_slot].gain_target = 0.0f;
-        alAuxEffectSlots[effect_slot].gain_current =
+        alAuxEffectSlots[effect_slot].gain_fading_target = 0.0f;
+        alAuxEffectSlots[effect_slot].gain_fading_current =
           FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_initial_value,
-            alAuxEffectSlots[effect_slot].gain_current,
-            alAuxEffectSlots[effect_slot].gain_old_target,
-            alAuxEffectSlots[effect_slot].gain_target);
+            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
+            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
+            alAuxEffectSlots[effect_slot].gain_fading_current,
+            alAuxEffectSlots[effect_slot].gain_fading_last_target,
+            alAuxEffectSlots[effect_slot].gain_fading_target);
 
         effect_slot = (effect_slot + 1) % alAuxEffectSlots.size();
 
-        alAuxEffectSlots[effect_slot].gain_target = AL_REVERBMIX;
-        alAuxEffectSlots[effect_slot].gain_current =
+        alAuxEffectSlots[effect_slot].gain_fading_target = AL_REVERBMIX;
+        alAuxEffectSlots[effect_slot].gain_fading_current =
           FadeToNewValue(true, false,
-            alAuxEffectSlots[effect_slot].gain_elapsed_time,
-            alAuxEffectSlots[effect_slot].gain_initial_value,
-            alAuxEffectSlots[effect_slot].gain_current,
-            alAuxEffectSlots[effect_slot].gain_old_target,
-            alAuxEffectSlots[effect_slot].gain_target);
+            alAuxEffectSlots[effect_slot].gain_fading_elapsed_time,
+            alAuxEffectSlots[effect_slot].gain_fading_initial_value,
+            alAuxEffectSlots[effect_slot].gain_fading_current,
+            alAuxEffectSlots[effect_slot].gain_fading_last_target,
+            alAuxEffectSlots[effect_slot].gain_fading_target);
 
         alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
       }
@@ -121,16 +121,18 @@ namespace MetaAudio
 
     for (auto& effectSlot : alAuxEffectSlots)
     {
-      effectSlot.slot.setGain(effectSlot.gain_current);
+      effectSlot.slot.setGain(effectSlot.gain_fading_current);
       effectSlot.slot.applyEffect(effectSlot.effect);
     }
   }
 
+  void EnvEffects::SetListenerOrientation(std::pair<alure::Vector3, alure::Vector3> listenerOrientation)
+  {
+    listener_orientation = listenerOrientation;
+  }
+
   void EnvEffects::ApplyEffect(aud_channel_t* ch, qboolean underwater)
   {
-    mesh_loader.update();
-    auto f = mesh_loader.get_current_data();
-
     float direct_gain = 1.0f;
     cl_entity_t* pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
     cl_entity_t* sent = gEngfuncs.GetEntityByIndex(ch->entnum);
@@ -150,26 +152,40 @@ namespace MetaAudio
 
         if (distance < zero_gain_distance)
         {
-          ch->ob_gain_target = occlusion_calculator->GetParameters(
-            Position{ pent->origin[0], pent->origin[1], pent->origin[2] },
-            Position{ ch->origin[0], ch->origin[1], ch->origin[2] },
+          auto radius = sent->model != nullptr ? sent->model->radius : 1.0f;
+          auto getVector = [](float* from)
+          {
+            auto ret = AL_UnpackVector(from);
+            return Vector3{ ret[0], ret[1], ret[2] };
+          };
+
+          if (std::string("ambience/breather.wav") == ch->sfx->name)
+          {
+            auto k = 1;
+          }
+          ch->gain_fading_target = occlusion_calculator->GetParameters(
+            getVector(pent->origin),
+            Vector3{ listener_orientation.first[0], listener_orientation.first[1], listener_orientation.first[2] },
+            Vector3{ listener_orientation.second[0], listener_orientation.second[1], listener_orientation.second[2] },
+            getVector(ch->origin),
+            radius * AL_UnitToMeters,
             ch->attenuation
             ).Mid;
         }
       }
       else
       {
-        ch->ob_gain_target = direct_gain;
+        ch->gain_fading_target = direct_gain;
       }
 
-      ch->ob_gain_current = FadeToNewValue(al_occlusion_fade->value,
+      ch->gain_fading_current = FadeToNewValue(al_occlusion_fade->value,
         ch->firstpass,
-        ch->ob_gain_elapsed_time,
-        ch->ob_gain_initial_value,
-        ch->ob_gain_current,
-        ch->ob_gain_old_target,
-        ch->ob_gain_target);
-      direct_gain = ch->ob_gain_current;
+        ch->gain_fading_elapsed_time,
+        ch->gain_fading_initial_value,
+        ch->gain_fading_current,
+        ch->gain_fading_last_target,
+        ch->gain_fading_target);
+      direct_gain = ch->gain_fading_current;
     }
 
     direct_gain = workarounds->GainWorkaround(direct_gain);
@@ -190,7 +206,7 @@ namespace MetaAudio
     }
   }
 
-  EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends)
+  EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator) : occlusion_calculator(occlusion_calculator)
   {
     if (al_occlusion == nullptr)
     {
@@ -236,24 +252,15 @@ namespace MetaAudio
     if (alAuxEffectSlots.size() > 0)
     {
       alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
-      alAuxEffectSlots[0].gain_current = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_initial_value = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_old_target = AL_REVERBMIX;
-      alAuxEffectSlots[0].gain_target = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain_fading_current = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain_fading_initial_value = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain_fading_last_target = AL_REVERBMIX;
+      alAuxEffectSlots[0].gain_fading_target = AL_REVERBMIX;
 
       if (alAuxEffectSlots.size() > 1)
       {
         alAuxEffectSlots[1].slot.setGain(0.0f);
       }
-    }
-
-    if (true /*GoldSrc*/)
-    {
-      occlusion_calculator = std::make_unique<GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
-    }
-    else
-    {
-      occlusion_calculator = std::make_unique<SteamAudioOcclusionCalculator>();
     }
 
     fader = std::make_unique<Fade>();

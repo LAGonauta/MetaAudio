@@ -74,4 +74,8 @@ add_subdirectory(externals/alure)
 
 add_subdirectory(externals/metahook)
 
-target_link_libraries(MetaAudio PRIVATE OpenAL alure2)
+add_subdirectory(externals/steamaudio)
+
+add_dependencies(MetaAudio SteamAudio)
+
+target_link_libraries(MetaAudio PRIVATE OpenAL alure2 SteamAudio)

@@ -2,7 +2,7 @@
 
 namespace MetaAudio
 {
-  struct Position
+  struct Vector3
   {
     float X;
     float Y;

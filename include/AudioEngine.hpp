@@ -61,10 +61,19 @@ namespace MetaAudio
     aud_channel_t* SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx);
     aud_channel_t* SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx);
     void S_StartSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch, bool is_static);
-    bool OpenAL_Init();
-    
 
+    bool OpenAL_Init();
     void OpenAL_Shutdown();
+
+    // SteamAudio
+    IPLhandle sa_context = nullptr;
+    IPLSimulationSettings sa_simulationSettings{};
+    IPLhandle sa_environment = nullptr;
+
+    void SteamAudio_Init();
+    void SteamAudio_Shutdown();
+
+    std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader;
 
   public:
     AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader);

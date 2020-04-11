@@ -8,6 +8,8 @@ namespace MetaAudio
 {
   constexpr const float EPSILON = 0.000001f;
 
+  static IPLhandle context{ nullptr };
+
   bool VectorEquals(const alure::Vector3& left, const alure::Vector3& right)
   {
     return left[0] == right[0] && left[1] == right[1] && left[2] == right[2];
@@ -18,9 +20,9 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader()
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings) : sa_simul_settings(simulSettings), sa_context(sa_context)
   {
-    current_map = std::make_tuple("", MapData{});
+    current_env = std::make_tuple("", nullptr);
   }
 
   alure::Vector3 SteamAudioMapMeshLoader::Normalize(const alure::Vector3& vector)
@@ -37,11 +39,6 @@ namespace MetaAudio
   float SteamAudioMapMeshLoader::DotProduct(const alure::Vector3& left, const alure::Vector3& right)
   {
     return left[0] * right[0] + left[1] * right[1] + left[2] * right[2];
-  }
-
-  alure::Vector3 SteamAudioMapMeshLoader::CrossProduct(const alure::Vector3& a, const alure::Vector3& b)
-  {
-    return alure::Vector3(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]);
   }
 
   void SteamAudioMapMeshLoader::update()
@@ -61,7 +58,7 @@ namespace MetaAudio
       else
       {
         auto mapModel = map->model;
-        if (std::get<0>(current_map) == mapModel->name)
+        if (std::get<0>(current_env) == mapModel->name)
         {
           return;
         }
@@ -70,7 +67,7 @@ namespace MetaAudio
           auto search = map_cache.find(mapModel->name);
           if (search != map_cache.end())
           {
-            current_map = std::make_tuple(search->first, search->second);
+            current_env = std::make_tuple(search->first, search->second->Env());
             return;
           }
         }
@@ -153,14 +150,6 @@ namespace MetaAudio
               triangle.indices[0] = indexoffset + i + 2;
               triangle.indices[1] = indexoffset + i + 1;
               triangle.indices[2] = indexoffset;
-
-              // Faster way to check if the ordering is correct?
-              auto normal = Normalize(CrossProduct(newVerts[triangle.indices[0] - indexoffset] - newVerts[triangle.indices[1] - indexoffset],
-                newVerts[triangle.indices[1] - indexoffset] - newVerts[triangle.indices[2] - indexoffset]));
-              if (!VectorApproximatelyEquals(normal, actualNormal))
-              {
-                std::swap(triangle.indices[1], triangle.indices[2]);
-              }
             }
 
             // Add vertices to final array
@@ -168,14 +157,36 @@ namespace MetaAudio
           }
         }
 
-        map_cache[mapModel->name] = MapData{ triangulatedVerts, triangles };
-        current_map = std::make_tuple(mapModel->name, map_cache[mapModel->name]);
+        auto data = MapData{ triangulatedVerts, triangles };
+
+        IPLerror error;
+        IPLhandle scene = nullptr;
+        error = iplCreateScene(sa_context, nullptr, sa_simul_settings, 1, materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        if (error)
+        {
+          throw std::exception("Error creating scene: " + error);
+        }
+
+        IPLhandle staticmesh = nullptr;
+        error = iplCreateStaticMesh(scene, data.vertices.size() * 3, data.triangles.size(), reinterpret_cast<IPLVector3*>(data.vertices.data()), data.triangles.data(), std::vector<int>(data.triangles.size(), 0).data(), &staticmesh);
+
+        IPLhandle env = nullptr;
+        error = iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
+
+        map_cache[mapModel->name] = std::make_shared<CacheItem>(env, scene, staticmesh);
+        current_env = std::make_tuple(mapModel->name, map_cache[mapModel->name]->Env());
       }
     }
   }
 
-  SteamAudioMapMeshLoader::MapData SteamAudioMapMeshLoader::get_current_data()
+  IPLhandle SteamAudioMapMeshLoader::get_current_environment()
   {
-    return std::get<1>(current_map);
+    return std::get<1>(current_env);
+  }
+
+  void SteamAudioMapMeshLoader::PurgeCache()
+  {
+    current_env = std::make_tuple("", nullptr);
+    map_cache.clear();
   }
 }

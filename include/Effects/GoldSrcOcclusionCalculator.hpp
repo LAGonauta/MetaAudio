@@ -16,10 +16,15 @@ namespace MetaAudio
     static constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * AL_UnitToMeters;
 
     const event_api_s* event_api;
-    void PlayerTrace(Position start, Position end, pmtrace_s& tr);
+    void PlayerTrace(Vector3 start, Vector3 end, pmtrace_s& tr);
   public:
     GoldSrcOcclusionCalculator(event_api_s* event_api);
 
-    OcclusionFilter GetParameters(Position listener, Position audioSource, float attenuationMultiplier);
+    OcclusionFilter GetParameters(Vector3 listenerPosition,
+      Vector3 listenerAhead,
+      Vector3 listenerUp,
+      Vector3 audioSourcePosition,
+      float sourceRadius,
+      float attenuationMultiplier);
   };
 }

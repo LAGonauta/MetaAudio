@@ -2,36 +2,93 @@
 #include <unordered_map>
 
 #include "alure2.h"
+#include "phonon.h"
 
 namespace MetaAudio
 {
   class SteamAudioMapMeshLoader final
   {
   private:
-
-    typedef struct
-    {
-      int indices[3];
-    } IPLTriangle;
-
     typedef struct
     {
       std::vector<alure::Vector3> vertices;
       std::vector<IPLTriangle> triangles;
     } MapData;
 
-    std::tuple<std::string, MapData> current_map;
-    std::unordered_map<std::string, MapData> map_cache;
+    class CacheItem final
+    {
+    private:
+      IPLhandle environment;
+      IPLhandle scene;
+      IPLhandle static_mesh;
+
+    public:
+      CacheItem(IPLhandle env, IPLhandle scene, IPLhandle mesh) : environment(env), scene(scene), static_mesh(mesh)
+      {
+      }
+
+      ~CacheItem()
+      {
+        if (environment != nullptr)
+        {
+          iplDestroyEnvironment(&environment);
+        }
+
+        if (scene != nullptr)
+        {
+          iplDestroyScene(&scene);
+        }
+
+        if (static_mesh != nullptr)
+        {
+          iplDestroyStaticMesh(&static_mesh);
+        }
+      }
+
+      // delete copy
+      CacheItem(const CacheItem& other) = delete;
+      CacheItem& CacheItem::operator=(const CacheItem& other) = delete;
+
+      // allow move
+      CacheItem(CacheItem&& other) noexcept
+      {
+        std::swap(environment, other.environment);
+        std::swap(scene, other.scene);
+        std::swap(static_mesh, other.static_mesh);
+      }
+      CacheItem& operator=(CacheItem&& other) noexcept
+      {
+        std::swap(environment, other.environment);
+        std::swap(scene, other.scene);
+        std::swap(static_mesh, other.static_mesh);
+        return *this;
+      }
+
+      IPLhandle Env()
+      {
+        return environment;
+      }
+    };
+
+    IPLSimulationSettings sa_simul_settings;
+    IPLhandle sa_context;
+
+    std::tuple<std::string, IPLhandle> current_env;
+    std::unordered_map<std::string, std::shared_ptr<CacheItem>> map_cache;
 
     alure::Vector3 Normalize(const alure::Vector3& vector);
     float DotProduct(const alure::Vector3& left, const alure::Vector3& right);
-    alure::Vector3 CrossProduct(const alure::Vector3& a, const alure::Vector3& b);
+
+    std::array<IPLMaterial, 1> materials{ {0.10f,0.20f,0.30f,0.05f,0.100f,0.050f,0.030f} };
   public:
-    SteamAudioMapMeshLoader();
+    SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings);
 
     // Checks if map is current , if not update it
     void update();
 
-    MapData get_current_data();
+    // get current scene data as an IPLhandle
+    IPLhandle get_current_environment();
+
+    void PurgeCache();
   };
 }

@@ -16,19 +16,17 @@ namespace MetaAudio
     {
       alure::AuxiliaryEffectSlot slot;
       alure::Effect effect;
-      float gain_current{ 0 };
-      float gain_elapsed_time{ 0 };
-      float gain_initial_value{ 0 };
-      float gain_old_target{ 0 };
-      float gain_target{ 0 };
+      float gain_fading_current{ 0 };
+      float gain_fading_elapsed_time{ 0 };
+      float gain_fading_initial_value{ 0 };
+      float gain_fading_last_target{ 0 };
+      float gain_fading_target{ 0 };
       effectSlot(alure::AuxiliaryEffectSlot _slot, alure::Effect _effect)
       {
         slot = _slot;
         effect = _effect;
       };
     };
-
-    SteamAudioMapMeshLoader mesh_loader;
 
     alure::Vector<effectSlot> alAuxEffectSlots;
 
@@ -77,7 +75,8 @@ namespace MetaAudio
     } };
 
     // For occlusion
-    std::unique_ptr<IOcclusionCalculator> occlusion_calculator;
+    std::pair<alure::Vector3, alure::Vector3> listener_orientation;
+    std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
     std::unique_ptr<Fade> fader;
     std::unique_ptr<IWorkarounds> workarounds;
     float EnvEffects::FadeToNewValue(const bool fade_enabled,
@@ -92,10 +91,11 @@ namespace MetaAudio
     void OverrideEffects();
 
   public:
-    EnvEffects(alure::Context al_context, ALCuint max_sends);
+    EnvEffects(alure::Context al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator);
     ~EnvEffects();
 
     void InterplEffect(int roomtype);
     void ApplyEffect(aud_channel_t* ch, qboolean underwater);
+    void SetListenerOrientation(std::pair<alure::Vector3, alure::Vector3> listenerOrientation);
   };
 }

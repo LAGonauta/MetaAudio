@@ -1,12 +1,18 @@
 #pragma once
 
 #include "alure2.h"
+#include "Structures/Vector3.hpp"
 
 namespace MetaAudio
 {
   // translates from AL coordinate system to quake
   // HL seems to use inches, convert to meters.
   static constexpr float AL_UnitToMeters = 0.0254f;
+
+  static constexpr Vector3 GoldSrc_UnpackVector(const Vector3& vector)
+  {
+    return {-vector.Z / AL_UnitToMeters, -vector.X / AL_UnitToMeters, vector.Y / AL_UnitToMeters};
+  }
 
   static constexpr alure::Vector3 AL_UnpackVector(float* vector)
   {
