@@ -106,7 +106,6 @@ namespace MetaAudio
 
   void EnvEffects::ApplyEffect(aud_channel_t* ch, qboolean underwater)
   {
-    float direct_gain = 1.0f;
     alure::FilterParams params{1.0f, AL_LOWPASS_DEFAULT_GAIN, AL_HIGHPASS_DEFAULT_GAIN };
 
     cl_entity_t* pent = gEngfuncs.GetEntityByIndex(*gAudEngine.cl_viewentity);
@@ -134,11 +133,6 @@ namespace MetaAudio
             return Vector3{ ret[0], ret[1], ret[2] };
           };
 
-          if (std::string("ambience/breather.wav") == ch->sfx->name)
-          {
-            auto k = 1;
-          }
-
           auto occlusion = occlusion_calculator->GetParameters(
             getVector(pent->origin),
             Vector3{ listener_orientation.first[0], listener_orientation.first[1], listener_orientation.first[2] },
@@ -148,30 +142,26 @@ namespace MetaAudio
             ch->attenuation
             );
 
-          ch->LowGain.target = occlusion.Low;
           ch->MidGain.target = occlusion.Mid;
-          ch->HighGain.target = occlusion.High;
+          ch->LowGain.target = std::clamp(occlusion.Mid ? occlusion.Low / occlusion.Mid : occlusion.Low, 0.0f, 1.0f);
+          ch->HighGain.target = std::clamp(occlusion.Mid ? occlusion.High / occlusion.Mid : occlusion.High, 0.0f, 1.0f);
         }
       }
       else
       {
-        ch->LowGain.target = direct_gain;
-        ch->MidGain.target = direct_gain;
-        ch->HighGain.target = direct_gain;
+        ch->LowGain.target = 1.0f;
+        ch->MidGain.target = 1.0f;
+        ch->HighGain.target = 1.0f;
       }
 
       FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->LowGain);
       FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->MidGain);
       FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->HighGain);
 
-      direct_gain = ch->MidGain.current;
-
-      params.mGain = (ch->LowGain.current + ch->MidGain.current + ch->HighGain.current) / 3;
+      params.mGain = ch->MidGain.current;
       params.mGainHF = ch->HighGain.current;
       params.mGainLF = ch->LowGain.current;
     }
-
-    direct_gain = workarounds->GainWorkaround(direct_gain);
 
     params.mGain = workarounds->GainWorkaround(params.mGain);
     params.mGainHF = workarounds->GainWorkaround(params.mGainHF);

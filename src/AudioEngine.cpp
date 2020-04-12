@@ -1033,11 +1033,16 @@ namespace MetaAudio
     }
   }
 
+  static IPLvoid SteamAudioLog(char* message)
+  {
+    gEngfuncs.Con_Printf(const_cast<char *>(("SteamAudio: " + std::string(message)).c_str()));
+  }
+
   void AudioEngine::SteamAudio_Init()
   {
     if (sa_context == nullptr)
     {
-      auto error = iplCreateContext(nullptr, nullptr, nullptr, &sa_context);
+      auto error = iplCreateContext(SteamAudioLog, nullptr, nullptr, &sa_context);
       if (error)
       {
         throw std::exception("Error creating SA context: " + error);

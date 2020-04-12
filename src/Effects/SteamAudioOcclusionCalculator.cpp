@@ -39,8 +39,8 @@ namespace MetaAudio
       IPLDirectOcclusionMethod::IPL_DIRECTOCCLUSION_VOLUMETRIC
       );
 
-    auto getFactor = [=](const IPLDirectSoundPath& path, size_t index) { return std::clamp((path.occlusionFactor + (1 - path.occlusionFactor) * path.transmissionFactor[index]) * attenuationMultiplier, 0.0f, 1.0f); };
-    auto ret = OcclusionFilter{ getFactor(result, 0), getFactor(result, 1), getFactor(result, 2) };
+    auto getFactor = [&](size_t index) { return std::clamp((result.occlusionFactor + (1 - result.occlusionFactor) * result.transmissionFactor[index]) * attenuationMultiplier, 0.0f, 1.0f); };
+    auto ret = OcclusionFilter{ getFactor(0), getFactor(1), getFactor(2) };
     return ret;
   }
 }
