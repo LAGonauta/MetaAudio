@@ -31,6 +31,7 @@ namespace MetaAudio
     //active control
     cvar_t* al_doppler = nullptr;
     cvar_t* al_xfi_workaround = nullptr;
+    cvar_t* al_occluder = nullptr;
     bool openal_started = false;
     bool openal_mute = false;
 
@@ -72,6 +73,7 @@ namespace MetaAudio
 
     void SteamAudio_Init();
     void SteamAudio_Shutdown();
+    std::shared_ptr<IOcclusionCalculator> GetOccluder();
 
     std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader;
 

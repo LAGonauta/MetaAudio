@@ -1003,16 +1003,7 @@ namespace MetaAudio
   void AudioEngine::AL_ResetEFX()
   {
     al_efx.reset();
-    std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
-    if (false /*GoldSrc*/)
-    {
-      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
-    }
-    else
-    {
-      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
-    }
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
+    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), GetOccluder());
   }
 
   void AudioEngine::AL_Devices(bool basic)
@@ -1077,6 +1068,7 @@ namespace MetaAudio
   {
     al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
     al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
+    al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "1", FCVAR_EXTDLL);
 
     gAudEngine.S_Init();
 
@@ -1092,19 +1084,21 @@ namespace MetaAudio
     }
 
     SteamAudio_Init();
+    AL_ResetEFX();
 
-    std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
-    if (false /*GoldSrc*/)
+    vox = alure::MakeUnique<VoxManager>(this, loader);
+  }
+
+  std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
+  {
+    if (al_occluder->value == 0.0f)
     {
-      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
+      return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
     }
     else
     {
-      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
+      return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
     }
-
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
-    vox = alure::MakeUnique<VoxManager>(this, loader);
   }
 
   void AudioEngine::OpenAL_Shutdown()
