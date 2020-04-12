@@ -1,7 +1,5 @@
 #pragma once
 
-#include <limits>
-
 #include "IOcclusionCalculator.hpp"
 #include "Utilities/VectorUtils.hpp"
 #include "event_api.h"
@@ -15,12 +13,12 @@ namespace MetaAudio
     // Attenuation per wall inch in dB
     static constexpr float TRANSMISSION_ATTN_PER_INCH = -2.7f * AL_UnitToMeters;
 
-    const event_api_s* event_api;
-    void PlayerTrace(Vector3 start, Vector3 end, pmtrace_s& tr);
+    const event_api_s& event_api;
+    void PlayerTrace(Vector3* start, Vector3* end, pmtrace_s& tr);
   public:
-    GoldSrcOcclusionCalculator(event_api_s* event_api);
+    GoldSrcOcclusionCalculator(const event_api_s& event_api);
 
-    OcclusionFilter GetParameters(Vector3 listenerPosition,
+    OcclusionFrequencyGain GetParameters(Vector3 listenerPosition,
       Vector3 listenerAhead,
       Vector3 listenerUp,
       Vector3 audioSourcePosition,

@@ -2,7 +2,7 @@
 
 namespace MetaAudio
 {
-  struct OcclusionFilter
+  struct OcclusionFrequencyGain
   {
     float Low;
     float Mid;

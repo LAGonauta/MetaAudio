@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Structures/OcclusionFilter.hpp"
+#include "../Structures/OcclusionFrequencyGain.hpp"
 #include "../Structures/Vector3.hpp"
 
 namespace MetaAudio
@@ -9,7 +9,7 @@ namespace MetaAudio
   {
   public:
     // Vectors should be in meters and using OpenAL coordinate orientation
-    virtual OcclusionFilter GetParameters(Vector3 listenerPosition,
+    virtual OcclusionFrequencyGain GetParameters(Vector3 listenerPosition,
       Vector3 listenerAhead,
       Vector3 listenerUp,
       Vector3 audioSourcePosition,

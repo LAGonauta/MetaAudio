@@ -1,8 +1,10 @@
 #pragma once
+#include <metahook.h>
 #include <memory>
 
 #include "IOcclusionCalculator.hpp"
 #include "Loaders/SteamAudioMapMeshLoader.hpp"
+#include "event_api.h"
 
 namespace MetaAudio
 {
@@ -11,14 +13,16 @@ namespace MetaAudio
   private:
     std::shared_ptr<SteamAudioMapMeshLoader> meshLoader;
 
+    const event_api_s& event_api;
+    void PlayerTrace(Vector3* start, Vector3* end, pmtrace_s& tr);
   public:
-    OcclusionFilter GetParameters(Vector3 listenerPosition,
+    OcclusionFrequencyGain GetParameters(Vector3 listenerPosition,
       Vector3 listenerAhead,
       Vector3 listenerUp,
       Vector3 audioSourcePosition,
       float sourceRadius,
       float attenuationMultiplier);
 
-    SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudioMapMeshLoader> meshLoader);
+    SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudioMapMeshLoader> meshLoader, const event_api_s& event_api);
   };
 }

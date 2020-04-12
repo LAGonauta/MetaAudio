@@ -7,19 +7,18 @@
 
 namespace MetaAudio
 {
-  GoldSrcOcclusionCalculator::GoldSrcOcclusionCalculator(event_api_s* event_api)
+  GoldSrcOcclusionCalculator::GoldSrcOcclusionCalculator(const event_api_s& event_api) : event_api(event_api)
   {
-    this->event_api = event_api;
   }
 
-  void GoldSrcOcclusionCalculator::PlayerTrace(Vector3 start, Vector3 end, pmtrace_s& tr)
+  void GoldSrcOcclusionCalculator::PlayerTrace(Vector3* start, Vector3* end, pmtrace_s& tr)
   {
     // 0 = regular player hull, 1 = ducked player hull, 2 = point hull
-    event_api->EV_SetTraceHull(2);
-    event_api->EV_PlayerTrace(reinterpret_cast<float*>(&start), reinterpret_cast<float*>(&end), PM_STUDIO_IGNORE, -1, &tr);
+    event_api.EV_SetTraceHull(2);
+    event_api.EV_PlayerTrace(reinterpret_cast<float*>(start), reinterpret_cast<float*>(end), PM_STUDIO_IGNORE, -1, &tr);
   }
 
-  OcclusionFilter GoldSrcOcclusionCalculator::GetParameters(
+  OcclusionFrequencyGain GoldSrcOcclusionCalculator::GetParameters(
     Vector3 listenerPosition,
     Vector3 listenerAhead,
     Vector3 listenerUp,
@@ -30,7 +29,7 @@ namespace MetaAudio
   {
     float gain = 1.0f;
 
-    if (attenuationMultiplier)
+    if (attenuationMultiplier != ATTN_NONE)
     {
       pmtrace_s tr;
 
@@ -39,13 +38,13 @@ namespace MetaAudio
       auto audio_source_position = GoldSrc_UnpackVector(audioSourcePosition);
 
       // set up traceline from player eyes to sound emitting entity origin
-      PlayerTrace(listener_position, audio_source_position, tr);
+      PlayerTrace(&listener_position, &audio_source_position, tr);
 
       // If hit, traceline between ent and player to get solid length.
       if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f)
       {
         alure::Vector3 obstruction_first_point(tr.endpos);
-        PlayerTrace(audio_source_position, listener_position, tr);
+        PlayerTrace(&audio_source_position, &listener_position, tr);
 
         if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
         {
@@ -54,6 +53,6 @@ namespace MetaAudio
       }
     }
 
-    return OcclusionFilter{ gain, gain, gain };
+    return OcclusionFrequencyGain{ gain, gain, gain };
   }
 }

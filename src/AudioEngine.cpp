@@ -1006,11 +1006,11 @@ namespace MetaAudio
     std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
     if (false /*GoldSrc*/)
     {
-      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
     }
     else
     {
-      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader);
+      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
     }
     al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
   }
@@ -1096,11 +1096,11 @@ namespace MetaAudio
     std::shared_ptr<IOcclusionCalculator> occlusion_calculator;
     if (false /*GoldSrc*/)
     {
-      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(gEngfuncs.pEventAPI);
+      occlusion_calculator = std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
     }
     else
     {
-      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader);
+      occlusion_calculator = std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
     }
 
     al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), occlusion_calculator);
