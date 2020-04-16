@@ -73,7 +73,7 @@ namespace MetaAudio
         }
 
         std::vector<IPLTriangle> triangles;
-        std::vector<alure::Vector3> triangulatedVerts;
+        std::vector<IPLVector3> triangulatedVerts;
 
         for (int i = 0; i < mapModel->nummodelsurfaces; ++i)
         {
@@ -110,7 +110,7 @@ namespace MetaAudio
 
           // Triangulate
           alure::Vector3 origin{ 0,0,0 };
-          alure::Vector<alure::Vector3> newVerts;
+          alure::Vector<IPLVector3> newVerts;
           { // remove colinear
             for (size_t i = 0; i < surfaceVerts.size(); ++i)
             {
@@ -128,7 +128,7 @@ namespace MetaAudio
               }
               else
               {
-                newVerts.emplace_back(vertex);
+                newVerts.emplace_back<IPLVector3>({ vertex[0], vertex[1], vertex[2] });
               }
             }
           }
@@ -141,7 +141,6 @@ namespace MetaAudio
 
           { // generate indices
             int indexoffset = triangulatedVerts.size();
-            auto actualNormal = MetaAudio::AL_CopyVector(surface.plane->normal);
 
             for (size_t i = 0; i < newVerts.size() - 2; ++i)
             {
@@ -157,22 +156,32 @@ namespace MetaAudio
           }
         }
 
-        auto data = MapData{ triangulatedVerts, triangles };
+        struct
+        {
+          std::vector<IPLVector3>& vertices;
+          std::vector<IPLTriangle>& triangles;
+        } data = { triangulatedVerts, triangles };
 
-        IPLerror error;
         IPLhandle scene = nullptr;
-        error = iplCreateScene(sa_context, nullptr, sa_simul_settings, 1, materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, 1, materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
         if (error)
         {
           throw std::exception("Error creating scene: " + error);
         }
 
         IPLhandle staticmesh = nullptr;
-        error = iplCreateStaticMesh(scene, data.vertices.size() * 3, data.triangles.size(), reinterpret_cast<IPLVector3*>(data.vertices.data()), data.triangles.data(), std::vector<int>(data.triangles.size(), 0).data(), &staticmesh);
+        error = iplCreateStaticMesh(scene, data.vertices.size() * 3, data.triangles.size(), data.vertices.data(), data.triangles.data(), std::vector<int>(data.triangles.size(), 0).data(), &staticmesh);
+        if (error)
+        {
+          throw std::exception("Error creating scene: " + error);
+        }
 
         IPLhandle env = nullptr;
         error = iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
-
+        if (error)
+        {
+          throw std::exception("Error creating scene: " + error);
+        }
         map_cache[mapModel->name] = std::make_shared<CacheItem>(env, scene, staticmesh);
         current_env = std::make_tuple(mapModel->name, map_cache[mapModel->name]->Env());
       }

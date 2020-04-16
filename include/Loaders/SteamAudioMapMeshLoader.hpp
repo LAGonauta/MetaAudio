@@ -9,12 +9,6 @@ namespace MetaAudio
   class SteamAudioMapMeshLoader final
   {
   private:
-    typedef struct
-    {
-      std::vector<alure::Vector3> vertices;
-      std::vector<IPLTriangle> triangles;
-    } MapData;
-
     class CacheItem final
     {
     private:
