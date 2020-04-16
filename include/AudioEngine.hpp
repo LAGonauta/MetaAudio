@@ -7,19 +7,14 @@
 #include "Vox/VoxManager.hpp"
 #include "Utilities/AudioCache.hpp"
 #include "Loaders/SoundLoader.hpp"
+#include "Utilities/ChannelPool.hpp"
 
 namespace MetaAudio
 {
   class AudioEngine final
   {
-    friend class VoxManager;
-
   private:
     std::unordered_map<alure::String, sfx_t> known_sfx;
-
-    //channels
-    alure::Array<aud_channel_t, MAX_CHANNELS> channels{};
-    int total_channels;
 
     //engine cvars
     cvar_t* nosound = nullptr;
@@ -39,7 +34,8 @@ namespace MetaAudio
     alure::Device al_device;
     alure::Context al_context;
     alure::UniquePtr<EnvEffects> al_efx;
-    alure::UniquePtr<VoxManager> vox;
+    alure::SharedPtr<VoxManager> vox;
+    alure::SharedPtr<ChannelPool> channel_pool;
 
     char al_device_name[1024] = "";
     int al_device_majorversion = 0;
@@ -51,16 +47,10 @@ namespace MetaAudio
     //Print buffer
     std::string dprint_buffer;
 
-    bool ChannelCheckIsPlaying(const aud_channel_t& channel);
     void S_FreeCache(sfx_t* sfx);
     void S_FlushCaches(void);
     void S_CheckWavEnd(aud_channel_t* ch, aud_sfxcache_t* sc);
     void SND_Spatialize(aud_channel_t* ch, qboolean init);
-    void S_FreeChannel(aud_channel_t* ch);
-    int S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags);
-    bool SND_IsPlaying(sfx_t* sfx);
-    aud_channel_t* SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx);
-    aud_channel_t* SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx);
     void S_StartSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch, bool is_static);
 
     bool OpenAL_Init();

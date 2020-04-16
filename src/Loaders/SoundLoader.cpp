@@ -221,6 +221,7 @@ namespace MetaAudio
         catch (const std::exception& error)
         {
           gEngfuncs.Con_DPrintf("Unable to set loop points for sound %s. %s. Will use manual looping.\n", s->name, error.what());
+          sc->force_streaming = true;
         }
       }
 

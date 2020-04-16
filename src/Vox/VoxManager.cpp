@@ -5,9 +5,9 @@
 
 namespace MetaAudio
 {
-  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader) : rgrgvoxword{}, m_engine(engine), m_loader(loader) {}
-
-  VoxManager::~VoxManager() {}
+  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader, std::shared_ptr<ChannelPool> pool)
+    : rgrgvoxword{}, m_engine(engine), m_loader(loader), m_pool(pool)
+  {}
 
   void VoxManager::TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc)
   {
@@ -516,14 +516,14 @@ namespace MetaAudio
 
     if (!pchan->sfx)
     {
-      m_engine->S_FreeChannel(pchan);
+      m_pool->FreeChannel(pchan);
       return nullptr;
     }
 
     sc = m_loader->S_LoadSound(pchan->sfx, pchan);
     if (!sc)
     {
-      m_engine->S_FreeChannel(pchan);
+      m_pool->FreeChannel(pchan);
       return nullptr;
     }
 

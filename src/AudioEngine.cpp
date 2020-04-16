@@ -1,35 +1,16 @@
 #include "AudioEngine.hpp"
-#include "Utilities\VectorUtils.hpp"
-#include "Loaders\GoldSrcFileFactory.hpp"
-#include "Effects\GoldSrcOcclusionCalculator.hpp"
-#include "Effects\SteamAudioOcclusionCalculator.hpp"
+
+#include "Utilities/VectorUtils.hpp"
+
+#include "Loaders/GoldSrcFileFactory.hpp"
+
+#include "Effects/GoldSrcOcclusionCalculator.hpp"
+#include "Effects/SteamAudioOcclusionCalculator.hpp"
 
 namespace MetaAudio
 {
   AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : cache(cache), loader(loader)
   {
-  }
-
-  bool AudioEngine::ChannelCheckIsPlaying(const aud_channel_t& channel)
-  {
-    if (channel.source)
-    {
-      if (al_xfi_workaround->value == 0.0f ||
-        al_xfi_workaround->value == 2.0f ||
-        channel.source.getLooping() ||
-        channel.entchannel == CHAN_STREAM ||
-        (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
-        channel.decoder != nullptr ||
-        channel.buffer == nullptr)
-      {
-        return channel.source.isPlaying();
-      }
-      else
-      {
-        return channel.source.isPlaying() && std::chrono::steady_clock::now() < channel.playback_end_time;
-      }
-    }
-    return false;
   }
 
   void AudioEngine::S_FreeCache(sfx_t* sfx)
@@ -39,7 +20,7 @@ namespace MetaAudio
       return;
 
     //2015-12-12 fixed a bug that a buffer in use is freed
-    if (SND_IsPlaying(sfx))
+    if (channel_pool->IsPlaying(sfx))
       return;
 
     if (sc->buffer)
@@ -137,7 +118,7 @@ namespace MetaAudio
 
     qboolean fWaveEnd = false;
 
-    if (!ChannelCheckIsPlaying(*ch))
+    if (!channel_pool->IsPlaying(*ch))
     {
       fWaveEnd = true;
     }
@@ -195,7 +176,7 @@ namespace MetaAudio
     }
 
     // Free the channel up if source has stopped and there is nothing else to do
-    S_FreeChannel(ch);
+    channel_pool->FreeChannel(ch);
   }
 
   void AudioEngine::SND_Spatialize(aud_channel_t* ch, qboolean init)
@@ -302,7 +283,6 @@ namespace MetaAudio
   {
     try
     {
-      int i, total;
       vec_t orientation[6];
 
       // Update Alure's OpenAL context at the start of processing.
@@ -377,23 +357,20 @@ namespace MetaAudio
       }
       al_efx->InterplEffect(roomtype);
 
-      for (i = NUM_AMBIENTS; i < total_channels; i++)
-      {
-        SND_Spatialize(&channels[i], false);
-      }
+      channel_pool->ForEachValidChannel(false, [&](auto& channel) { SND_Spatialize(&channel, false); });
 
       if (snd_show && snd_show->value)
       {
         std::string output;
-        total = 0;
-        for (i = 0; i < total_channels; i++)
-        {
-          if (channels[i].sfx && channels[i].volume > 0)
+        size_t total = 0;
+        channel_pool->ForEachValidChannel(true, [&](auto& channel)
           {
-            output.append(std::to_string(static_cast<int>(channels[i].volume * 255.0f)) + " " + channels[i].sfx->name + "\n");
-            total++;
-          }
-        }
+            if (channel.sfx && channel.volume > 0)
+            {
+              output.append(std::to_string(static_cast<int>(channel.volume * 255.0f)) + " " + channel.sfx->name + "\n");
+              total++;
+            }
+          });
 
         output.append("----(" + std::to_string(total) + ")----\n");
         gEngfuncs.Con_Printf(const_cast<char*>(output.c_str()));
@@ -404,259 +381,6 @@ namespace MetaAudio
       MessageBox(NULL, e.what(), "Error on S_Update", MB_ICONERROR);
       exit(0);
     }
-  }
-
-  void AudioEngine::S_FreeChannel(aud_channel_t* ch)
-  {
-    if (ch->source)
-    {
-      // Stop the Source and reset buffer
-      ch->buffer = nullptr;
-      ch->source.stop();
-      ch->source.destroy();
-    }
-
-    if (ch->decoder)
-    {
-      ch->decoder.reset();
-    }
-
-    if (ch->isentence >= 0)
-    {
-      for (size_t i = 0; i < CVOXWORDMAX; ++i)
-      {
-        vox->rgrgvoxword[ch->isentence][i].sfx = nullptr;
-      }
-    }
-
-    ch->isentence = -1;
-    ch->sfx = nullptr;
-
-    vox->CloseMouth(ch);
-  }
-
-  int AudioEngine::S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags)
-  {
-    int ch_idx;
-    aud_channel_t* ch;
-
-    if (sfx->name[0] == '!')
-    {
-      // This is a sentence name.
-      // For sentences: assume that the entity is only playing one sentence
-      // at a time, so we can just shut off
-      // any channel that has ch->isentence >= 0 and matches the
-      // soundsource.
-
-      for (ch_idx = 0; ch_idx < total_channels; ch_idx++)
-      {
-        ch = &channels[ch_idx];
-        if (ch->entnum == entnum
-          && ch->entchannel == entchannel
-          && ch->sfx != nullptr
-          && ch->isentence >= 0)
-        {
-          if (flags & SND_CHANGE_PITCH)
-          {
-            ch->pitch = pitch;
-            ch->source.setPitch(ch->pitch);
-          }
-
-          if (flags & SND_CHANGE_VOL)
-          {
-            ch->volume = fvol;
-            ch->source.setGain(ch->volume);
-          }
-
-          if (flags & SND_STOP)
-          {
-            S_FreeChannel(ch);
-          }
-
-          return true;
-        }
-      }
-      // channel not found
-      return false;
-    }
-
-    for (ch_idx = 0; ch_idx < total_channels; ch_idx++)
-    {
-      ch = &channels[ch_idx];
-      if (ch->entnum == entnum
-        && ch->entchannel == entchannel
-        && ch->sfx == sfx)
-      {
-        if (flags & SND_CHANGE_PITCH)
-        {
-          ch->pitch = pitch;
-          ch->source.setPitch(ch->pitch);
-        }
-
-        if (flags & SND_CHANGE_VOL)
-        {
-          ch->volume = fvol;
-          ch->source.setGain(ch->volume);
-        }
-
-        if (flags & SND_STOP)
-        {
-          S_FreeChannel(ch);
-        }
-
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  bool AudioEngine::SND_IsPlaying(sfx_t* sfx)
-  {
-    int ch_idx;
-
-    for (ch_idx = 0; ch_idx < MAX_CHANNELS; ch_idx++)
-    {
-      if (channels[ch_idx].sfx == sfx && channels[ch_idx].source && ChannelCheckIsPlaying(channels[ch_idx]))
-      {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  aud_channel_t* AudioEngine::SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx)
-  {
-    int ch_idx;
-    int first_to_die;
-
-    if (entchannel == CHAN_STREAM && SND_IsPlaying(sfx))
-      return nullptr;
-
-    first_to_die = -1;
-
-    float life_left = 99999;
-    float life;
-    uint64_t played;
-
-    aud_channel_t* ch;
-
-    // Check all channels and check if it is available for use
-    for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
-    {
-      ch = &channels[ch_idx];
-      if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ChannelCheckIsPlaying(*ch))
-      {
-        if (entchannel == CHAN_VOICE)
-          return nullptr;
-
-        continue;
-      }
-
-      // Appointed channel
-      if (entchannel != 0 && ch->entnum == entnum && (ch->entchannel == entchannel || entchannel == -1))
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (ch->entnum == *gAudEngine.cl_viewentity && entnum != *gAudEngine.cl_viewentity && ch->sfx)
-        continue;
-
-      if (!ch->source)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (ch->sfx == nullptr)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      aud_sfxcache_t* sc = static_cast<aud_sfxcache_t*>(sfx->cache.data);
-      if (sc == nullptr)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (!ChannelCheckIsPlaying(*ch))
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      played = ch->source.getSampleOffset();
-      if (ch->decoder)
-      {
-        life = static_cast<float>(ch->end - played) / ch->decoder->getFrequency();
-      }
-      else
-      {
-        life = static_cast<float>(ch->end - played) / ch->buffer.getFrequency();
-      }
-
-      if (life < life_left)
-      {
-        life_left = life;
-        first_to_die = ch_idx;
-      }
-    }
-
-    if (first_to_die == -1)
-      return nullptr;
-
-    if (channels[first_to_die].sfx)
-    {
-      S_FreeChannel(&(channels[first_to_die]));
-    }
-
-    return &channels[first_to_die];
-  }
-
-  aud_channel_t* AudioEngine::SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx)
-  {
-    int i;
-    aud_channel_t* ch = nullptr;
-
-    for (i = MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
-    {
-      if (channels[i].sfx == nullptr)
-        break;
-
-      // This should allow channels to be reused, but won't work on some
-      // bugged Creative drivers.
-      if (channels[i].source)
-      {
-        if (!ChannelCheckIsPlaying(channels[i]))
-        {
-          break;
-        }
-      }
-    }
-
-    if (i < total_channels)
-    {
-      ch = &channels[i];
-    }
-    else
-    {
-      // no empty slots, alloc a new static sound channel
-      if (total_channels == MAX_CHANNELS)
-      {
-        gEngfuncs.Con_DPrintf("total_channels == MAX_CHANNELS\n");
-        return nullptr;
-      }
-
-      // get a channel for the static sound
-      ch = &channels[total_channels];
-      total_channels++;
-    }
-
-    return ch;
   }
 
   void AudioEngine::S_StartSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch, bool is_static)
@@ -702,7 +426,7 @@ namespace MetaAudio
 
     if (flags & (SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH))
     {
-      if (S_AlterChannel(entnum, entchannel, sfx, fvol, fpitch, flags))
+      if (channel_pool->S_AlterChannel(entnum, entchannel, sfx, fvol, fpitch, flags))
         return;
 
       if (flags & SND_STOP)
@@ -717,11 +441,11 @@ namespace MetaAudio
 
     if (is_static)
     {
-      ch = SND_PickStaticChannel(entnum, entchannel, sfx);
+      ch = channel_pool->SND_PickStaticChannel(entnum, entchannel, sfx);
     }
     else
     {
-      ch = SND_PickDynamicChannel(entnum, entchannel, sfx);
+      ch = channel_pool->SND_PickDynamicChannel(entnum, entchannel, sfx);
     }
 
     if (!ch)
@@ -774,6 +498,7 @@ namespace MetaAudio
     ch->source.setAirAbsorptionFactor(1.0f);
 
     // Should also set source priority
+    ch->source.setLooping(sc->looping);
     if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
     {
       SND_Spatialize(ch, true);
@@ -798,25 +523,7 @@ namespace MetaAudio
     }
     else
     {
-      bool force_stream = false;
-      if (al_xfi_workaround->value == 2.0f)
-      {
-        force_stream = true;
-      }
-      if (sc->looping)
-      {
-        ch->source.setLooping(true);
-        if (sc->loopstart > 0)
-        {
-          auto points = sc->buffer.getLoopPoints();
-          if (points.first != sc->loopstart)
-          {
-            // Use Alure2 stream looping facilities
-            force_stream = true;
-          }
-        }
-      }
-      if (force_stream)
+      if (al_xfi_workaround->value == 2.0f || sc->force_streaming)
       {
         ch->decoder = al_context.createDecoder(sc->buffer.getName());
         SND_Spatialize(ch, true);
@@ -878,13 +585,7 @@ namespace MetaAudio
   {
     try
     {
-      for (int i = NUM_AMBIENTS; i < total_channels; ++i)
-      {
-        if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
-        {
-          S_FreeChannel(&channels[i]);
-        }
-      }
+      channel_pool->ClearEntityChannels(entnum, entchannel);
     }
     catch (const std::exception& e)
     {
@@ -897,16 +598,10 @@ namespace MetaAudio
   {
     try
     {
-      for (int i = 0; i < MAX_CHANNELS; i++)
+      if (channel_pool != nullptr)
       {
-        if (channels[i].sfx)
-        {
-          S_FreeChannel(&channels[i]);
-        }
+        channel_pool->ClearAllChannels();
       }
-
-      channels.fill(aud_channel_t());
-      total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
     }
     catch (const std::exception& e)
     {
@@ -1086,7 +781,9 @@ namespace MetaAudio
     SteamAudio_Init();
     AL_ResetEFX();
 
-    vox = alure::MakeUnique<VoxManager>(this, loader);
+    channel_pool = alure::MakeShared<ChannelPool>();
+    vox = alure::MakeShared<VoxManager>(this, loader, channel_pool);
+    channel_pool->SetVox(vox);
   }
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
@@ -1118,6 +815,7 @@ namespace MetaAudio
       S_StopAllSounds(true);
       al_efx.reset();
       vox.reset();
+      channel_pool.reset();
       OpenAL_Shutdown();
       openal_started = false;
 

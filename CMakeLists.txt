@@ -29,7 +29,8 @@ set(SOURCES
     src/Loaders/GoldSrcFileStream.cpp
     src/Loaders/GoldSrcFileFactory.cpp
     src/Loaders/SoundLoader.cpp
-    src/AudioEngine.cpp)
+    src/AudioEngine.cpp
+    src/Utilities/ChannelPool.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

@@ -4,6 +4,7 @@
 #include "exportfuncs.h"
 #include "enginedef.h"
 #include "aud_int_internal.h"
+#include "SoundSources/ISoundSource.hpp"
 
 //internal structures
 
@@ -34,6 +35,7 @@ typedef struct
   sfxcache_t *voicecache;
 
   // For OpenAL
+  alure::SharedPtr<ISoundSource> sound_source;
   alure::SharedPtr<alure::Decoder> decoder;
   alure::Buffer buffer;
   alure::Source source;
@@ -56,6 +58,7 @@ typedef struct
   uint64_t loopend{};
   ALuint samplerate{};
   bool looping{};
+  bool force_streaming{};
   alure::SampleType stype{};
   alure::ChannelConfig channels{};
 
