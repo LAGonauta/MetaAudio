@@ -20,9 +20,10 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings) : sa_simul_settings(simulSettings), sa_context(sa_context)
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings)
+    : sa_simul_settings(simulSettings), sa_context(sa_context)
   {
-    current_env = std::make_tuple("", nullptr);
+    current_map = std::make_unique<ProcessedMap>("", nullptr, nullptr, nullptr);
   }
 
   alure::Vector3 SteamAudioMapMeshLoader::Normalize(const alure::Vector3& vector)
@@ -58,18 +59,9 @@ namespace MetaAudio
       else
       {
         auto mapModel = map->model;
-        if (std::get<0>(current_env) == mapModel->name)
+        if (current_map->Name() == mapModel->name)
         {
           return;
-        }
-        else
-        {
-          auto search = map_cache.find(mapModel->name);
-          if (search != map_cache.end())
-          {
-            current_env = std::make_tuple(search->first, search->second);
-            return;
-          }
         }
 
         std::vector<IPLTriangle> triangles;
@@ -157,7 +149,7 @@ namespace MetaAudio
         }
 
         IPLhandle scene = nullptr;
-        IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, 1, materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
         if (error)
         {
           throw std::exception("Error creating scene: " + error);
@@ -176,21 +168,13 @@ namespace MetaAudio
         {
           throw std::exception("Error creating scene: " + error);
         }
-        auto item = std::make_shared<CacheItem>(env, scene, staticmesh);
-        map_cache[mapModel->name] = item;
-        current_env = std::make_tuple(mapModel->name, item);
+        current_map = std::make_unique<ProcessedMap>(mapModel->name, env, scene, staticmesh);
       }
     }
   }
 
   IPLhandle SteamAudioMapMeshLoader::CurrentEnvironment()
   {
-    return std::get<1>(current_env)->Env();
-  }
-
-  void SteamAudioMapMeshLoader::PurgeCache()
-  {
-    current_env = std::make_tuple("", nullptr);
-    map_cache.clear();
+    return current_map->Env();
   }
 }

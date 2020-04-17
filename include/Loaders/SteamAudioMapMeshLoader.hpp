@@ -9,19 +9,21 @@ namespace MetaAudio
   class SteamAudioMapMeshLoader final
   {
   private:
-    class CacheItem final
+    class ProcessedMap final
     {
     private:
+      std::string mapName;
       IPLhandle environment;
       IPLhandle scene;
       IPLhandle static_mesh;
 
     public:
-      CacheItem(IPLhandle env, IPLhandle scene, IPLhandle mesh) : environment(env), scene(scene), static_mesh(mesh)
+      ProcessedMap(const std::string& mapName, IPLhandle env, IPLhandle scene, IPLhandle mesh)
+        : environment(env), scene(scene), static_mesh(mesh), mapName(mapName)
       {
       }
 
-      ~CacheItem()
+      ~ProcessedMap()
       {
         if (environment != nullptr)
         {
@@ -40,22 +42,27 @@ namespace MetaAudio
       }
 
       // delete copy
-      CacheItem(const CacheItem& other) = delete;
-      CacheItem& CacheItem::operator=(const CacheItem& other) = delete;
+      ProcessedMap(const ProcessedMap& other) = delete;
+      ProcessedMap& ProcessedMap::operator=(const ProcessedMap& other) = delete;
 
       // allow move
-      CacheItem(CacheItem&& other) noexcept
+      ProcessedMap(ProcessedMap&& other) noexcept
       {
         std::swap(environment, other.environment);
         std::swap(scene, other.scene);
         std::swap(static_mesh, other.static_mesh);
       }
-      CacheItem& operator=(CacheItem&& other) noexcept
+      ProcessedMap& operator=(ProcessedMap&& other) noexcept
       {
         std::swap(environment, other.environment);
         std::swap(scene, other.scene);
         std::swap(static_mesh, other.static_mesh);
         return *this;
+      }
+
+      const std::string& Name()
+      {
+        return mapName;
       }
 
       IPLhandle Env()
@@ -67,8 +74,7 @@ namespace MetaAudio
     IPLSimulationSettings sa_simul_settings;
     IPLhandle sa_context;
 
-    std::tuple<std::string, std::shared_ptr<CacheItem>> current_env;
-    std::unordered_map<std::string, std::shared_ptr<CacheItem>> map_cache;
+    std::unique_ptr<ProcessedMap> current_map;
 
     alure::Vector3 Normalize(const alure::Vector3& vector);
     float DotProduct(const alure::Vector3& left, const alure::Vector3& right);
@@ -86,7 +92,5 @@ namespace MetaAudio
 
     // get current scene data as an IPLhandle
     IPLhandle CurrentEnvironment();
-
-    void PurgeCache();
   };
 }
