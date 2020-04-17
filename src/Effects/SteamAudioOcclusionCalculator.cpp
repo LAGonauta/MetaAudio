@@ -32,7 +32,7 @@ namespace MetaAudio
     auto toIPLVector3 = [](Vector3* vector) { return *reinterpret_cast<IPLVector3*>(vector); };
 
     IPLSource source{ toIPLVector3(&audioSourcePosition) };
-    auto env = meshLoader->get_current_environment();
+    auto env = meshLoader->CurrentEnvironment();
     IPLDirectSoundPath result{};
     result = iplGetDirectSoundPath(
       env,

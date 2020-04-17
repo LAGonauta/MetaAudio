@@ -47,11 +47,11 @@ namespace MetaAudio
     bool paused = false;
     {
       cl_entity_s* map = gEngfuncs.GetEntityByIndex(0);
-      if (map == nullptr
-        || map->model == nullptr
-        || map->model->needload
-        || gEngfuncs.pfnGetLevelName() == nullptr
-        || _stricmp(gEngfuncs.pfnGetLevelName(), map->model->name) != 0)
+      if (map == nullptr ||
+          map->model == nullptr ||
+          map->model->needload ||
+          gEngfuncs.pfnGetLevelName() == nullptr ||
+          _stricmp(gEngfuncs.pfnGetLevelName(), map->model->name) != 0)
       {
         paused = true;
       }
@@ -67,13 +67,13 @@ namespace MetaAudio
           auto search = map_cache.find(mapModel->name);
           if (search != map_cache.end())
           {
-            current_env = std::make_tuple(search->first, search->second->Env());
+            current_env = std::make_tuple(search->first, search->second);
             return;
           }
         }
 
         std::vector<IPLTriangle> triangles;
-        std::vector<IPLVector3> triangulatedVerts;
+        std::vector<IPLVector3> vertices;
 
         for (int i = 0; i < mapModel->nummodelsurfaces; ++i)
         {
@@ -85,7 +85,7 @@ namespace MetaAudio
             if (poly->numverts <= 0)
               continue;
 
-            for (int j = 0; j < poly->numverts; j++)
+            for (int j = 0; j < poly->numverts; ++j)
             {
               surfaceVerts.emplace_back(MetaAudio::AL_UnpackVector(poly->verts[j]));
             }
@@ -114,12 +114,12 @@ namespace MetaAudio
           { // remove colinear
             for (size_t i = 0; i < surfaceVerts.size(); ++i)
             {
-              alure::Vector3 vertexBefore = origin + surfaceVerts[(i > 0) ? (i - 1) : (surfaceVerts.size() - 1)];
-              alure::Vector3 vertex = origin + surfaceVerts[i];
-              alure::Vector3 vertexAfter = origin + surfaceVerts[(i < (surfaceVerts.size() - 1)) ? (i + 1) : 0];
+              auto vertexBefore = origin + surfaceVerts[(i > 0) ? (i - 1) : (surfaceVerts.size() - 1)];
+              auto vertex = origin + surfaceVerts[i];
+              auto vertexAfter = origin + surfaceVerts[(i < (surfaceVerts.size() - 1)) ? (i + 1) : 0];
 
-              alure::Vector3 v1 = Normalize(vertexBefore - vertex);
-              alure::Vector3 v2 = Normalize(vertexAfter - vertex);
+              auto v1 = Normalize(vertexBefore - vertex);
+              auto v2 = Normalize(vertexAfter - vertex);
 
               float vertDot = DotProduct(v1, v2);
               if (std::fabs(vertDot + 1.f) < EPSILON)
@@ -140,7 +140,7 @@ namespace MetaAudio
           }
 
           { // generate indices
-            int indexoffset = triangulatedVerts.size();
+            int indexoffset = vertices.size();
 
             for (size_t i = 0; i < newVerts.size() - 2; ++i)
             {
@@ -152,15 +152,9 @@ namespace MetaAudio
             }
 
             // Add vertices to final array
-            triangulatedVerts.insert(triangulatedVerts.end(), newVerts.begin(), newVerts.end());
+            vertices.insert(vertices.end(), newVerts.begin(), newVerts.end());
           }
         }
-
-        struct
-        {
-          std::vector<IPLVector3>& vertices;
-          std::vector<IPLTriangle>& triangles;
-        } data = { triangulatedVerts, triangles };
 
         IPLhandle scene = nullptr;
         IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, 1, materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
@@ -170,7 +164,7 @@ namespace MetaAudio
         }
 
         IPLhandle staticmesh = nullptr;
-        error = iplCreateStaticMesh(scene, data.vertices.size() * 3, data.triangles.size(), data.vertices.data(), data.triangles.data(), std::vector<int>(data.triangles.size(), 0).data(), &staticmesh);
+        error = iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
         if (error)
         {
           throw std::exception("Error creating scene: " + error);
@@ -182,15 +176,16 @@ namespace MetaAudio
         {
           throw std::exception("Error creating scene: " + error);
         }
-        map_cache[mapModel->name] = std::make_shared<CacheItem>(env, scene, staticmesh);
-        current_env = std::make_tuple(mapModel->name, map_cache[mapModel->name]->Env());
+        auto item = std::make_shared<CacheItem>(env, scene, staticmesh);
+        map_cache[mapModel->name] = item;
+        current_env = std::make_tuple(mapModel->name, item);
       }
     }
   }
 
-  IPLhandle SteamAudioMapMeshLoader::get_current_environment()
+  IPLhandle SteamAudioMapMeshLoader::CurrentEnvironment()
   {
-    return std::get<1>(current_env);
+    return std::get<1>(current_env)->Env();
   }
 
   void SteamAudioMapMeshLoader::PurgeCache()
