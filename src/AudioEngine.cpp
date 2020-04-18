@@ -358,13 +358,13 @@ namespace MetaAudio
       }
       al_efx->InterplEffect(roomtype);
 
-      channel_pool->ForEachValidChannel([&](auto& channel) { SND_Spatialize(&channel, false); });
+      channel_pool->ForEachChannel([&](auto& channel) { SND_Spatialize(&channel, false); });
 
       if (snd_show && snd_show->value)
       {
         std::string output;
         size_t total = 0;
-        channel_pool->ForEachValidChannel([&](auto& channel)
+        channel_pool->ForEachChannel([&](auto& channel)
           {
             if (channel.sfx && channel.volume > 0)
             {
@@ -372,9 +372,11 @@ namespace MetaAudio
               total++;
             }
           });
-
-        output.append("----(" + std::to_string(total) + ")----\n");
-        gEngfuncs.Con_Printf(const_cast<char*>(output.c_str()));
+        if (!output.empty())
+        {
+          output.append("----(" + std::to_string(total) + ")----\n");
+          gEngfuncs.Con_Printf(const_cast<char*>(output.c_str()));
+        }
       }
     }
     catch (const std::exception& e)
@@ -784,7 +786,6 @@ namespace MetaAudio
 
     channel_pool = alure::MakeShared<ChannelManager>();
     vox = alure::MakeShared<VoxManager>(this, loader, channel_pool);
-    channel_pool->SetVox(vox);
   }
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()

@@ -446,7 +446,7 @@ namespace MetaAudio
     return -1;
   }
 
-  aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* pchan, const alure::String& pszin)
+  aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
   {
     if (pszin.empty() || std::all_of(pszin.begin(), pszin.end(), std::isspace))
     {
@@ -510,20 +510,21 @@ namespace MetaAudio
       ++j;
     }
 
-    pchan->isentence = k;
-    pchan->iword = 0;
-    pchan->sfx = rgvoxword[0].sfx;
+    channel->isentence = k;
+    channel->iword = 0;
+    channel->sfx = rgvoxword[0].sfx;
+    channel->vox = this;
 
-    if (!pchan->sfx)
+    if (!channel->sfx)
     {
-      m_pool->FreeChannel(pchan);
+      m_pool->FreeChannel(channel);
       return nullptr;
     }
 
-    sc = m_loader->S_LoadSound(pchan->sfx, pchan);
+    sc = m_loader->S_LoadSound(channel->sfx, channel);
     if (!sc)
     {
-      m_pool->FreeChannel(pchan);
+      m_pool->FreeChannel(channel);
       return nullptr;
     }
 

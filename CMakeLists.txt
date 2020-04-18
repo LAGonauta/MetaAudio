@@ -30,7 +30,8 @@ set(SOURCES
     src/Loaders/GoldSrcFileFactory.cpp
     src/Loaders/SoundLoader.cpp
     src/AudioEngine.cpp
-    src/Utilities/ChannelManager.cpp)
+    src/Utilities/ChannelManager.cpp
+    src/snd_local.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

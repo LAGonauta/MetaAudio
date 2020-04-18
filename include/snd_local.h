@@ -17,7 +17,14 @@ typedef struct
   float target{ 0 };
 } GainFading;
 
-typedef struct
+namespace MetaAudio
+{
+  class AudioEngine;
+  class SoundLoader;
+  class VoxManager;
+}
+
+struct aud_channel_t
 {
   sfx_t *sfx;
   float volume;
@@ -40,6 +47,8 @@ typedef struct
   alure::Buffer buffer;
   alure::Source source;
 
+  MetaAudio::VoxManager* vox;
+
   //X-Fi workaround
   std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
 
@@ -48,9 +57,18 @@ typedef struct
   GainFading LowGain;
   GainFading MidGain;
   GainFading HighGain;
-} aud_channel_t;
 
-typedef struct
+  aud_channel_t() = default;
+  ~aud_channel_t();
+
+  aud_channel_t(const aud_channel_t& other) = delete;
+  aud_channel_t& aud_channel_t::operator=(const aud_channel_t& other) = delete;
+
+  aud_channel_t(aud_channel_t&& other) noexcept;
+  aud_channel_t& operator=(aud_channel_t&& other) noexcept;
+};
+
+struct aud_sfxcache_t
 {
   //wave info
   uint64_t length{};
@@ -67,9 +85,9 @@ typedef struct
   alure::Buffer buffer;
 
   alure::Vector<ALubyte> data;
-}aud_sfxcache_t;
+};
 
-typedef struct
+struct aud_engine_t
 {
   int *cl_servercount;
   int *cl_parsecount;
@@ -116,16 +134,10 @@ typedef struct
 #ifdef _DEBUG
   void(*Sys_Error)(char *fmt, ...);
 #endif
-}aud_engine_t;
+};
 
 //snd_hook.cpp
 void S_FillAddress(void);
-
-namespace MetaAudio
-{
-  class AudioEngine;
-  class SoundLoader;
-}
 
 void S_InstallHook(MetaAudio::AudioEngine* engine, MetaAudio::SoundLoader* loader);
 
