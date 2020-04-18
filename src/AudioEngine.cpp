@@ -782,7 +782,7 @@ namespace MetaAudio
     SteamAudio_Init();
     AL_ResetEFX();
 
-    channel_pool = alure::MakeShared<ChannelPool>();
+    channel_pool = alure::MakeShared<ChannelManager>();
     vox = alure::MakeShared<VoxManager>(this, loader, channel_pool);
     channel_pool->SetVox(vox);
   }

@@ -5,7 +5,7 @@
 
 namespace MetaAudio
 {
-  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader, std::shared_ptr<ChannelPool> pool)
+  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader, std::shared_ptr<ChannelManager> pool)
     : rgrgvoxword{}, m_engine(engine), m_loader(loader), m_pool(pool)
   {}
 

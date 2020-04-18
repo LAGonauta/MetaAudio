@@ -7,7 +7,7 @@ namespace MetaAudio
 {
   class VoxManager;
 
-  class ChannelPool final
+  class ChannelManager final
   {
   private:
     std::weak_ptr<VoxManager> vox;
@@ -20,7 +20,7 @@ namespace MetaAudio
     } channels;
 
   public:
-    ChannelPool(); // TODO: add pool update, to check for finished channels and remove them
+    ChannelManager(); // TODO: add pool update, to check for finished channels and remove them
 
     aud_channel_t* SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx);
     aud_channel_t* SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx);
@@ -43,8 +43,8 @@ namespace MetaAudio
     }
 
     // delete copy
-    ChannelPool(const ChannelPool& other) = delete;
-    ChannelPool& ChannelPool::operator=(const ChannelPool& other) = delete;
+    ChannelManager(const ChannelManager& other) = delete;
+    ChannelManager& ChannelManager::operator=(const ChannelManager& other) = delete;
 
     // HACK for now. Need to do a better refactor.
     void SetVox(std::shared_ptr<VoxManager> vox);

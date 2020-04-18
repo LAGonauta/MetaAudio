@@ -7,7 +7,7 @@
 #include "Vox/VoxManager.hpp"
 #include "Utilities/AudioCache.hpp"
 #include "Loaders/SoundLoader.hpp"
-#include "Utilities/ChannelPool.hpp"
+#include "Utilities/ChannelManager.hpp"
 
 namespace MetaAudio
 {
@@ -35,7 +35,7 @@ namespace MetaAudio
     alure::Context al_context;
     alure::UniquePtr<EnvEffects> al_efx;
     alure::SharedPtr<VoxManager> vox;
-    alure::SharedPtr<ChannelPool> channel_pool;
+    alure::SharedPtr<ChannelManager> channel_pool;
 
     char al_device_name[1024] = "";
     int al_device_majorversion = 0;

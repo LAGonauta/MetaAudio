@@ -1,19 +1,19 @@
-#include "Utilities/ChannelPool.hpp"
+#include "Utilities/ChannelManager.hpp"
 #include "Vox/VoxManager.hpp"
 
 namespace MetaAudio
 {
-  ChannelPool::ChannelPool()
+  ChannelManager::ChannelManager()
   {
     al_xfi_workaround = gEngfuncs.pfnGetCvarPointer("al_xfi_workaround");
   }
 
-  void ChannelPool::SetVox(std::shared_ptr<VoxManager> vox)
+  void ChannelManager::SetVox(std::shared_ptr<VoxManager> vox)
   {
     this->vox = vox;
   }
 
-  bool ChannelPool::IsPlaying(sfx_t* sfx)
+  bool ChannelManager::IsPlaying(sfx_t* sfx)
   {
     auto functor = [&](auto& channel) { return channel.sfx == sfx && channel.source && IsPlaying(channel); };
 
@@ -21,7 +21,7 @@ namespace MetaAudio
            std::any_of(channels.static_.begin(), channels.static_.end(), functor);
   }
 
-  bool ChannelPool::IsPlaying(const aud_channel_t& channel)
+  bool ChannelManager::IsPlaying(const aud_channel_t& channel)
   {
     if (channel.source)
     {
@@ -43,7 +43,7 @@ namespace MetaAudio
     return false;
   }
 
-  void ChannelPool::FreeChannel(aud_channel_t* ch)
+  void ChannelManager::FreeChannel(aud_channel_t* ch)
   {
     if (ch->source)
     {
@@ -72,13 +72,13 @@ namespace MetaAudio
     vox.lock()->CloseMouth(ch);
   }
 
-  aud_channel_t* ChannelPool::SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx)
+  aud_channel_t* ChannelManager::SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx)
   {
     auto& channel = channels.static_.emplace_back();
     return &channel;
   }
 
-  aud_channel_t* ChannelPool::SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx)
+  aud_channel_t* ChannelManager::SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx)
   {
     if (entchannel == CHAN_STREAM && IsPlaying(sfx))
     {
@@ -89,7 +89,7 @@ namespace MetaAudio
     return &channel;
   }
 
-  void ChannelPool::ClearAllChannels()
+  void ChannelManager::ClearAllChannels()
   {
     auto functor = [&](auto& channel) { if (channel.sfx != nullptr) FreeChannel(&channel); }; // TODO: move FreeChannel to channel destructor eventually.
     std::for_each(channels.dynamic.begin(), channels.dynamic.end(), functor);
@@ -99,14 +99,14 @@ namespace MetaAudio
     channels.static_.clear();
   }
 
-  void ChannelPool::ClearEntityChannels(int entnum, int entchannel)
+  void ChannelManager::ClearEntityChannels(int entnum, int entchannel)
   {
     auto functor = [&](auto& channel) { if (channel.entnum == entnum && channel.entchannel == entchannel) { FreeChannel(&channel); return true; } return false; };
     channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
     channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
   }
 
-  void ChannelPool::ClearFinished()
+  void ChannelManager::ClearFinished()
   {
     auto functor = [&](aud_channel_t& channel)
     {
@@ -122,7 +122,7 @@ namespace MetaAudio
     channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
   }
 
-  int ChannelPool::S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags)
+  int ChannelManager::S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags)
   {
     std::function<bool(aud_channel_t& channel)> functor;
 
