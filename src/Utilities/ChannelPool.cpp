@@ -3,7 +3,7 @@
 
 namespace MetaAudio
 {
-  ChannelPool::ChannelPool() : total_channels(0)
+  ChannelPool::ChannelPool()
   {
     al_xfi_workaround = gEngfuncs.pfnGetCvarPointer("al_xfi_workaround");
   }
@@ -15,23 +15,13 @@ namespace MetaAudio
 
   bool ChannelPool::IsPlaying(sfx_t* sfx)
   {
-    for (auto& channel : channels)
-    {
-      if (channel.sfx == sfx && channel.source && ChannelCheckIsPlaying(channel))
-      {
-        return true;
-      }
-    }
+    auto functor = [&](auto& channel) { return channel.sfx == sfx && channel.source && IsPlaying(channel); };
 
-    return false;
+    return std::any_of(channels.dynamic.begin(), channels.dynamic.end(), functor) ||
+           std::any_of(channels.static_.begin(), channels.static_.end(), functor);
   }
 
   bool ChannelPool::IsPlaying(const aud_channel_t& channel)
-  {
-    return ChannelCheckIsPlaying(channel);
-  }
-
-  bool ChannelPool::ChannelCheckIsPlaying(const aud_channel_t& channel)
   {
     if (channel.source)
     {
@@ -84,166 +74,77 @@ namespace MetaAudio
 
   aud_channel_t* ChannelPool::SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx)
   {
-    size_t i;
-    aud_channel_t* ch = nullptr;
-
-    for (i = MAX_DYNAMIC_CHANNELS; i < total_channels; i++)
-    {
-      if (channels[i].sfx == nullptr)
-        break;
-
-      // This should allow channels to be reused, but won't work on some
-      // bugged Creative drivers.
-      if (channels[i].source)
-      {
-        if (!ChannelCheckIsPlaying(channels[i]))
-        {
-          break;
-        }
-      }
-    }
-
-    if (i < total_channels)
-    {
-      ch = &channels[i];
-    }
-    else
-    {
-      // no empty slots, alloc a new static sound channel
-      if (total_channels == MAX_CHANNELS)
-      {
-        gEngfuncs.Con_DPrintf("total_channels == MAX_CHANNELS\n");
-        return nullptr;
-      }
-
-      // get a channel for the static sound
-      ch = &channels[total_channels];
-      total_channels++;
-    }
-
-    return ch;
+    auto& channel = channels.static_.emplace_back();
+    return &channel;
   }
 
   aud_channel_t* ChannelPool::SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx)
   {
-    int ch_idx;
-    int first_to_die;
-
     if (entchannel == CHAN_STREAM && IsPlaying(sfx))
-      return nullptr;
-
-    first_to_die = -1;
-
-    float life_left = 99999;
-    float life;
-    uint64_t played;
-
-    aud_channel_t* ch;
-
-    // Check all channels and check if it is available for use
-    for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
     {
-      ch = &channels[ch_idx];
-      if (ch->entchannel == CHAN_STREAM && channels[ch_idx].source && ChannelCheckIsPlaying(*ch))
-      {
-        if (entchannel == CHAN_VOICE)
-          return nullptr;
-
-        continue;
-      }
-
-      // Appointed channel
-      if (entchannel != 0 && ch->entnum == entnum && (ch->entchannel == entchannel || entchannel == -1))
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (ch->entnum == *gAudEngine.cl_viewentity && entnum != *gAudEngine.cl_viewentity && ch->sfx)
-        continue;
-
-      if (!ch->source)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (ch->sfx == nullptr)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      aud_sfxcache_t* sc = static_cast<aud_sfxcache_t*>(sfx->cache.data);
-      if (sc == nullptr)
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      if (!ChannelCheckIsPlaying(*ch))
-      {
-        first_to_die = ch_idx;
-        break;
-      }
-
-      played = ch->source.getSampleOffset();
-      if (ch->decoder)
-      {
-        life = static_cast<float>(ch->end - played) / ch->decoder->getFrequency();
-      }
-      else
-      {
-        life = static_cast<float>(ch->end - played) / ch->buffer.getFrequency();
-      }
-
-      if (life < life_left)
-      {
-        life_left = life;
-        first_to_die = ch_idx;
-      }
+      return nullptr;
     }
 
-    if (first_to_die == -1)
-      return nullptr;
-
-    if (channels[first_to_die].sfx)
-    {
-      FreeChannel(&(channels[first_to_die]));
-    }
-
-    return &channels[first_to_die];
+    auto& channel = channels.dynamic.emplace_back();
+    return &channel;
   }
 
   void ChannelPool::ClearAllChannels()
   {
-    for (auto& channel : channels)
-    {
-      if (channel.sfx != nullptr)
-      {
-        FreeChannel(&channel);
-      }
-    }
+    auto functor = [&](auto& channel) { if (channel.sfx != nullptr) FreeChannel(&channel); }; // TODO: move FreeChannel to channel destructor eventually.
+    std::for_each(channels.dynamic.begin(), channels.dynamic.end(), functor);
+    std::for_each(channels.static_.begin(), channels.static_.end(), functor);
 
-    channels.fill(aud_channel_t());
-    total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;
+    channels.dynamic.clear();
+    channels.static_.clear();
   }
 
   void ChannelPool::ClearEntityChannels(int entnum, int entchannel)
   {
-    for (size_t i = NUM_AMBIENTS; i < total_channels; ++i)
+    auto functor = [&](auto& channel) { if (channel.entnum == entnum && channel.entchannel == entchannel) { FreeChannel(&channel); return true; } return false; };
+    channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
+    channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
+  }
+
+  void ChannelPool::ClearFinished()
+  {
+    auto functor = [&](aud_channel_t& channel)
     {
-      if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+      if (channel.isentence < 0 && !IsPlaying(channel))
       {
-        FreeChannel(&channels[i]);
+        FreeChannel(&channel);
+        return true;
       }
-    }
+      return false ;
+    };
+
+    channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
+    channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
   }
 
   int ChannelPool::S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags)
   {
-    size_t ch_idx;
-    aud_channel_t* ch;
+    std::function<bool(aud_channel_t& channel)> functor;
+
+    auto internalFunctor = [&](aud_channel_t& channel)
+    {
+      if (flags & SND_CHANGE_PITCH)
+      {
+        channel.pitch = pitch;
+        channel.source.setPitch(channel.pitch);
+      }
+
+      if (flags & SND_CHANGE_VOL)
+      {
+        channel.volume = fvol;
+        channel.source.setGain(channel.volume);
+      }
+
+      if (flags & SND_STOP)
+      {
+        FreeChannel(&channel);
+      }
+    };
 
     if (sfx->name[0] == '!')
     {
@@ -252,67 +153,41 @@ namespace MetaAudio
       // at a time, so we can just shut off
       // any channel that has ch->isentence >= 0 and matches the
       // soundsource.
-
-      for (ch_idx = 0; ch_idx < total_channels; ++ch_idx)
+      functor = [&](aud_channel_t& channel)
       {
-        ch = &channels[ch_idx];
-        if (ch->entnum == entnum
-          && ch->entchannel == entchannel
-          && ch->sfx != nullptr
-          && ch->isentence >= 0)
+        if (channel.entnum == entnum &&
+            channel.entchannel == entchannel &&
+            channel.sfx != nullptr &&
+            channel.isentence >= 0)
         {
-          if (flags & SND_CHANGE_PITCH)
-          {
-            ch->pitch = pitch;
-            ch->source.setPitch(ch->pitch);
-          }
-
-          if (flags & SND_CHANGE_VOL)
-          {
-            ch->volume = fvol;
-            ch->source.setGain(ch->volume);
-          }
-
-          if (flags & SND_STOP)
-          {
-            FreeChannel(ch);
-          }
-
+          internalFunctor(channel);
           return true;
         }
-      }
-      // channel not found
-      return false;
+        else
+        {
+          return false;
+        }
+      };
     }
-
-    for (ch_idx = 0; ch_idx < total_channels; ++ch_idx)
+    else
     {
-      ch = &channels[ch_idx];
-      if (ch->entnum == entnum
-        && ch->entchannel == entchannel
-        && ch->sfx == sfx)
+      functor = [&](aud_channel_t& channel)
       {
-        if (flags & SND_CHANGE_PITCH)
+        if (channel.entnum == entnum &&
+            channel.entchannel == entchannel &&
+            channel.sfx == sfx)
         {
-          ch->pitch = pitch;
-          ch->source.setPitch(ch->pitch);
+          internalFunctor(channel);
+          return true;
         }
-
-        if (flags & SND_CHANGE_VOL)
+        else
         {
-          ch->volume = fvol;
-          ch->source.setGain(ch->volume);
+          return false;
         }
-
-        if (flags & SND_STOP)
-        {
-          FreeChannel(ch);
-        }
-
-        return true;
-      }
+      };
     }
 
-    return false;
+    return std::any_of(channels.dynamic.begin(), channels.dynamic.end(), functor) ||
+           std::any_of(channels.static_.begin(), channels.static_.end(), functor);
   }
 }

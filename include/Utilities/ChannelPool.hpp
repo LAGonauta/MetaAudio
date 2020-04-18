@@ -13,13 +13,14 @@ namespace MetaAudio
     std::weak_ptr<VoxManager> vox;
     cvar_t* al_xfi_workaround;
 
-    alure::Array<aud_channel_t, MAX_CHANNELS> channels{};
-    size_t total_channels;
-
-    bool ChannelCheckIsPlaying(const aud_channel_t& channel);
+    struct
+    {
+      std::vector<aud_channel_t> static_;
+      std::vector<aud_channel_t> dynamic;
+    } channels;
 
   public:
-    ChannelPool();
+    ChannelPool(); // TODO: add pool update, to check for finished channels and remove them
 
     aud_channel_t* SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx);
     aud_channel_t* SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx);
@@ -32,15 +33,18 @@ namespace MetaAudio
 
     void ClearAllChannels();
     void ClearEntityChannels(int entnum, int entchannel);
+    void ClearFinished();
 
     template<class Functor>
-    void ForEachValidChannel(bool includeAmbients, Functor& lambda)
+    void ForEachValidChannel(Functor& lambda)
     {
-      for (size_t i = includeAmbients ? 0 : NUM_AMBIENTS; i < total_channels; ++i)
-      {
-        lambda(channels[i]);
-      }
+      std::for_each(channels.dynamic.begin(), channels.dynamic.end(), lambda);
+      std::for_each(channels.static_.begin(), channels.static_.end(), lambda);
     }
+
+    // delete copy
+    ChannelPool(const ChannelPool& other) = delete;
+    ChannelPool& ChannelPool::operator=(const ChannelPool& other) = delete;
 
     // HACK for now. Need to do a better refactor.
     void SetVox(std::shared_ptr<VoxManager> vox);

@@ -288,6 +288,7 @@ namespace MetaAudio
       // Update Alure's OpenAL context at the start of processing.
       al_context.update();
       sa_meshloader->update();
+      channel_pool->ClearFinished();
 
       // Print buffer and clear it.
       if (dprint_buffer.length())
@@ -357,13 +358,13 @@ namespace MetaAudio
       }
       al_efx->InterplEffect(roomtype);
 
-      channel_pool->ForEachValidChannel(false, [&](auto& channel) { SND_Spatialize(&channel, false); });
+      channel_pool->ForEachValidChannel([&](auto& channel) { SND_Spatialize(&channel, false); });
 
       if (snd_show && snd_show->value)
       {
         std::string output;
         size_t total = 0;
-        channel_pool->ForEachValidChannel(true, [&](auto& channel)
+        channel_pool->ForEachValidChannel([&](auto& channel)
           {
             if (channel.sfx && channel.volume > 0)
             {
