@@ -146,10 +146,10 @@ namespace MetaAudio
           sc = new aud_sfxcache_t();
           sc->channels = dec->getChannelConfig();
           sc->samplerate = dec->getFrequency();
-          sc->length = UINT64_MAX;
+          sc->length = std::numeric_limits<uint64_t>::max();
           sc->looping = false;
           sc->loopstart = 0;
-          sc->loopend = UINT64_MAX;
+          sc->loopend = std::numeric_limits<uint64_t>::max();
           sc->stype = dec->getSampleType();
           sc->decoder = dec;
           return sc;

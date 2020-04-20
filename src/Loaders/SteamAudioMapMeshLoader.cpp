@@ -152,21 +152,21 @@ namespace MetaAudio
         IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
         if (error)
         {
-          throw std::exception("Error creating scene: " + error);
+          throw std::runtime_error("Error creating scene: " + std::to_string(error));
         }
 
         IPLhandle staticmesh = nullptr;
         error = iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
         if (error)
         {
-          throw std::exception("Error creating scene: " + error);
+          throw std::runtime_error("Error creating static mesh: " + std::to_string(error));
         }
 
         IPLhandle env = nullptr;
         error = iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
         if (error)
         {
-          throw std::exception("Error creating scene: " + error);
+          throw std::runtime_error("Error creating environment: " + std::to_string(error));
         }
         current_map = std::make_unique<ProcessedMap>(mapModel->name, env, scene, staticmesh);
       }

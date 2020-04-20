@@ -35,7 +35,7 @@ namespace MetaAudio
     void ClearFinished();
 
     template<class Functor>
-    void ForEachValidChannel(Functor& lambda)
+    void ForEachChannel(Functor& lambda)
     {
       std::for_each(channels.dynamic.begin(), channels.dynamic.end(), lambda);
       std::for_each(channels.static_.begin(), channels.static_.end(), lambda);

@@ -15,6 +15,11 @@ namespace MetaAudio
 
     m_ch = ch;
 
+    if (m_ch->entchannel < CHAN_NETWORKVOICE_BASE || m_ch ->entchannel > CHAN_NETWORKVOICE_END)
+    {
+      throw std::runtime_error("Bad entity channel for voice: " + std::to_string(m_ch->entchannel) + ".");
+    }
+
     VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_s*, char*, int, int, int))oldsc->loopstart;
 
     ch->voicecache = oldsc;

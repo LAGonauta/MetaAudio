@@ -267,7 +267,7 @@ namespace MetaAudio
 
     if (sc && sc->length != 0x40000000)
     {
-      fvol *= (*gAudEngine.g_SND_VoiceOverdrive);
+      fvol /= (*gAudEngine.g_SND_VoiceOverdrive);
     }
 
     ch->source.setGain(ch->volume * fvol);
@@ -511,7 +511,7 @@ namespace MetaAudio
         ch->decoder = sc->decoder;
         if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
         {
-          ch->source.play(ch->decoder, 1024, 3);
+          ch->source.play(ch->decoder, 1024, 2);
           delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
         }
         else

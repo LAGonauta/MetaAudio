@@ -5,8 +5,6 @@ aud_channel_t::~aud_channel_t()
 {
   if (this->source)
   {
-    // Stop the Source and reset buffer
-    this->buffer = nullptr;
     this->source.stop();
     this->source.destroy();
   }
@@ -30,9 +28,6 @@ aud_channel_t::~aud_channel_t()
 
     this->vox->CloseMouth(this);
   }
-
-  this->isentence = -1;
-  this->sfx = nullptr;
 }
 
 aud_channel_t::aud_channel_t(aud_channel_t&& other) noexcept

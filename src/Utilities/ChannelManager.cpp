@@ -67,15 +67,32 @@ namespace MetaAudio
       return nullptr;
     }
 
-    // Remove channel entity is already using for vox. We do not want it talking about two things at the same time.
-    auto entityChannel = std::find_if(
-      channels.dynamic.begin(),
-      channels.dynamic.end(),
-      [&](auto& channel) { return entchannel != 0 && channel.entnum == entnum && (channel.entchannel == entchannel || entchannel == -1); }
-    );
-    if (entityChannel != channels.dynamic.end())
+    // We cannot re-use a voice channel, let the decoder deal with it.
+    if (entchannel == CHAN_VOICE)
     {
-      channels.dynamic.erase(entityChannel);
+      auto voiceChannel = std::find_if(
+        channels.dynamic.begin(),
+        channels.dynamic.end(),
+        [&](auto& channel) { return channel.entchannel == CHAN_STREAM && channel.source && IsPlaying(channel); }
+      );
+      if (voiceChannel != channels.dynamic.end())
+      {
+        return nullptr;
+      }
+    }
+
+    // Remove channel if entity is already using for vox. We do not want the entity talking about two things at the same time.
+    if (entchannel != CHAN_AUTO)
+    {
+      auto entityChannel = std::find_if(
+        channels.dynamic.begin(),
+        channels.dynamic.end(),
+        [&](auto& channel) { return channel.entnum == entnum && (channel.entchannel == entchannel || entchannel == -1); }
+      );
+      if (entityChannel != channels.dynamic.end())
+      {
+        channels.dynamic.erase(entityChannel);
+      }
     }
 
     return &channels.dynamic.emplace_back();
