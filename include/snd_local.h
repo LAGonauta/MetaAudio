@@ -26,25 +26,25 @@ namespace MetaAudio
 
 struct aud_channel_t
 {
-  sfx_t *sfx;
-  float volume;
-  float pitch;
-  float attenuation;
-  int entnum;
-  int entchannel;
+  sfx_t* sfx{ nullptr };
+  float volume{ 0 };
+  float pitch{ 0 };
+  float attenuation{ 0 };
+  int entnum{ 0 };
+  int entchannel{ 0 };
   vec3_t origin;
-  uint64_t start;
-  uint64_t end;
+  uint64_t start{ 0 };
+  uint64_t end{ 0 };
   //for sentence
-  int isentence;
-  int iword;
+  int isentence{ 0 };
+  int iword{ 0 };
   //for voice sound
-  sfxcache_t *voicecache;
+  sfxcache_t* voicecache{ nullptr };
 
   // For OpenAL
   alure::SharedPtr<MetaAudio::BaseSoundSource> sound_source;
 
-  MetaAudio::VoxManager* vox;
+  MetaAudio::VoxManager* vox{ nullptr };
 
   // For OpenAL EFX
   bool firstpass{ true };

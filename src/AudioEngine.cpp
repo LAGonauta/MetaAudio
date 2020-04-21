@@ -395,8 +395,8 @@ namespace MetaAudio
       _function_name = "S_StartDynamicSound";
     }
 
-    aud_channel_t* ch;
-    aud_sfxcache_t* sc;
+    aud_channel_t* ch{ nullptr };
+    aud_sfxcache_t* sc{ nullptr };
     float fpitch;
 
     if (!sfx)
