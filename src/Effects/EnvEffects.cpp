@@ -170,18 +170,18 @@ namespace MetaAudio
     if (underwater)
     {
       params.mGainHF *= AL_UNDERWATER_LP_GAIN;
-      ch->source.setDirectFilter(params);
-      ch->source.setDopplerFactor(AL_UNDERWATER_DOPPLER_FACTOR_RATIO);
+      ch->sound_source->GetInternalSourceHandle().setDirectFilter(params);
+      ch->sound_source->GetInternalSourceHandle().setDopplerFactor(AL_UNDERWATER_DOPPLER_FACTOR_RATIO);
     }
     else
     {
-      ch->source.setDirectFilter(params);
-      ch->source.setDopplerFactor(1.0f);
+      ch->sound_source->GetInternalSourceHandle().setDirectFilter(params);
+      ch->sound_source->GetInternalSourceHandle().setDopplerFactor(1.0f);
     }
 
     for (size_t i = 0; i < alAuxEffectSlots.size(); ++i)
     {
-      ch->source.setAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, params);
+      ch->sound_source->GetInternalSourceHandle().setAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, params);
     }
   }
 

@@ -4,7 +4,7 @@
 #include "exportfuncs.h"
 #include "enginedef.h"
 #include "aud_int_internal.h"
-#include "SoundSources/ISoundSource.hpp"
+#include "SoundSources/BaseSoundSource.hpp"
 
 //internal structures
 
@@ -42,15 +42,9 @@ struct aud_channel_t
   sfxcache_t *voicecache;
 
   // For OpenAL
-  alure::SharedPtr<ISoundSource> sound_source;
-  alure::SharedPtr<alure::Decoder> decoder;
-  alure::Buffer buffer;
-  alure::Source source;
+  alure::SharedPtr<MetaAudio::BaseSoundSource> sound_source;
 
   MetaAudio::VoxManager* vox;
-
-  //X-Fi workaround
-  std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
 
   // For OpenAL EFX
   bool firstpass{ true };

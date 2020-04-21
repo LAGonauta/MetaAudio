@@ -15,7 +15,6 @@ namespace MetaAudio
   private:
     AudioEngine* m_engine;
     std::shared_ptr<SoundLoader> m_loader;
-    std::shared_ptr<ChannelManager> m_pool;
 
     alure::Array<alure::String, CVOXWORDMAX> rgpparseword{};  // array parsed words
     alure::String voxperiod = "_period";                      // vocal pause
@@ -36,7 +35,7 @@ namespace MetaAudio
   public:
     alure::Array<alure::Array<voxword_t, CVOXWORDMAX>, CVOXSENTENCEMAX> rgrgvoxword;
 
-    VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader, std::shared_ptr<ChannelManager> pool);
+    VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader);
 
     void TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc);
     void SetChanVolPitch(aud_channel_t* ch, float* fvol, float* fpitch);

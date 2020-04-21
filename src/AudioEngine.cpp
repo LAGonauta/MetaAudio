@@ -7,6 +7,8 @@
 #include "Effects/GoldSrcOcclusionCalculator.hpp"
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
 
+#include "SoundSources/SoundSourceFactory.hpp"
+
 namespace MetaAudio
 {
   AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : cache(cache), loader(loader)
@@ -124,12 +126,12 @@ namespace MetaAudio
     }
     else if (ch->entchannel != CHAN_STREAM)
     {
-      uint64_t iSamplesPlayed = ch->source.getSampleOffset();
+      uint64_t iSamplesPlayed = ch->sound_source->GetInternalSourceHandle().getSampleOffset();
 
       if (!sc->looping && iSamplesPlayed >= ch->end)
       {
         fWaveEnd = true;
-        ch->source.stop();
+        ch->sound_source->GetInternalSourceHandle().stop();
       }
     }
 
@@ -158,25 +160,19 @@ namespace MetaAudio
           vox->TrimStartEndTimes(ch, sc);
           if (ch->entchannel == CHAN_STREAM)
           {
-            ch->decoder = sc->decoder;
-            ch->source.setOffset(ch->start);
-            ch->source.play(ch->decoder, 12000, 4);
+            ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 16348, 4);
           }
           else
           {
-            ch->buffer = sc->buffer;
-            ch->source.setOffset(ch->start);
-            ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
-            ch->source.play(ch->buffer);
+            ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context.createSource());
           }
+          ch->sound_source->GetInternalSourceHandle().setOffset(ch->start);
+          ch->sound_source->Play();
 
           return;
         }
       }
     }
-
-    // Free the channel up if source has stopped and there is nothing else to do
-    channel_pool->FreeChannel(ch);
   }
 
   void AudioEngine::SND_Spatialize(aud_channel_t* ch, qboolean init)
@@ -186,7 +182,7 @@ namespace MetaAudio
       return;
 
     // invalid source
-    if (!ch->source)
+    if (!ch->sound_source)
       return;
 
     //apply effect
@@ -209,7 +205,7 @@ namespace MetaAudio
     alure::Vector3 alure_position(0, 0, 0);
     if (ch->entnum != *gAudEngine.cl_viewentity)
     {
-      ch->source.setRelative(false);
+      ch->sound_source->GetInternalSourceHandle().setRelative(false);
       if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)
       {
         cl_entity_t* sent = gEngfuncs.GetEntityByIndex(ch->entnum);
@@ -240,8 +236,8 @@ namespace MetaAudio
             (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
             (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
-          ch->source.setVelocity(AL_UnpackVector(sent_velocity));
-          ch->source.setRadius(sent->model->radius * AL_UnitToMeters);
+          ch->sound_source->GetInternalSourceHandle().setVelocity(AL_UnpackVector(sent_velocity));
+          ch->sound_source->GetInternalSourceHandle().setRadius(sent->model->radius * AL_UnitToMeters);
         }
       }
       else
@@ -249,16 +245,16 @@ namespace MetaAudio
         // It seems that not only sounds from the view entity can be source relative...
         if (ch->origin[0] == 0.0f && ch->origin[1] == 0.0f && ch->origin[2] == 0.0f)
         {
-          ch->source.setRelative(true);
+          ch->sound_source->GetInternalSourceHandle().setRelative(true);
         }
       }
       alure_position = AL_UnpackVector(ch->origin);
     }
     else
     {
-      ch->source.setRelative(true);
+      ch->sound_source->GetInternalSourceHandle().setRelative(true);
     }
-    ch->source.setPosition(alure_position);
+    ch->sound_source->GetInternalSourceHandle().setPosition(alure_position);
 
     float fvol = 1.0f;
     float fpitch = 1.0f;
@@ -270,8 +266,8 @@ namespace MetaAudio
       fvol /= (*gAudEngine.g_SND_VoiceOverdrive);
     }
 
-    ch->source.setGain(ch->volume * fvol);
-    ch->source.setPitch(ch->pitch * fpitch);
+    ch->sound_source->GetInternalSourceHandle().setGain(ch->volume * fvol);
+    ch->sound_source->GetInternalSourceHandle().setPitch(ch->pitch * fpitch);
 
     if (!init)
     {
@@ -358,13 +354,13 @@ namespace MetaAudio
       }
       al_efx->InterplEffect(roomtype);
 
-      channel_pool->ForEachChannel([&](auto& channel) { SND_Spatialize(&channel, false); });
+      channel_pool->ForEachChannel([&](aud_channel_t& channel) { SND_Spatialize(&channel, false); });
 
       if (snd_show && snd_show->value)
       {
         std::string output;
         size_t total = 0;
-        channel_pool->ForEachChannel([&](auto& channel)
+        channel_pool->ForEachChannel([&](aud_channel_t& channel)
           {
             if (channel.sfx && channel.volume > 0)
             {
@@ -372,6 +368,7 @@ namespace MetaAudio
               total++;
             }
           });
+
         if (!output.empty())
         {
           output.append("----(" + std::to_string(total) + ")----\n");
@@ -476,13 +473,8 @@ namespace MetaAudio
 
     if (!sc)
     {
-      ch->sfx = nullptr;
+      channel_pool->FreeChannel(ch);
       return;
-    }
-
-    if (!ch->source)
-    {
-      ch->source = al_context.createSource();
     }
 
     ch->start = 0;
@@ -495,66 +487,55 @@ namespace MetaAudio
       vox->InitMouth(entnum, entchannel);
     }
 
-    ch->source.setPitch(ch->pitch);
-    ch->source.setRolloffFactors(ch->attenuation, ch->attenuation);
-    ch->source.setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
-    ch->source.setAirAbsorptionFactor(1.0f);
-
-    // Should also set source priority
-    ch->source.setLooping(sc->looping);
     if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
     {
-      SND_Spatialize(ch, true);
-      try
+      if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
       {
-        ch->source.setOffset(ch->start);
-        ch->decoder = sc->decoder;
-        if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
-        {
-          ch->source.play(ch->decoder, 1024, 2);
-          delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
-        }
-        else
-        {
-          ch->source.play(ch->decoder, 4096, 4);
-        }
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 1024, 2);
+        delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
       }
-      catch (const std::runtime_error& error)
+      else
       {
-        dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 4096, 4);
       }
     }
     else
     {
       if (al_xfi_workaround->value == 2.0f || sc->force_streaming)
       {
-        ch->decoder = al_context.createDecoder(sc->buffer.getName());
-        SND_Spatialize(ch, true);
-        try
-        {
-          ch->source.setOffset(ch->start);
-          ch->source.play(ch->decoder, 12000, 4);
-        }
-        catch (const std::runtime_error& error)
-        {
-          dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
-        }
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context.createDecoder(sc->buffer.getName()), al_context.createSource(), 16384, 4);
       }
       else
       {
-        ch->buffer = sc->buffer;
-        SND_Spatialize(ch, true);
-        try
-        {
-          ch->source.setOffset(ch->start);
-          ch->playback_end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(static_cast<long long>(static_cast<double>(ch->buffer.getLength()) / ch->buffer.getFrequency() * 1.5 * 1000)); // 50% of safety
-          ch->source.play(ch->buffer);
-        }
-        catch (const std::runtime_error& error)
-        {
-          dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
-        }
+        ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context.createSource());
       }
+    }
+
+    try
+    {
+      ch->sound_source->GetInternalSourceHandle().setOffset(ch->start);
+    }
+    catch (const std::runtime_error& error)
+    {
+      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+    }
+
+    try
+    {
+      ch->sound_source->GetInternalSourceHandle().setPitch(ch->pitch);
+      ch->sound_source->GetInternalSourceHandle().setRolloffFactors(ch->attenuation, ch->attenuation);
+      ch->sound_source->GetInternalSourceHandle().setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
+      ch->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
+
+      // Should also set source priority
+      ch->sound_source->GetInternalSourceHandle().setLooping(sc->looping);
+
+      SND_Spatialize(ch, true);
+      ch->sound_source->Play();
+    }
+    catch (const std::runtime_error& error)
+    {
+      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
     }
   }
 
@@ -784,8 +765,8 @@ namespace MetaAudio
     SteamAudio_Init();
     AL_ResetEFX();
 
-    channel_pool = alure::MakeShared<ChannelManager>();
-    vox = alure::MakeShared<VoxManager>(this, loader, channel_pool);
+    channel_pool = alure::MakeUnique<ChannelManager>();
+    vox = alure::MakeUnique<VoxManager>(this, loader);
   }
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()

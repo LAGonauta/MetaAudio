@@ -9,6 +9,8 @@ namespace MetaAudio
 
   class ChannelManager final
   {
+    friend AudioEngine;
+
   private:
     cvar_t* al_xfi_workaround;
 
@@ -17,6 +19,8 @@ namespace MetaAudio
       std::vector<aud_channel_t> static_;
       std::vector<aud_channel_t> dynamic;
     } channels;
+
+    void FreeChannel(aud_channel_t* ch);
 
   public:
     ChannelManager();
@@ -28,8 +32,6 @@ namespace MetaAudio
     bool IsPlaying(sfx_t* sfx);
     bool IsPlaying(const aud_channel_t& channel);
 
-    void FreeChannel(aud_channel_t* ch);
-
     void ClearAllChannels();
     void ClearEntityChannels(int entnum, int entchannel);
     void ClearFinished();
@@ -37,8 +39,8 @@ namespace MetaAudio
     template<class Functor>
     void ForEachChannel(Functor& lambda)
     {
-      std::for_each(channels.dynamic.begin(), channels.dynamic.end(), lambda);
-      std::for_each(channels.static_.begin(), channels.static_.end(), lambda);
+      for (auto& channel : channels.dynamic) lambda(channel);
+      for (auto& channel : channels.static_) lambda(channel);
     }
 
     // delete copy

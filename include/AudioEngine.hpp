@@ -34,8 +34,8 @@ namespace MetaAudio
     alure::Device al_device;
     alure::Context al_context;
     alure::UniquePtr<EnvEffects> al_efx;
-    alure::SharedPtr<VoxManager> vox;
-    alure::SharedPtr<ChannelManager> channel_pool;
+    alure::UniquePtr<VoxManager> vox;
+    alure::UniquePtr<ChannelManager> channel_pool;
 
     char al_device_name[1024] = "";
     int al_device_majorversion = 0;

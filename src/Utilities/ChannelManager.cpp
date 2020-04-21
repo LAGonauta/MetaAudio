@@ -10,7 +10,7 @@ namespace MetaAudio
 
   bool ChannelManager::IsPlaying(sfx_t* sfx)
   {
-    auto functor = [&](auto& channel) { return channel.sfx == sfx && channel.source && IsPlaying(channel); };
+    auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source && IsPlaying(channel); };
 
     return std::any_of(channels.dynamic.begin(), channels.dynamic.end(), functor) ||
            std::any_of(channels.static_.begin(), channels.static_.end(), functor);
@@ -18,24 +18,7 @@ namespace MetaAudio
 
   bool ChannelManager::IsPlaying(const aud_channel_t& channel)
   {
-    if (channel.source)
-    {
-      if (al_xfi_workaround->value == 0.0f ||
-        al_xfi_workaround->value == 2.0f ||
-        channel.source.getLooping() ||
-        channel.entchannel == CHAN_STREAM ||
-        (channel.entchannel >= CHAN_NETWORKVOICE_BASE && channel.entchannel <= CHAN_NETWORKVOICE_END) ||
-        channel.decoder != nullptr ||
-        channel.buffer == nullptr)
-      {
-        return channel.source.isPlaying();
-      }
-      else
-      {
-        return channel.source.isPlaying() && std::chrono::steady_clock::now() < channel.playback_end_time;
-      }
-    }
-    return false;
+    return channel.sound_source->IsPlaying();
   }
 
   void ChannelManager::FreeChannel(aud_channel_t* ch)
@@ -73,7 +56,7 @@ namespace MetaAudio
       auto voiceChannel = std::find_if(
         channels.dynamic.begin(),
         channels.dynamic.end(),
-        [&](auto& channel) { return channel.entchannel == CHAN_STREAM && channel.source && IsPlaying(channel); }
+        [&](aud_channel_t& channel) { return channel.entchannel == CHAN_STREAM && channel.sound_source && IsPlaying(channel); }
       );
       if (voiceChannel != channels.dynamic.end())
       {
@@ -129,18 +112,18 @@ namespace MetaAudio
       if (flags & SND_CHANGE_PITCH)
       {
         channel.pitch = pitch;
-        channel.source.setPitch(channel.pitch);
+        channel.sound_source->GetInternalSourceHandle().setPitch(channel.pitch);
       }
 
       if (flags & SND_CHANGE_VOL)
       {
         channel.volume = fvol;
-        channel.source.setGain(channel.volume);
+        channel.sound_source->GetInternalSourceHandle().setGain(channel.volume);
       }
 
       if (flags & SND_STOP)
       {
-        channel.source.stop();
+        channel.sound_source->GetInternalSourceHandle().stop();
       }
     };
 

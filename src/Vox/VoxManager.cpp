@@ -5,8 +5,8 @@
 
 namespace MetaAudio
 {
-  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader, std::shared_ptr<ChannelManager> pool)
-    : rgrgvoxword{}, m_engine(engine), m_loader(loader), m_pool(pool)
+  VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader)
+    : rgrgvoxword{}, m_engine(engine), m_loader(loader)
   {}
 
   void VoxManager::TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc)
@@ -228,7 +228,6 @@ namespace MetaAudio
 
   std::optional<alure::String> VoxManager::LookupString(const alure::String& pszin, int* psentencenum)
   {
-    int i;
     char* cptr;
     sentenceEntry_s* sentenceEntry;
 
@@ -240,7 +239,7 @@ namespace MetaAudio
         return alure::String(sentenceEntry->data);
     }
 
-    for (i = 0; i < *gAudEngine.cszrawsentences; i++)
+    for (size_t i = 0, final = *gAudEngine.cszrawsentences; i < final; ++i)
     {
       if (!_stricmp(pszin.c_str(), (*gAudEngine.rgpszrawsentence)[i]))
       {
@@ -517,14 +516,12 @@ namespace MetaAudio
 
     if (!channel->sfx)
     {
-      m_pool->FreeChannel(channel);
       return nullptr;
     }
 
     sc = m_loader->S_LoadSound(channel->sfx, channel);
     if (!sc)
     {
-      m_pool->FreeChannel(channel);
       return nullptr;
     }
 
@@ -579,7 +576,7 @@ namespace MetaAudio
     if (!pent)
       return;
 
-    i = static_cast<size_t>(ch->source.getSampleOffset());
+    i = static_cast<size_t>(ch->sound_source->GetInternalSourceHandle().getSampleOffset());
     scount = pent->mouth.sndcount;
     savg = 0;
 
