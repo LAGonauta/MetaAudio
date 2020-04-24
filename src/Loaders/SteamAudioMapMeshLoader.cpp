@@ -149,7 +149,7 @@ namespace MetaAudio
         }
 
         IPLhandle scene = nullptr;
-        IPLerror error = iplCreateScene(sa_context, nullptr, sa_simul_settings, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        IPLerror error = iplCreateScene(sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
         if (error)
         {
           throw std::runtime_error("Error creating scene: " + std::to_string(error));

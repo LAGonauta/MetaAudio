@@ -131,7 +131,7 @@ namespace MetaAudio
       if (!sc->looping && iSamplesPlayed >= ch->end)
       {
         fWaveEnd = true;
-        ch->sound_source->GetInternalSourceHandle().stop();
+        ch->sound_source->Stop();
       }
     }
 
@@ -205,7 +205,7 @@ namespace MetaAudio
     alure::Vector3 alure_position(0, 0, 0);
     if (ch->entnum != *gAudEngine.cl_viewentity)
     {
-      ch->sound_source->GetInternalSourceHandle().setRelative(false);
+      ch->sound_source->SetRelative(false);
       if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)
       {
         cl_entity_t* sent = gEngfuncs.GetEntityByIndex(ch->entnum);
@@ -236,8 +236,8 @@ namespace MetaAudio
             (sent->curstate.origin[1] - sent->prevstate.origin[1]) * ratio,
             (sent->curstate.origin[2] - sent->prevstate.origin[2]) * ratio };
 
-          ch->sound_source->GetInternalSourceHandle().setVelocity(AL_UnpackVector(sent_velocity));
-          ch->sound_source->GetInternalSourceHandle().setRadius(sent->model->radius * AL_UnitToMeters);
+          ch->sound_source->SetVelocity(AL_UnpackVector(sent_velocity));
+          ch->sound_source->SetRadius(sent->model->radius * AL_UnitToMeters);
         }
       }
       else
@@ -245,16 +245,16 @@ namespace MetaAudio
         // It seems that not only sounds from the view entity can be source relative...
         if (ch->origin[0] == 0.0f && ch->origin[1] == 0.0f && ch->origin[2] == 0.0f)
         {
-          ch->sound_source->GetInternalSourceHandle().setRelative(true);
+          ch->sound_source->SetRelative(true);
         }
       }
       alure_position = AL_UnpackVector(ch->origin);
     }
     else
     {
-      ch->sound_source->GetInternalSourceHandle().setRelative(true);
+      ch->sound_source->SetRelative(true);
     }
-    ch->sound_source->GetInternalSourceHandle().setPosition(alure_position);
+    ch->sound_source->SetPosition(alure_position);
 
     float fvol = 1.0f;
     float fpitch = 1.0f;
@@ -528,7 +528,7 @@ namespace MetaAudio
       ch->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
 
       // Should also set source priority
-      ch->sound_source->GetInternalSourceHandle().setLooping(sc->looping);
+      ch->sound_source->SetLooping(sc->looping);
 
       SND_Spatialize(ch, true);
       ch->sound_source->Play();
@@ -725,7 +725,7 @@ namespace MetaAudio
     sa_simulationSettings.maxConvolutionSources = 1;
     sa_simulationSettings.numBounces = 2;
     sa_simulationSettings.numDiffuseSamples = 1024;
-    sa_simulationSettings.numOcclusionSamples = 512;
+    sa_simulationSettings.maxNumOcclusionSamples = 512;
     sa_simulationSettings.numRays = 4096;
     sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
     sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;

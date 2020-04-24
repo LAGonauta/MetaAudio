@@ -123,7 +123,7 @@ namespace MetaAudio
 
       if (flags & SND_STOP)
       {
-        channel.sound_source->GetInternalSourceHandle().stop();
+        channel.sound_source->Stop();
       }
     };
 

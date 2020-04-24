@@ -11,6 +11,7 @@ namespace MetaAudio
   class SteamAudioOcclusionCalculator final : public IOcclusionCalculator
   {
   private:
+    static constexpr size_t NUMBER_OCCLUSION_RAYS = 512;
     std::shared_ptr<SteamAudioMapMeshLoader> meshLoader;
 
     const event_api_s& event_api;

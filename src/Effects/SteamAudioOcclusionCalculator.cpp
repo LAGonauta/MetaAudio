@@ -41,6 +41,7 @@ namespace MetaAudio
       toIPLVector3(&listenerUp),
       source,
       sourceRadius,
+      SteamAudioOcclusionCalculator::NUMBER_OCCLUSION_RAYS,
       IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY,
       IPLDirectOcclusionMethod::IPL_DIRECTOCCLUSION_VOLUMETRIC
       );
