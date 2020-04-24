@@ -30,7 +30,6 @@ namespace MetaAudio
     int S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags);
 
     bool IsPlaying(sfx_t* sfx);
-    bool IsPlaying(const aud_channel_t& channel);
 
     void ClearAllChannels();
     void ClearEntityChannels(int entnum, int entchannel);

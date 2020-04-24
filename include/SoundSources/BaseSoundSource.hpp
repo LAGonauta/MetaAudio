@@ -16,12 +16,12 @@ namespace MetaAudio
       return m_source->isPlaying();
     }
 
-    virtual void SetPosition(alure::Vector3 position)
+    void SetPosition(alure::Vector3 position)
     {
       m_source->setPosition(position);
     }
 
-    virtual void SetRelative(bool value)
+    void SetRelative(bool value)
     {
       m_source->setRelative(value);
     }
@@ -36,7 +36,7 @@ namespace MetaAudio
       m_source->setRadius(radius);
     }
 
-    virtual void SetLooping(bool value)
+    void SetLooping(bool value)
     {
       m_source->setLooping(value);
     }

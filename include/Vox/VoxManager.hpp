@@ -16,7 +16,6 @@ namespace MetaAudio
     AudioEngine* m_engine;
     std::shared_ptr<SoundLoader> m_loader;
 
-    alure::Array<alure::String, CVOXWORDMAX> rgpparseword{};  // array parsed words
     alure::String voxperiod = "_period";                      // vocal pause
     alure::String voxcomma = "_comma";                        // vocal pause
     voxword_t voxwordDefault;
@@ -24,9 +23,9 @@ namespace MetaAudio
     // Voice file lookup
     std::optional<alure::String> LookupString(const alure::String& pszin, int* psentencenum);
     alure::String GetDirectory(alure::String& szpath, alure::String& psz);
-    void ParseString(const alure::String& psz);
-    bool ParseWordParams(alure::String& psz, voxword_t* pvoxword, int fFirst);
-    int IFindEmptySentence(void);
+    alure::Vector<alure::String> ParseString(const alure::String& psz);
+    std::optional<voxword_t> ParseWordParams(alure::String& psz, int fFirst);
+    int FindEmptySentence();
 
     // Mouth movement
     void ForceInitMouth(int entnum);

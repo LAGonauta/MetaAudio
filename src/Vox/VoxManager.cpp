@@ -11,27 +11,26 @@ namespace MetaAudio
 
   void VoxManager::TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc)
   {
-    float sstart;
-    float send;
-    size_t length;
-    int i;
     size_t srcsample;
     int skiplen;
-    voxword_t* pvoxword;
 
     if (ch->isentence < 0)
+    {
       return;
+    }
 
     // only mono support
     if (sc->channels != alure::ChannelConfig::Mono)
+    {
       return;
+    }
 
-    pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
+    auto pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
     pvoxword->cbtrim = sc->length;
 
-    sstart = static_cast<float>(pvoxword->start);
-    send = static_cast<float>(pvoxword->end);
-    length = static_cast<size_t>(sc->length);
+    auto sstart = static_cast<float>(pvoxword->start);
+    auto send = static_cast<float>(pvoxword->end);
+    auto length = static_cast<size_t>(sc->length);
 
     if (ch->entchannel == CHAN_STREAM)
     {
@@ -63,7 +62,7 @@ namespace MetaAudio
         case alure::SampleType::UInt8:
         {
           auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample >= sc->length)
               break;
@@ -81,7 +80,7 @@ namespace MetaAudio
         case alure::SampleType::Int16:
         {
           auto temp_viewer = data_viewer.reinterpret_as<int16>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample >= sc->length)
               break;
@@ -99,7 +98,7 @@ namespace MetaAudio
         case alure::SampleType::Float32:
         {
           auto temp_viewer = data_viewer.reinterpret_as<float>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample >= sc->length)
               break;
@@ -136,7 +135,7 @@ namespace MetaAudio
         case alure::SampleType::UInt8:
         {
           auto temp_viewer = data_viewer.reinterpret_as<ALubyte>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample <= ch->start)
               break;
@@ -158,7 +157,7 @@ namespace MetaAudio
         case alure::SampleType::Int16:
         {
           auto temp_viewer = data_viewer.reinterpret_as<int16>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample <= ch->start)
               break;
@@ -180,7 +179,7 @@ namespace MetaAudio
         case alure::SampleType::Float32:
         {
           auto temp_viewer = data_viewer.reinterpret_as<float>();
-          for (i = 0; i < CVOXZEROSCANMAX; i++)
+          for (size_t i = 0; i < CVOXZEROSCANMAX; ++i)
           {
             if (srcsample <= ch->start)
               break;
@@ -281,27 +280,29 @@ namespace MetaAudio
     return alure::String(psz, charscan_index + 1, psz.length());
   }
 
-  void VoxManager::ParseString(const alure::String& psz)
+  alure::Vector<alure::String> VoxManager::ParseString(const alure::String& psz)
   {
-    rgpparseword.fill(alure::String());
+    std::vector<alure::String> words;
 
     if (!psz.length())
-      return;
+      return words;
 
     // Split over space, comma, and periods.
     // If comma or periods, add them to own slot.
     int psz_size = psz.length();
     int charscan_initial_index = 0;
     int charscan_last_index = 0;
-    size_t word_index = 0;
-    while (word_index < CVOXWORDMAX && charscan_last_index < psz_size)
+    while (words.size() < CVOXWORDMAX && charscan_last_index < psz_size)
     {
       if (psz[charscan_last_index] == ' ')
       {
-        if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ',' && psz[charscan_last_index - 1] != '.')
+        if ((charscan_last_index - 1 >= 0) &&
+          psz[charscan_last_index - 1] != ',' &&
+          psz[charscan_last_index - 1] != '.' &&
+          charscan_initial_index != charscan_last_index)
         {
-          rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-          ++word_index;
+          auto& word = words.emplace_back();
+          word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
         }
         charscan_initial_index = charscan_last_index + 1;
       }
@@ -317,20 +318,25 @@ namespace MetaAudio
       {
         if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
         {
-          rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-          ++word_index;
+          auto& word = words.emplace_back();
+          word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
         }
 
         switch (psz[charscan_last_index])
         {
         case ',':
-          rgpparseword[word_index].assign(voxcomma);
-          ++word_index;
-          break;
+          {
+            auto& word = words.emplace_back();
+            word.assign(voxcomma);
+            break;
+          }
+
         case '.':
-          rgpparseword[word_index].assign(voxperiod);
-          ++word_index;
-          break;
+          {
+            auto& word = words.emplace_back();
+            word.assign(voxperiod);
+            break;
+          }
         }
         charscan_initial_index = charscan_last_index + 1;
       }
@@ -339,18 +345,18 @@ namespace MetaAudio
       // Finished parsing, add last word
       if (charscan_last_index == psz_size)
       {
-        rgpparseword[word_index].assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-        ++word_index;
+        auto& word = words.emplace_back();
+        word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
       }
     }
+
+    return words;
   }
 
-  bool VoxManager::ParseWordParams(alure::String& initial_string, voxword_t* pvoxword, int fFirst)
+  std::optional<voxword_t> VoxManager::ParseWordParams(alure::String& initial_string, int fFirst)
   {
     size_t charscan_index;
     alure::String psz = initial_string;
-    alure::String ct;
-    alure::String sznum;
 
     // init to defaults if this is the first word in string.
     if (fFirst)
@@ -361,14 +367,14 @@ namespace MetaAudio
       voxwordDefault.end = 100;
     }
 
-    *pvoxword = voxwordDefault;
+    auto voxword = voxwordDefault;
 
     // look at next to last char to see if we have a
     // valid format:
     charscan_index = psz.length() - 1;
 
     if (psz[charscan_index] != ')')
-      return true;  // no formatting, return
+      return voxword;  // no formatting, return
 
     // scan forward to first '('
     charscan_index = 0;
@@ -376,20 +382,18 @@ namespace MetaAudio
       ++charscan_index;
 
     if (psz[charscan_index] == ')')
-      return false;  // bogus formatting
+      return std::nullopt;  // bogus formatting
 
     // remove parameter block from initial string
     initial_string.assign(initial_string, 0, charscan_index);
 
-    ct = psz[++charscan_index];
-
+    alure::String ct; ct = psz[++charscan_index];
+    auto ValidCharacter = [](char& character) { return character == 'v' || character == 'p' || character == 's' || character == 'e' || character == 't'; };
     while (1)
     {
       // scan until we hit a character in the commandSet
       while (charscan_index < psz.length() && psz[charscan_index] != ')' &&
-        !(ct[0] == 'v' || ct[0] == 'p' ||
-          ct[0] == 's' || ct[0] == 'e' ||
-          ct[0] == 't'))
+             !ValidCharacter(ct[0]))
       {
         ct = psz[++charscan_index];
       }
@@ -398,12 +402,12 @@ namespace MetaAudio
         break;
 
       ++charscan_index;
-      if (!isdigit(psz[charscan_index]))
+      if (!std::isdigit(psz[charscan_index]))
         break;
 
       // read number
-      sznum = "";
-      while (isdigit(psz[charscan_index]))
+      alure::String sznum = "";
+      while (std::isdigit(psz[charscan_index]))
       {
         sznum += psz[charscan_index];
         ++charscan_index;
@@ -411,11 +415,11 @@ namespace MetaAudio
 
       switch (ct[0])
       {
-      case 'v': pvoxword->volume = stoi(sznum); break;
-      case 'p': pvoxword->pitch = stoi(sznum); break;
-      case 's': pvoxword->start = stoi(sznum); break;
-      case 'e': pvoxword->end = stoi(sznum); break;
-      case 't': pvoxword->timecompress = stoi(sznum); break;
+      case 'v': voxword.volume = std::stoi(sznum); break;
+      case 'p': voxword.pitch = std::stoi(sznum); break;
+      case 's': voxword.start = std::stoi(sznum); break;
+      case 'e': voxword.end = std::stoi(sznum); break;
+      case 't': voxword.timecompress = std::stoi(sznum); break;
       }
 
       ct = psz[charscan_index];
@@ -424,18 +428,16 @@ namespace MetaAudio
     // isolated parameter block
     if (psz[0] == '(')
     {
-      voxwordDefault = *pvoxword;
-      return false;
+      voxwordDefault = voxword;
+      return std::nullopt;
     }
     else
-      return true;
+      return voxword;
   }
 
-  int VoxManager::IFindEmptySentence(void)
+  int VoxManager::FindEmptySentence()
   {
-    int k;
-
-    for (k = 0; k < CVOXSENTENCEMAX; k++)
+    for (int k = 0; k < CVOXSENTENCEMAX; ++k)
     {
       if (!rgrgvoxword[k][0].sfx)
         return k;
@@ -447,20 +449,15 @@ namespace MetaAudio
 
   aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
   {
-    if (pszin.empty() || std::all_of(pszin.begin(), pszin.end(), std::isspace))
+    if (pszin.empty() ||
+        std::all_of(pszin.begin(), pszin.end(), std::isspace))
     {
       return nullptr;
     }
 
-    int i, j, k, cword;
-    alure::String pathbuffer;
-    alure::String szpath;
-    aud_sfxcache_t* sc;
-    alure::Array<voxword_t, CVOXWORDMAX> rgvoxword{};
-    alure::String psz;
-
     // lookup actual string in (*gAudEngine.rgpszrawsentence),
     // set pointer to string data
+    alure::String psz;
     auto data_string = LookupString(pszin, nullptr);
     if (data_string.has_value())
     {
@@ -473,45 +470,48 @@ namespace MetaAudio
     }
 
     // get directory from string, advance psz
+    alure::String szpath;
     psz = GetDirectory(szpath, psz);
 
     // parse sentence
-    ParseString(psz);
+    auto words = ParseString(psz);
 
     // for each word in the sentence, construct the filename,
     // lookup the sfx and save each pointer in a temp array
-    i = 0;
-    cword = 0;
-    while (rgpparseword[i].length())
+    alure::Vector<voxword_t> voxWords;
+    for (size_t i = 0, final = words.size(); i < final; ++i)
     {
       // Get any pitch, volume, start, end params into voxword
-      if (ParseWordParams(rgpparseword[i], &rgvoxword[cword], i == 0))
+      if (auto voxParameter = ParseWordParams(words[i], i == 0))
       {
+        auto& value = voxParameter.value();
         // this is a valid word (as opposed to a parameter block)
-        pathbuffer = szpath + rgpparseword[i] + ".wav";
+        auto pathbuffer = szpath + words[i] + ".wav";
 
         // find name, if already in cache, mark voxword
         // so we don't discard when word is done playing
-        rgvoxword[cword].sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &(rgvoxword[cword].fKeepCached));
-        cword++;
+        value.sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &value.fKeepCached);
+
+        voxWords.emplace_back(value);
       }
-      i++;
     }
 
-    k = IFindEmptySentence();
+    auto k = FindEmptySentence();
     if (k < 0)
-      return nullptr;
-
-    j = 0;
-    while (rgvoxword[j].sfx != nullptr)
     {
-      rgrgvoxword[k][j] = rgvoxword[j];
+      return nullptr;
+    }
+
+    auto j = 0;
+    for (auto& vox : voxWords)
+    {
+      rgrgvoxword[k][j] = vox;
       ++j;
     }
 
     channel->isentence = k;
     channel->iword = 0;
-    channel->sfx = rgvoxword[0].sfx;
+    channel->sfx = voxWords.size() > 0 ? voxWords[0].sfx : nullptr;
     channel->vox = this;
 
     if (!channel->sfx)
@@ -519,7 +519,7 @@ namespace MetaAudio
       return nullptr;
     }
 
-    sc = m_loader->S_LoadSound(channel->sfx, channel);
+    auto sc = m_loader->S_LoadSound(channel->sfx, channel);
     if (!sc)
     {
       return nullptr;

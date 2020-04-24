@@ -10,15 +10,10 @@ namespace MetaAudio
 
   bool ChannelManager::IsPlaying(sfx_t* sfx)
   {
-    auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source && IsPlaying(channel); };
+    auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source && channel.sound_source->IsPlaying(); };
 
     return std::any_of(channels.dynamic.begin(), channels.dynamic.end(), functor) ||
            std::any_of(channels.static_.begin(), channels.static_.end(), functor);
-  }
-
-  bool ChannelManager::IsPlaying(const aud_channel_t& channel)
-  {
-    return channel.sound_source->IsPlaying();
   }
 
   void ChannelManager::FreeChannel(aud_channel_t* ch)
@@ -56,7 +51,7 @@ namespace MetaAudio
       auto voiceChannel = std::find_if(
         channels.dynamic.begin(),
         channels.dynamic.end(),
-        [&](aud_channel_t& channel) { return channel.entchannel == CHAN_STREAM && channel.sound_source && IsPlaying(channel); }
+        [&](aud_channel_t& channel) { return channel.entchannel == CHAN_STREAM && channel.sound_source && channel.sound_source->IsPlaying(); }
       );
       if (voiceChannel != channels.dynamic.end())
       {
@@ -97,7 +92,7 @@ namespace MetaAudio
 
   void ChannelManager::ClearFinished()
   {
-    auto functor = [&](aud_channel_t& channel) { return channel.isentence < 0 && !IsPlaying(channel); };
+    auto functor = [&](aud_channel_t& channel) { return channel.isentence < 0 && !channel.sound_source->IsPlaying(); };
 
     channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
     channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());

@@ -171,8 +171,8 @@ namespace MetaAudio
         context.setMessageHandler(m_decoder);
       }
 
-      std::optional<alure::String> file_path = S_GetFilePath(s->name, false);
-      if (!file_path.has_value())
+      auto file_path = S_GetFilePath(s->name, false);
+      if (!file_path)
       {
         return nullptr;
       }

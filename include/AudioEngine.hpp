@@ -52,6 +52,7 @@ namespace MetaAudio
     void S_CheckWavEnd(aud_channel_t* ch, aud_sfxcache_t* sc);
     void SND_Spatialize(aud_channel_t* ch, qboolean init);
     void S_StartSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch, bool is_static);
+    void ConfigureSource(aud_channel_t* channel, aud_sfxcache_t* data);
 
     bool OpenAL_Init();
     void OpenAL_Shutdown();

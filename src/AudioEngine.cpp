@@ -120,7 +120,7 @@ namespace MetaAudio
 
     qboolean fWaveEnd = false;
 
-    if (!channel_pool->IsPlaying(*ch))
+    if (!ch->sound_source->IsPlaying())
     {
       fWaveEnd = true;
     }
@@ -155,7 +155,7 @@ namespace MetaAudio
         {
           ch->start = 0;
           ch->end = sc->length;
-          ch->iword++;
+          ++ch->iword;
 
           vox->TrimStartEndTimes(ch, sc);
           if (ch->entchannel == CHAN_STREAM)
@@ -166,7 +166,8 @@ namespace MetaAudio
           {
             ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context.createSource());
           }
-          ch->sound_source->GetInternalSourceHandle().setOffset(ch->start);
+
+          ConfigureSource(ch, sc);
           ch->sound_source->Play();
 
           return;
@@ -383,6 +384,20 @@ namespace MetaAudio
     }
   }
 
+  void AudioEngine::ConfigureSource(aud_channel_t* channel, aud_sfxcache_t* audioData)
+  {
+    channel->sound_source->GetInternalSourceHandle().setOffset(channel->start);
+    channel->sound_source->GetInternalSourceHandle().setPitch(channel->pitch);
+    channel->sound_source->GetInternalSourceHandle().setRolloffFactors(channel->attenuation, channel->attenuation);
+    channel->sound_source->GetInternalSourceHandle().setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
+    channel->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
+
+    // Should also set source priority
+    channel->sound_source->SetLooping(audioData->looping);
+
+    SND_Spatialize(channel, true);
+  }
+
   void AudioEngine::S_StartSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch, bool is_static)
   {
     std::string _function_name;
@@ -513,24 +528,8 @@ namespace MetaAudio
 
     try
     {
-      ch->sound_source->GetInternalSourceHandle().setOffset(ch->start);
-    }
-    catch (const std::runtime_error& error)
-    {
-      dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
-    }
+      ConfigureSource(ch, sc);
 
-    try
-    {
-      ch->sound_source->GetInternalSourceHandle().setPitch(ch->pitch);
-      ch->sound_source->GetInternalSourceHandle().setRolloffFactors(ch->attenuation, ch->attenuation);
-      ch->sound_source->GetInternalSourceHandle().setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
-      ch->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
-
-      // Should also set source priority
-      ch->sound_source->SetLooping(sc->looping);
-
-      SND_Spatialize(ch, true);
       ch->sound_source->Play();
     }
     catch (const std::runtime_error& error)
