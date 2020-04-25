@@ -31,8 +31,8 @@ namespace MetaAudio
     bool openal_mute = false;
 
     alure::DeviceManager al_dev_manager;
-    alure::Device al_device;
-    alure::Context al_context;
+    alure::AutoObj<alure::Device> al_device;
+    alure::AutoObj<alure::Context> al_context;
     alure::UniquePtr<EnvEffects> al_efx;
     alure::UniquePtr<VoxManager> vox;
     alure::UniquePtr<ChannelManager> channel_pool;
@@ -41,8 +41,8 @@ namespace MetaAudio
     int al_device_majorversion = 0;
     int al_device_minorversion = 0;
 
-    std::shared_ptr<AudioCache> cache;
-    std::shared_ptr<SoundLoader> loader;
+    std::shared_ptr<AudioCache> m_cache;
+    std::shared_ptr<SoundLoader> m_loader;
 
     //Print buffer
     std::string dprint_buffer;
@@ -70,6 +70,7 @@ namespace MetaAudio
 
   public:
     AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader);
+    ~AudioEngine();
 
     void AL_Version();
     void AL_ResetEFX();
@@ -78,7 +79,6 @@ namespace MetaAudio
     void S_Startup();
     void S_Init();
     void S_Shutdown();
-    void S_ShutdownAL();
 
     void S_StartDynamicSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch);
     void S_StartStaticSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch);

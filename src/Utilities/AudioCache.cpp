@@ -9,7 +9,7 @@ namespace MetaAudio
       Sys_ErrorEx("Cache_Alloc: already allocated");
     }
 
-    auto result = cache.emplace(name, aud_sfxcache_t());
+    auto& result = cache.emplace(name, aud_sfxcache_t());
     c->data = static_cast<void*>(&result.first->second);
 
     return &result.first->second;

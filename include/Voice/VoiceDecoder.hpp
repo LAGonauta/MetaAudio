@@ -6,19 +6,19 @@ namespace MetaAudio
 {
   class VoiceDecoder final : public alure::Decoder
   {
+  private:
     int(*VoiceSE_GetSoundDataCallback)(sfxcache_s* cache, char* copyBuf, int maxOutDataSize, int samplePos, int sampleCount);
 
     alure::ChannelConfig m_channel_config{ alure::ChannelConfig::Mono };
     alure::SampleType m_sample_type{ alure::SampleType::UInt8 };
     size_t m_sample_rate{ 8000 };
 
-    aud_channel_t* m_ch;
+    sfxcache_t* m_voicecache{ nullptr };
+    int m_entchannel{ 0 };
 
   public:
     VoiceDecoder(sfx_t* sound, aud_channel_t* ch);
     ~VoiceDecoder() override;
-
-    void destroy();
 
     ALuint getFrequency() const noexcept override;
     alure::ChannelConfig getChannelConfig() const noexcept override;

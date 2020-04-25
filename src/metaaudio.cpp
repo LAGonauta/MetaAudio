@@ -7,29 +7,13 @@
 #include "Vox/VoxManager.hpp"
 #include "AudioEngine.hpp"
 
-static auto audio_cache = std::make_shared<MetaAudio::AudioCache>();
-static auto sound_loader = std::make_shared<MetaAudio::SoundLoader>(audio_cache);
-static MetaAudio::AudioEngine audio_engine(audio_cache, sound_loader);
+static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
+static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;
 
-static void AL_Version()
-{
-  audio_engine.AL_Version();
-}
-
-static void AL_ResetEFX()
-{
-  audio_engine.AL_ResetEFX();
-}
-
-static void AL_BasicDevices()
-{
-  audio_engine.AL_Devices(true);
-}
-
-static void AL_FullDevices()
-{
-  audio_engine.AL_Devices(false);
-}
+static void AL_Version() { audio_engine->AL_Version(); }
+static void AL_ResetEFX() { audio_engine->AL_ResetEFX(); }
+static void AL_BasicDevices() { audio_engine->AL_Devices(true); }
+static void AL_FullDevices() { audio_engine->AL_Devices(false); }
 
 cl_exportfuncs_t gExportfuncs;
 mh_interface_t *g_pInterface;
@@ -39,18 +23,9 @@ IFileSystem *g_pFileSystem;
 
 extern aud_export_t gAudExports;
 
-HINSTANCE g_hInstance, g_hThisModule, g_hEngineModule;
+HINSTANCE g_hInstance, g_hThisModule;
 DWORD g_dwEngineBase, g_dwEngineSize;
 DWORD g_dwEngineBuildnum;
-DWORD g_iVideoMode;
-int g_iVideoWidth, g_iVideoHeight, g_iBPP;
-
-#pragma pack(1)
-bool g_bWindowed;
-bool g_bIsNewEngine;
-bool g_bIsUseSteam;
-bool g_bIsDebuggerPresent;
-#pragma pack()
 
 ICommandLine *CommandLine(void)
 {
@@ -59,32 +34,32 @@ ICommandLine *CommandLine(void)
 
 void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_enginesave_t *pSave)
 {
-  BOOL(*IsDebuggerPresent)(void) = (BOOL(*)(void))GetProcAddress(GetModuleHandle("kernel32.dll"), "IsDebuggerPresent");
-
   g_pInterface = pInterface;
   g_pMetaHookAPI = pAPI;
   g_pMetaSave = pSave;
   g_hInstance = GetModuleHandle(NULL);
-  g_bIsDebuggerPresent = IsDebuggerPresent() != FALSE;
+
+  auto audio_cache = std::make_shared<MetaAudio::AudioCache>();
+  sound_loader = std::make_shared<MetaAudio::SoundLoader>(audio_cache);
+  audio_engine = std::make_unique<MetaAudio::AudioEngine>(audio_cache, sound_loader);
 }
 
 void IPlugins::Shutdown(void)
 {
-  audio_engine.S_ShutdownAL();
+  sound_loader.reset();
+  audio_engine.reset();
 }
 
 void IPlugins::LoadEngine(void)
 {
   g_pFileSystem = g_pInterface->FileSystem;
-  g_iVideoMode = g_pMetaHookAPI->GetVideoMode(&g_iVideoWidth, &g_iVideoHeight, &g_iBPP, &g_bWindowed);
   g_dwEngineBuildnum = g_pMetaHookAPI->GetEngineBuildnum();
 
-  g_hEngineModule = g_pMetaHookAPI->GetEngineModule();
   g_dwEngineBase = g_pMetaHookAPI->GetEngineBase();
   g_dwEngineSize = g_pMetaHookAPI->GetEngineSize();
 
   S_FillAddress();
-  S_InstallHook(&audio_engine, &(*sound_loader));
+  S_InstallHook(audio_engine.get(), sound_loader.get());
 }
 
 void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
@@ -100,8 +75,8 @@ void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
 
 void IPlugins::ExitGame(int iResult)
 {
-  //force shutdown OpenAL
-  audio_engine.S_ShutdownAL();
+  sound_loader.reset();
+  audio_engine.reset();
 }
 
 EXPOSE_SINGLE_INTERFACE(IPlugins, IPlugins, METAHOOK_PLUGIN_API_VERSION);

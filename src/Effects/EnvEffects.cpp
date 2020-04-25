@@ -185,7 +185,7 @@ namespace MetaAudio
     }
   }
 
-  EnvEffects::EnvEffects(alure::Context al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator) : occlusion_calculator(occlusion_calculator)
+  EnvEffects::EnvEffects(alure::Context& al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator) : occlusion_calculator(occlusion_calculator)
   {
     if (al_occlusion == nullptr)
     {

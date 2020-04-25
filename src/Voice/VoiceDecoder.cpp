@@ -13,15 +13,16 @@ namespace MetaAudio
       throw std::runtime_error("Unable to find voice cache.");
     }
 
-    m_ch = ch;
+    m_entchannel = ch->entchannel;
 
-    if (m_ch->entchannel < CHAN_NETWORKVOICE_BASE || m_ch ->entchannel > CHAN_NETWORKVOICE_END)
+    if (m_entchannel < CHAN_NETWORKVOICE_BASE || m_entchannel > CHAN_NETWORKVOICE_END)
     {
-      throw std::runtime_error("Bad entity channel for voice: " + std::to_string(m_ch->entchannel) + ".");
+      throw std::runtime_error("Bad entity channel for voice: " + std::to_string(m_entchannel) + ".");
     }
 
     VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_s*, char*, int, int, int))oldsc->loopstart;
 
+    m_voicecache = oldsc;
     ch->voicecache = oldsc;
 
     if (oldsc->stereo)
@@ -48,25 +49,18 @@ namespace MetaAudio
   //not done
   VoiceDecoder::~VoiceDecoder()
   {
-    destroy();
-  }
-
-  void VoiceDecoder::destroy()
-  {
-    if (m_ch->voicecache)
-    {
-      m_ch->voicecache = nullptr;
-      gAudEngine.VoiceSE_NotifyFreeChannel(m_ch->entchannel);
-    }
+    gAudEngine.VoiceSE_NotifyFreeChannel(m_entchannel);
   }
 
   ALuint VoiceDecoder::read(ALvoid* ptr, ALuint count) noexcept
   {
     //invalid voice?
-    if (!m_ch->voicecache)
+    if (!m_voicecache)
+    {
       return 0;
+    }
 
-    size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_ch->voicecache, static_cast<char*>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
+    size_t ulRecvedFrames = VoiceSE_GetSoundDataCallback(m_voicecache, static_cast<char*>(ptr), alure::FramesToBytes(count, m_channel_config, m_sample_type), 0, count);
 
     return ulRecvedFrames;
   }

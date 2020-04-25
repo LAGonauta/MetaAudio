@@ -81,7 +81,7 @@ namespace MetaAudio
     void OverrideEffects();
 
   public:
-    EnvEffects(alure::Context al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator);
+    EnvEffects(alure::Context& al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator);
     ~EnvEffects();
 
     void InterplEffect(int roomtype);

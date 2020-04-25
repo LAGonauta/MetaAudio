@@ -11,7 +11,7 @@
 
 namespace MetaAudio
 {
-  AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : cache(cache), loader(loader)
+  AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : m_cache(cache), m_loader(loader)
   {
   }
 
@@ -27,10 +27,10 @@ namespace MetaAudio
 
     if (sc->buffer)
     {
-      al_context.removeBuffer(sc->buffer);
+      al_context->removeBuffer(sc->buffer);
     }
 
-    cache->Cache_Free(sfx->name);
+    m_cache->Cache_Free(sfx->name);
 
     sfx->cache.data = nullptr;
   }
@@ -41,6 +41,7 @@ namespace MetaAudio
     {
       S_FreeCache(&(sfx.second));
     }
+    known_sfx.clear();
   }
 
   sfx_t* AudioEngine::S_FindName(char* name, int* pfInCache)
@@ -83,7 +84,7 @@ namespace MetaAudio
 
       if (!sfx)
       {
-        auto result = known_sfx.emplace(name, sfx_t());
+        auto& result = known_sfx.emplace(name, sfx_t());
         sfx = &(result.first->second);
       }
       else
@@ -149,7 +150,7 @@ namespace MetaAudio
 
       if (sfx)
       {
-        sc = loader->S_LoadSound(sfx, ch);
+        sc = m_loader->S_LoadSound(sfx, ch);
 
         if (sc)
         {
@@ -160,11 +161,11 @@ namespace MetaAudio
           vox->TrimStartEndTimes(ch, sc);
           if (ch->entchannel == CHAN_STREAM)
           {
-            ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 16348, 4);
+            ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 16348, 4);
           }
           else
           {
-            ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context.createSource());
+            ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
           }
 
           ConfigureSource(ch, sc);
@@ -283,7 +284,7 @@ namespace MetaAudio
       vec_t orientation[6];
 
       // Update Alure's OpenAL context at the start of processing.
-      al_context.update();
+      al_context->update();
       sa_meshloader->update();
       channel_pool->ClearFinished();
 
@@ -297,7 +298,7 @@ namespace MetaAudio
       AL_CopyVector(forward, orientation);
       AL_CopyVector(up, orientation + 3);
 
-      alure::Listener al_listener = al_context.getListener();
+      alure::Listener al_listener = al_context->getListener();
       if (openal_mute)
       {
         al_listener.setGain(0.0f);
@@ -310,7 +311,7 @@ namespace MetaAudio
           al_listener.setGain(1.0f);
       }
 
-      al_context.setDopplerFactor(std::clamp(al_doppler->value, 0.0f, 10.0f));
+      al_context->setDopplerFactor(std::clamp(al_doppler->value, 0.0f, 10.0f));
 
       std::pair<alure::Vector3, alure::Vector3> alure_orientation(
         alure::Vector3(orientation[0], orientation[1], orientation[2]),
@@ -393,7 +394,10 @@ namespace MetaAudio
     channel->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
 
     // Should also set source priority
-    channel->sound_source->SetLooping(audioData->looping);
+    if (audioData)
+    {
+      channel->sound_source->SetLooping(audioData->looping);
+    }
 
     SND_Spatialize(channel, true);
   }
@@ -482,7 +486,7 @@ namespace MetaAudio
     }
     else
     {
-      sc = loader->S_LoadSound(sfx, ch);
+      sc = m_loader->S_LoadSound(sfx, ch);
       ch->sfx = sfx;
     }
 
@@ -506,23 +510,24 @@ namespace MetaAudio
     {
       if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
       {
-        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 1024, 2);
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 1024, 2);
         delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
+        sc = nullptr;
       }
       else
       {
-        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context.createSource(), 4096, 4);
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 4096, 4);
       }
     }
     else
     {
       if (al_xfi_workaround->value == 2.0f || sc->force_streaming)
       {
-        ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context.createDecoder(sc->buffer.getName()), al_context.createSource(), 16384, 4);
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
       }
       else
       {
-        ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context.createSource());
+        ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
       }
     }
 
@@ -605,24 +610,24 @@ namespace MetaAudio
       const char* device_set = CommandLine()->CheckParm("-al_device", &_al_set_device);
 
       if (_al_set_device != nullptr)
-        al_device = al_dev_manager.openPlayback(_al_set_device, std::nothrow);
+        al_device = alure::MakeAuto(al_dev_manager.openPlayback(_al_set_device, std::nothrow));
 
       if (!al_device)
       {
         auto default_device = al_dev_manager.defaultDeviceName(alure::DefaultDeviceType::Full);
-        al_device = al_dev_manager.openPlayback(default_device);
+        al_device = alure::MakeAuto(al_dev_manager.openPlayback(default_device));
       }
 
-      strncpy_s(al_device_name, al_device.getName().c_str(), sizeof(al_device_name));
+      strncpy_s(al_device_name, al_device->getName().c_str(), sizeof(al_device_name));
 
-      al_context = al_device.createContext();
+      al_context = alure::MakeAuto(al_device->createContext());
 
-      alure::Version ver = al_device.getALCVersion();
+      alure::Version ver = al_device->getALCVersion();
       al_device_majorversion = ver.getMajor();
       al_device_minorversion = ver.getMinor();
 
-      alure::Context::MakeCurrent(al_context);
-      al_context.setDistanceModel(alure::DistanceModel::Linear);
+      alure::Context::MakeCurrent(al_context->getHandle());
+      al_context->setDistanceModel(alure::DistanceModel::Linear);
       return true;
     }
     catch (const std::exception& e)
@@ -681,7 +686,7 @@ namespace MetaAudio
   void AudioEngine::AL_ResetEFX()
   {
     al_efx.reset();
-    al_efx = alure::MakeUnique<EnvEffects>(al_context, al_device.getMaxAuxiliarySends(), GetOccluder());
+    al_efx = alure::MakeUnique<EnvEffects>(*al_context, al_device->getMaxAuxiliarySends(), GetOccluder());
   }
 
   void AudioEngine::AL_Devices(bool basic)
@@ -765,7 +770,7 @@ namespace MetaAudio
     AL_ResetEFX();
 
     channel_pool = alure::MakeUnique<ChannelManager>();
-    vox = alure::MakeUnique<VoxManager>(this, loader);
+    vox = alure::MakeUnique<VoxManager>(this, m_loader);
   }
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
@@ -780,29 +785,20 @@ namespace MetaAudio
     }
   }
 
-  void AudioEngine::OpenAL_Shutdown()
+  AudioEngine::~AudioEngine()
   {
-    // Should also clear all buffers and sources.
+    S_StopAllSounds(true);
+    S_FlushCaches();
+    al_efx.reset();
+    channel_pool.reset();
+    vox.reset();
+
     alure::FileIOFactory::set(nullptr);
     alure::Context::MakeCurrent(nullptr);
-    al_context.destroy();
 
-    al_device.close();
-  }
+    openal_started = false;
 
-  void AudioEngine::S_ShutdownAL()
-  {
-    if (openal_started)
-    {
-      S_StopAllSounds(true);
-      al_efx.reset();
-      vox.reset();
-      channel_pool.reset();
-      OpenAL_Shutdown();
-      openal_started = false;
-
-      SteamAudio_Shutdown();
-    }
+    SteamAudio_Shutdown();
   }
 
   void AudioEngine::S_Shutdown()
