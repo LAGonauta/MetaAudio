@@ -107,13 +107,13 @@ namespace MetaAudio
       if (flags & SND_CHANGE_PITCH)
       {
         channel.pitch = pitch;
-        channel.sound_source->GetInternalSourceHandle().setPitch(channel.pitch);
+        channel.sound_source->SetPitch(channel.pitch);
       }
 
       if (flags & SND_CHANGE_VOL)
       {
         channel.volume = fvol;
-        channel.sound_source->GetInternalSourceHandle().setGain(channel.volume);
+        channel.sound_source->SetGain(channel.volume);
       }
 
       if (flags & SND_STOP)

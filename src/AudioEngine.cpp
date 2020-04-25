@@ -127,7 +127,7 @@ namespace MetaAudio
     }
     else if (ch->entchannel != CHAN_STREAM)
     {
-      uint64_t iSamplesPlayed = ch->sound_source->GetInternalSourceHandle().getSampleOffset();
+      uint64_t iSamplesPlayed = ch->sound_source->GetSampleOffset();
 
       if (!sc->looping && iSamplesPlayed >= ch->end)
       {
@@ -268,8 +268,8 @@ namespace MetaAudio
       fvol /= (*gAudEngine.g_SND_VoiceOverdrive);
     }
 
-    ch->sound_source->GetInternalSourceHandle().setGain(ch->volume * fvol);
-    ch->sound_source->GetInternalSourceHandle().setPitch(ch->pitch * fpitch);
+    ch->sound_source->SetGain(ch->volume * fvol);
+    ch->sound_source->SetPitch(ch->pitch * fpitch);
 
     if (!init)
     {
@@ -387,11 +387,11 @@ namespace MetaAudio
 
   void AudioEngine::ConfigureSource(aud_channel_t* channel, aud_sfxcache_t* audioData)
   {
-    channel->sound_source->GetInternalSourceHandle().setOffset(channel->start);
-    channel->sound_source->GetInternalSourceHandle().setPitch(channel->pitch);
-    channel->sound_source->GetInternalSourceHandle().setRolloffFactors(channel->attenuation, channel->attenuation);
-    channel->sound_source->GetInternalSourceHandle().setDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
-    channel->sound_source->GetInternalSourceHandle().setAirAbsorptionFactor(1.0f);
+    channel->sound_source->SetOffset(channel->start);
+    channel->sound_source->SetPitch(channel->pitch);
+    channel->sound_source->SetRolloffFactors(channel->attenuation, channel->attenuation);
+    channel->sound_source->SetDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
+    channel->sound_source->SetAirAbsorptionFactor(1.0f);
 
     // Should also set source priority
     if (audioData)

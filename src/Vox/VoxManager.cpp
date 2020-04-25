@@ -576,7 +576,7 @@ namespace MetaAudio
     if (!pent)
       return;
 
-    i = static_cast<size_t>(ch->sound_source->GetInternalSourceHandle().getSampleOffset());
+    i = static_cast<size_t>(ch->sound_source->GetSampleOffset());
     scount = pent->mouth.sndcount;
     savg = 0;
 

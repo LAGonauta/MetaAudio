@@ -36,6 +36,16 @@ namespace MetaAudio
       m_source->setRadius(radius);
     }
 
+    void SetPitch(float pitch)
+    {
+      m_source->setPitch(pitch);
+    }
+
+    void SetGain(float gain)
+    {
+      m_source->setGain(gain);
+    }
+
     void SetLooping(bool value)
     {
       m_source->setLooping(value);
@@ -46,9 +56,44 @@ namespace MetaAudio
       m_source->stop();
     }
 
-    alure::Source GetInternalSourceHandle()
+    void SetDirectFilter(const alure::FilterParams& filter)
     {
-      return *m_source;
+      m_source->setDirectFilter(filter);
+    }
+
+    void SetDopplerFactor(float factor)
+    {
+      m_source->setDopplerFactor(factor);
+    }
+
+    void SetAuxiliarySendFilter(alure::AuxiliaryEffectSlot auxslot, ALuint send, const alure::FilterParams& filter)
+    {
+      m_source->setAuxiliarySendFilter(auxslot, send, filter);
+    }
+
+    void SetOffset(uint64_t offset)
+    {
+      m_source->setOffset(offset);
+    }
+
+    void SetRolloffFactors(float factor, float roomfactor)
+    {
+      m_source->setRolloffFactors(factor, roomfactor);
+    }
+
+    void SetDistanceRange(float refdist, float maxdist)
+    {
+      m_source->setDistanceRange(refdist, maxdist);
+    }
+
+    void SetAirAbsorptionFactor(float factor)
+    {
+      m_source->setAirAbsorptionFactor(factor);
+    }
+
+    uint64_t GetSampleOffset()
+    {
+      return m_source->getSampleOffset();
     }
 
     ~BaseSoundSource()
