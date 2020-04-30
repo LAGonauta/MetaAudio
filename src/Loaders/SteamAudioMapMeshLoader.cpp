@@ -8,8 +8,6 @@ namespace MetaAudio
 {
   constexpr const float EPSILON = 0.000001f;
 
-  static IPLhandle context{ nullptr };
-
   bool VectorEquals(const alure::Vector3& left, const alure::Vector3& right)
   {
     return left[0] == right[0] && left[1] == right[1] && left[2] == right[2];
@@ -149,21 +147,21 @@ namespace MetaAudio
         }
 
         IPLhandle scene = nullptr;
-        IPLerror error = iplCreateScene(sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        IPLerror error = gSteamAudio.iplCreateScene(sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
         if (error)
         {
           throw std::runtime_error("Error creating scene: " + std::to_string(error));
         }
 
         IPLhandle staticmesh = nullptr;
-        error = iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
+        error = gSteamAudio.iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
         if (error)
         {
           throw std::runtime_error("Error creating static mesh: " + std::to_string(error));
         }
 
         IPLhandle env = nullptr;
-        error = iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
+        error = gSteamAudio.iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
         if (error)
         {
           throw std::runtime_error("Error creating environment: " + std::to_string(error));

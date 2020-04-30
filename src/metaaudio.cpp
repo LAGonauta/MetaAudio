@@ -7,6 +7,7 @@
 #include "Vox/VoxManager.hpp"
 #include "AudioEngine.hpp"
 
+MetaAudio::SteamAudio gSteamAudio;
 static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
 static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;
 
@@ -23,11 +24,11 @@ IFileSystem *g_pFileSystem;
 
 extern aud_export_t gAudExports;
 
-HINSTANCE g_hInstance, g_hThisModule;
+HINSTANCE g_hInstance, g_hThisModule, g_hSteamAudioInstance;
 DWORD g_dwEngineBase, g_dwEngineSize;
 DWORD g_dwEngineBuildnum;
 
-ICommandLine *CommandLine(void)
+ICommandLine *CommandLine()
 {
   return g_pInterface->CommandLine;
 }
@@ -39,18 +40,38 @@ void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_engines
   g_pMetaSave = pSave;
   g_hInstance = GetModuleHandle(NULL);
 
+  g_hSteamAudioInstance = LoadLibrary("phonon.dll");
+  if (g_hSteamAudioInstance)
+  {
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCleanup);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyEnvironment);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyScene);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyStaticMesh);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplGetDirectSoundPath);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateScene);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateStaticMesh);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateEnvironment);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateContext);
+    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyContext);
+  }
+
   auto audio_cache = std::make_shared<MetaAudio::AudioCache>();
   sound_loader = std::make_shared<MetaAudio::SoundLoader>(audio_cache);
   audio_engine = std::make_unique<MetaAudio::AudioEngine>(audio_cache, sound_loader);
 }
 
-void IPlugins::Shutdown(void)
+void IPlugins::Shutdown()
 {
   sound_loader.reset();
   audio_engine.reset();
+  if (g_hSteamAudioInstance)
+  {
+    FreeLibrary(g_hSteamAudioInstance);
+    g_hSteamAudioInstance = nullptr;
+  }
 }
 
-void IPlugins::LoadEngine(void)
+void IPlugins::LoadEngine()
 {
   g_pFileSystem = g_pInterface->FileSystem;
   g_dwEngineBuildnum = g_pMetaHookAPI->GetEngineBuildnum();
@@ -75,8 +96,7 @@ void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
 
 void IPlugins::ExitGame(int iResult)
 {
-  sound_loader.reset();
-  audio_engine.reset();
+  Shutdown();
 }
 
 EXPOSE_SINGLE_INTERFACE(IPlugins, IPlugins, METAHOOK_PLUGIN_API_VERSION);

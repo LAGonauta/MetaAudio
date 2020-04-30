@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "alure2.h"
-#include "phonon.h"
+#include "dynamic_steamaudio.h"
 
 namespace MetaAudio
 {
@@ -27,17 +27,17 @@ namespace MetaAudio
       {
         if (environment != nullptr)
         {
-          iplDestroyEnvironment(&environment);
+          gSteamAudio.iplDestroyEnvironment(&environment);
         }
 
         if (scene != nullptr)
         {
-          iplDestroyScene(&scene);
+          gSteamAudio.iplDestroyScene(&scene);
         }
 
         if (static_mesh != nullptr)
         {
-          iplDestroyStaticMesh(&static_mesh);
+          gSteamAudio.iplDestroyStaticMesh(&static_mesh);
         }
       }
 
@@ -46,19 +46,8 @@ namespace MetaAudio
       ProcessedMap& ProcessedMap::operator=(const ProcessedMap& other) = delete;
 
       // allow move
-      ProcessedMap(ProcessedMap&& other) noexcept
-      {
-        std::swap(environment, other.environment);
-        std::swap(scene, other.scene);
-        std::swap(static_mesh, other.static_mesh);
-      }
-      ProcessedMap& operator=(ProcessedMap&& other) noexcept
-      {
-        std::swap(environment, other.environment);
-        std::swap(scene, other.scene);
-        std::swap(static_mesh, other.static_mesh);
-        return *this;
-      }
+      ProcessedMap(ProcessedMap&& other) = default;
+      ProcessedMap& operator=(ProcessedMap&& other) = default;
 
       const std::string& Name()
       {

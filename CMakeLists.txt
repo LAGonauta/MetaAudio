@@ -44,6 +44,7 @@ target_include_directories(MetaAudio
     PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/externals/picojson
+        ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
         ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/metahook/include
@@ -79,8 +80,6 @@ add_subdirectory(externals/alure)
 
 add_subdirectory(externals/metahook)
 
-add_subdirectory(externals/steamaudio)
+add_dependencies(MetaAudio alure2)
 
-add_dependencies(MetaAudio SteamAudio)
-
-target_link_libraries(MetaAudio PRIVATE OpenAL alure2 SteamAudio)
+target_link_libraries(MetaAudio PRIVATE OpenAL alure2)

@@ -721,44 +721,54 @@ namespace MetaAudio
 
   void AudioEngine::SteamAudio_Init()
   {
-    if (sa_context == nullptr)
+    if (gSteamAudio.iplCleanup != nullptr)
     {
-      auto error = iplCreateContext(SteamAudioLog, nullptr, nullptr, &sa_context);
-      if (error)
+      if (sa_context == nullptr)
       {
-        throw std::exception("Error creating SA context: " + error);
+        auto error = gSteamAudio.iplCreateContext(SteamAudioLog, nullptr, nullptr, &sa_context);
+        if (error)
+        {
+          throw std::exception("Error creating SA context: " + error);
+        }
       }
+      sa_simulationSettings.ambisonicsOrder = 1;
+      sa_simulationSettings.bakingBatchSize = 1;
+      sa_simulationSettings.irDuration = 1;
+      sa_simulationSettings.irradianceMinDistance = 0.1f;
+      sa_simulationSettings.maxConvolutionSources = 1;
+      sa_simulationSettings.numBounces = 2;
+      sa_simulationSettings.numDiffuseSamples = 1024;
+      sa_simulationSettings.maxNumOcclusionSamples = 512;
+      sa_simulationSettings.numRays = 4096;
+      sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
+      sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
+      sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(sa_context, sa_simulationSettings);
     }
-    sa_simulationSettings.ambisonicsOrder = 1;
-    sa_simulationSettings.bakingBatchSize = 1;
-    sa_simulationSettings.irDuration = 1;
-    sa_simulationSettings.irradianceMinDistance = 0.1f;
-    sa_simulationSettings.maxConvolutionSources = 1;
-    sa_simulationSettings.numBounces = 2;
-    sa_simulationSettings.numDiffuseSamples = 1024;
-    sa_simulationSettings.maxNumOcclusionSamples = 512;
-    sa_simulationSettings.numRays = 4096;
-    sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
-    sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
-    sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(sa_context, sa_simulationSettings);
   }
 
   void AudioEngine::SteamAudio_Shutdown()
   {
-    sa_meshloader.reset();
-    if (sa_context)
+    if (gSteamAudio.iplCleanup != nullptr)
     {
-      iplDestroyContext(&sa_context);
-      sa_context = nullptr;
+      sa_meshloader.reset();
+      if (sa_context)
+      {
+        gSteamAudio.iplDestroyContext(&sa_context);
+        sa_context = nullptr;
+      }
+      gSteamAudio.iplCleanup();
+      gSteamAudio = SteamAudio();
     }
-    iplCleanup();
   }
 
   void AudioEngine::S_Init()
   {
     al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
     al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
-    al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "1", FCVAR_EXTDLL);
+    if (gSteamAudio.iplCleanup != nullptr)
+    {
+      al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "0", FCVAR_EXTDLL);
+    }
 
     gAudEngine.S_Init();
 
@@ -782,7 +792,7 @@ namespace MetaAudio
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
   {
-    if (al_occluder->value == 0.0f)
+    if (!al_occluder || al_occluder->value == 0.0f)
     {
       return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
     }

@@ -34,7 +34,7 @@ namespace MetaAudio
     IPLSource source{ toIPLVector3(&audioSourcePosition) };
     auto env = meshLoader->CurrentEnvironment();
     IPLDirectSoundPath result{};
-    result = iplGetDirectSoundPath(
+    result = gSteamAudio.iplGetDirectSoundPath(
       env,
       toIPLVector3(&listenerPosition),
       toIPLVector3(&listenerAhead),
