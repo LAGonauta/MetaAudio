@@ -7,7 +7,7 @@ namespace MetaAudio
   class VoiceDecoder final : public alure::Decoder
   {
   private:
-    int(*VoiceSE_GetSoundDataCallback)(sfxcache_s* cache, char* copyBuf, int maxOutDataSize, int samplePos, int sampleCount);
+    int(*VoiceSE_GetSoundDataCallback)(sfxcache_t* cache, char* copyBuf, int maxOutDataSize, int samplePos, int sampleCount);
 
     alure::ChannelConfig m_channel_config{ alure::ChannelConfig::Mono };
     alure::SampleType m_sample_type{ alure::SampleType::UInt8 };

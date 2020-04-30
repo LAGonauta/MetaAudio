@@ -1,18 +1,14 @@
 #pragma once
 #include "alure2.h"
 
-#define MAX_QPATH  64   // max length of a quake game pathname
-
-#define MAX_SFX  1024
-
-typedef struct sfx_s
+struct sfx_t
 {
   char name[MAX_QPATH];
   cache_user_t cache;
   int servercount;
-}sfx_t;
+};
 
-typedef struct sfxcache_s
+struct sfxcache_t
 {
   int length;
   int loopstart;
@@ -20,9 +16,9 @@ typedef struct sfxcache_s
   int width;
   int stereo;
   byte data[1];  // variable sized
-} sfxcache_t;
+};
 
-typedef struct channel_s
+struct channel_t
 {
   sfx_t *sfx;       // sfx number
   int leftvol;      // 0-255 volume
@@ -38,9 +34,9 @@ typedef struct channel_s
   int isentence;
   int iword;
   int pitch;        // real-time pitch after any modulation or shift by dynamic data
-}channel_t;
+};
 
-typedef struct voxword_s
+struct voxword_t
 {
   int volume;             // increase percent, ie: 125 = 125% increase
   int pitch;              // pitch shift up percent
@@ -51,9 +47,9 @@ typedef struct voxword_s
   uint64_t samplefrac;    // if pitch shifting, this is position into wav * 256
   int timecompress;       // % of wave to skip during playback (causes no pitch shift)
   sfx_t *sfx;             // name and cache pointer
-} voxword_t;
+};
 
-typedef struct wavinfo_s
+struct wavinfo_t
 {
   uint64_t samples;
   uint64_t loopstart;
@@ -62,52 +58,21 @@ typedef struct wavinfo_s
   alure::SampleType stype;
   alure::ChannelConfig channels;
   bool looping;
-} wavinfo_t;
-
-typedef struct sx_preset_s
-{
-  float room_lp;          // for water fx, lowpass for entire room
-  float room_mod;         // stereo amplitude modulation for room
-
-  float room_size;        // reverb: initial reflection size
-  float room_refl;        // reverb: decay time
-  float room_rvblp;       // reverb: low pass filtering level
-
-  float room_delay;       // mono delay: delay time
-  float room_feedback;    // mono delay: decay time
-  float room_dlylp;       // mono delay: low pass filtering level
-
-  float room_left;        // left channel delay time
-} sx_preset_t;
-
-#define MAX_SOUNDS 512
+};
 
 // a sound with no channel is a local only sound
-#define SND_VOLUME (1<<0)      // a byte
-#define SND_ATTENUATION (1<<1)    // a byte
-#define SND_LARGE_INDEX (1<<2)    // a long
-#define SND_PITCH (1<<3)
-#define SND_SENTENCE (1<<4)
-#define SND_STOP (1<<5)
-#define SND_CHANGE_VOL (1<<6)
-#define SND_CHANGE_PITCH (1<<7)
-#define SND_SPAWNING (1<<8)
+constexpr auto SND_VOLUME = (1 << 0);       // a byte
+constexpr auto SND_ATTENUATION = (1<<1);    // a byte
+constexpr auto SND_LARGE_INDEX = (1<<2);    // a long
+constexpr auto SND_PITCH = (1<<3);
+constexpr auto SND_SENTENCE = (1<<4);
+constexpr auto SND_STOP = (1<<5);
+constexpr auto SND_CHANGE_VOL = (1<<6);
+constexpr auto SND_CHANGE_PITCH = (1<<7);
+constexpr auto SND_SPAWNING = (1<<8);
 
-#define NUM_AMBIENTS 4           // automatic ambient sounds
-#define MAX_DYNAMIC_CHANNELS 128
-#define MAX_CHANNELS 256
-
-#define MAX_WAVSTREAM_SIZE (32*1024)
-
-#define CVOXWORDMAX 32
-#define CVOXSENTENCEMAX 16
-
-#define CVOXZEROSCANMAX 255
-
-#define CVOXFILESENTENCEMAX 1536
-
-#define CAVGSAMPLES 10
-
-#define CSXROOM 29
-
-extern voxword_t rgrgvoxword[CVOXSENTENCEMAX][CVOXWORDMAX];
+constexpr auto CVOXWORDMAX = 32;
+constexpr auto CVOXZEROSCANMAX = 255;
+constexpr auto CVOXFILESENTENCEMAX = 1536;
+constexpr auto CAVGSAMPLES = 10;
+constexpr auto CSXROOM = 29;

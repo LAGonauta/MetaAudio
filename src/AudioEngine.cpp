@@ -23,16 +23,18 @@ namespace MetaAudio
 
     //2015-12-12 fixed a bug that a buffer in use is freed
     if (channel_pool->IsPlaying(sfx))
+    {
       return;
+    }
 
     if (sc->buffer)
     {
       al_context->removeBuffer(sc->buffer);
     }
 
-    m_cache->Cache_Free(sfx->name);
-
     sfx->cache.data = nullptr;
+
+    m_cache->Cache_Free(sfx->name);
   }
 
   void AudioEngine::S_FlushCaches(void)
@@ -139,39 +141,44 @@ namespace MetaAudio
     if (!fWaveEnd)
       return;
 
-    if (ch->isentence >= 0)
+    if (ch->words.size() > 0)
     {
-      sfx_t* sfx;
+      sfx_t* sfx = nullptr;
 
-      if (vox->rgrgvoxword[ch->isentence][ch->iword].sfx && !vox->rgrgvoxword[ch->isentence][ch->iword].fKeepCached)
-        S_FreeCache(vox->rgrgvoxword[ch->isentence][ch->iword].sfx);
+      auto& currentWord = ch->words.front();
+      if (currentWord.sfx && !currentWord.fKeepCached)
+        S_FreeCache(currentWord.sfx);
 
-      ch->sfx = sfx = vox->rgrgvoxword[ch->isentence][ch->iword + 1].sfx;
+      ch->words.pop();
 
-      if (sfx)
+      if (ch->words.size() > 0)
       {
-        sc = m_loader->S_LoadSound(sfx, ch);
+        ch->sfx = sfx = ch->words.front().sfx;
 
-        if (sc)
+        if (sfx)
         {
-          ch->start = 0;
-          ch->end = sc->length;
-          ++ch->iword;
+          sc = m_loader->S_LoadSound(sfx, ch);
 
-          vox->TrimStartEndTimes(ch, sc);
-          if (ch->entchannel == CHAN_STREAM)
+          if (sc)
           {
-            ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 16348, 4);
-          }
-          else
-          {
-            ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
-          }
+            ch->start = 0;
+            ch->end = sc->length;
 
-          ConfigureSource(ch, sc);
-          ch->sound_source->Play();
+            vox->TrimStartEndTimes(ch, sc);
+            if (ch->entchannel == CHAN_STREAM)
+            {
+              ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 16348, 4);
+            }
+            else
+            {
+              ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
+            }
 
-          return;
+            ConfigureSource(ch, sc);
+            ch->sound_source->Play();
+
+            return;
+          }
         }
       }
     }
@@ -367,7 +374,7 @@ namespace MetaAudio
             if (channel.sfx && channel.volume > 0)
             {
               output.append(std::to_string(static_cast<int>(channel.volume * 255.0f)) + " " + channel.sfx->name + "\n");
-              total++;
+              ++total;
             }
           });
 
@@ -419,13 +426,14 @@ namespace MetaAudio
     float fpitch;
 
     if (!sfx)
+    {
       return;
+    }
 
     if (nosound && nosound->value)
+    {
       return;
-
-    if (strncmp(sfx->name, "common/null.wav", 16) == 0)
-      return;
+    }
 
     if (sfx->name[0] == '*')
       entchannel = CHAN_STREAM;
@@ -478,7 +486,6 @@ namespace MetaAudio
     ch->entnum = entnum;
     ch->entchannel = entchannel;
     ch->pitch = fpitch;
-    ch->isentence = -1;
 
     if (sfx->name[0] == '!' || sfx->name[0] == '#')
     {

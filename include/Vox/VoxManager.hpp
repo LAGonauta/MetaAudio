@@ -25,15 +25,12 @@ namespace MetaAudio
     alure::String GetDirectory(alure::String& szpath, alure::String& psz);
     alure::Vector<alure::String> ParseString(const alure::String& psz);
     std::optional<voxword_t> ParseWordParams(alure::String& psz, int fFirst);
-    int FindEmptySentence();
 
     // Mouth movement
     void ForceInitMouth(int entnum);
     void ForceCloseMouth(int entnum);
 
   public:
-    alure::Array<alure::Array<voxword_t, CVOXWORDMAX>, CVOXSENTENCEMAX> rgrgvoxword;
-
     VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader);
 
     void TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc);

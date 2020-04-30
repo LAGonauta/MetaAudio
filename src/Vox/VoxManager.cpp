@@ -2,11 +2,12 @@
 #include <cctype>
 
 #include "Vox/VoxManager.hpp"
+#include "SoundSources/BaseSoundSource.hpp"
 
 namespace MetaAudio
 {
   VoxManager::VoxManager(AudioEngine* engine, std::shared_ptr<SoundLoader> loader)
-    : rgrgvoxword{}, m_engine(engine), m_loader(loader)
+    : m_engine(engine), m_loader(loader)
   {}
 
   void VoxManager::TrimStartEndTimes(aud_channel_t* ch, aud_sfxcache_t* sc)
@@ -14,7 +15,7 @@ namespace MetaAudio
     size_t srcsample;
     int skiplen;
 
-    if (ch->isentence < 0)
+    if (ch->words.size() == 0)
     {
       return;
     }
@@ -25,7 +26,7 @@ namespace MetaAudio
       return;
     }
 
-    auto pvoxword = &rgrgvoxword[ch->isentence][ch->iword];
+    auto pvoxword = &ch->words.front();
     pvoxword->cbtrim = sc->length;
 
     auto sstart = static_cast<float>(pvoxword->start);
@@ -207,17 +208,17 @@ namespace MetaAudio
   {
     int vol, pitch;
 
-    if (ch->isentence < 0)
+    if (ch->words.size() == 0)
       return;
 
-    vol = rgrgvoxword[ch->isentence][ch->iword].volume;
+    vol = ch->words.front().volume;
 
     if (vol > 0 && vol != 100)
     {
       (*fvol) *= (vol / 100.0f);
     }
 
-    pitch = rgrgvoxword[ch->isentence][ch->iword].pitch;
+    pitch = ch->words.front().pitch;
 
     if (pitch > 0 && pitch != 100)
     {
@@ -435,18 +436,6 @@ namespace MetaAudio
       return voxword;
   }
 
-  int VoxManager::FindEmptySentence()
-  {
-    for (int k = 0; k < CVOXSENTENCEMAX; ++k)
-    {
-      if (!rgrgvoxword[k][0].sfx)
-        return k;
-    }
-
-    gEngfuncs.Con_DPrintf("Sentence or Pitch shift ignored. > 16 playing!\n");
-    return -1;
-  }
-
   aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
   {
     if (pszin.empty() ||
@@ -478,7 +467,6 @@ namespace MetaAudio
 
     // for each word in the sentence, construct the filename,
     // lookup the sfx and save each pointer in a temp array
-    alure::Vector<voxword_t> voxWords;
     for (size_t i = 0, final = words.size(); i < final; ++i)
     {
       // Get any pitch, volume, start, end params into voxword
@@ -492,26 +480,11 @@ namespace MetaAudio
         // so we don't discard when word is done playing
         value.sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &value.fKeepCached);
 
-        voxWords.emplace_back(value);
+        channel->words.emplace(value);
       }
     }
 
-    auto k = FindEmptySentence();
-    if (k < 0)
-    {
-      return nullptr;
-    }
-
-    auto j = 0;
-    for (auto& vox : voxWords)
-    {
-      rgrgvoxword[k][j] = vox;
-      ++j;
-    }
-
-    channel->isentence = k;
-    channel->iword = 0;
-    channel->sfx = voxWords.size() > 0 ? voxWords[0].sfx : nullptr;
+    channel->sfx = channel->words.size() > 0 ? channel->words.front().sfx : nullptr;
     channel->vox = this;
 
     if (!channel->sfx)

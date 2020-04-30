@@ -20,7 +20,7 @@ namespace MetaAudio
       throw std::runtime_error("Bad entity channel for voice: " + std::to_string(m_entchannel) + ".");
     }
 
-    VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_s*, char*, int, int, int))oldsc->loopstart;
+    VoiceSE_GetSoundDataCallback = (int(*)(sfxcache_t*, char*, int, int, int))oldsc->loopstart;
 
     m_voicecache = oldsc;
     ch->voicecache = oldsc;

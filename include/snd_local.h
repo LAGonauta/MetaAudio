@@ -1,10 +1,10 @@
 #pragma once
 #include <metahook.h>
+#include <queue>
 
 #include "exportfuncs.h"
 #include "enginedef.h"
 #include "aud_int_internal.h"
-#include "SoundSources/BaseSoundSource.hpp"
 
 //internal structures
 
@@ -22,22 +22,22 @@ namespace MetaAudio
   class AudioEngine;
   class SoundLoader;
   class VoxManager;
+  class BaseSoundSource;
 }
 
 struct aud_channel_t
 {
   sfx_t* sfx{ nullptr };
-  float volume{ 0 };
-  float pitch{ 0 };
+  float volume{ 1.0f };
+  float pitch{ 1.0f };
   float attenuation{ 0 };
   int entnum{ 0 };
   int entchannel{ 0 };
-  vec3_t origin;
+  vec3_t origin{ 0.0f, 0.0f, 0.0f };
   uint64_t start{ 0 };
   uint64_t end{ 0 };
   //for sentence
-  int isentence{ 0 };
-  int iword{ 0 };
+  std::queue<voxword_t> words;
   //for voice sound
   sfxcache_t* voicecache{ nullptr };
 
@@ -58,8 +58,8 @@ struct aud_channel_t
   aud_channel_t(const aud_channel_t& other) = delete;
   aud_channel_t& aud_channel_t::operator=(const aud_channel_t& other) = delete;
 
-  aud_channel_t(aud_channel_t&& other) noexcept;
-  aud_channel_t& operator=(aud_channel_t&& other) noexcept;
+  aud_channel_t(aud_channel_t&& other) = default;
+  aud_channel_t& operator=(aud_channel_t&& other) = default;
 };
 
 struct aud_sfxcache_t

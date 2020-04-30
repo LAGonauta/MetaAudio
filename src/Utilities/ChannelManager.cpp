@@ -1,5 +1,6 @@
 #include "Utilities/ChannelManager.hpp"
 #include "Vox/VoxManager.hpp"
+#include "SoundSources/BaseSoundSource.hpp"
 
 namespace MetaAudio
 {
@@ -10,7 +11,7 @@ namespace MetaAudio
 
   bool ChannelManager::IsPlaying(sfx_t* sfx)
   {
-    auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source && channel.sound_source->IsPlaying(); };
+    auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source->IsPlaying(); };
 
     return std::any_of(channels.dynamic.begin(), channels.dynamic.end(), functor) ||
            std::any_of(channels.static_.begin(), channels.static_.end(), functor);
@@ -92,7 +93,7 @@ namespace MetaAudio
 
   void ChannelManager::ClearFinished()
   {
-    auto functor = [&](aud_channel_t& channel) { return channel.isentence < 0 && !channel.sound_source->IsPlaying(); };
+    auto functor = [&](aud_channel_t& channel) { return channel.words.size() == 0 && !channel.sound_source->IsPlaying(); };
 
     channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
     channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
@@ -134,7 +135,7 @@ namespace MetaAudio
         if (channel.entnum == entnum &&
             channel.entchannel == entchannel &&
             channel.sfx != nullptr &&
-            channel.isentence >= 0)
+            channel.words.size() > 0)
         {
           internalFunctor(channel);
           return true;

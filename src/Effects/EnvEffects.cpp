@@ -11,6 +11,7 @@
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
 #include "Workarounds/NoWorkarounds.hpp"
 #include "Workarounds/XFiWorkarounds.hpp"
+#include "SoundSources/BaseSoundSource.hpp"
 
 extern cvar_t* sxroomwater_type;
 extern cvar_t* sxroom_type;
