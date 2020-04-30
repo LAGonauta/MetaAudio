@@ -36,6 +36,21 @@ namespace MetaAudio
 
   aud_channel_t* ChannelManager::SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx)
   {
+    // We do not want an entity playing the same SFX more than once.
+    auto channel = std::find_if(
+      channels.static_.begin(),
+      channels.static_.end(),
+      [&](aud_channel_t& channel)
+      {
+        return channel.sfx == nullptr ||
+          (channel.sfx == sfx && channel.entnum == entnum && (channel.entchannel == entchannel || entchannel == -1)); // actually should compare origin to be sure
+      }
+    );
+    if (channel != channels.static_.end())
+    {
+      channels.static_.erase(channel);
+    }
+
     return &channels.static_.emplace_back();
   }
 
@@ -46,32 +61,45 @@ namespace MetaAudio
       return nullptr;
     }
 
-    // We cannot re-use a voice channel, let the decoder deal with it.
-    if (entchannel == CHAN_VOICE)
-    {
-      auto voiceChannel = std::find_if(
-        channels.dynamic.begin(),
-        channels.dynamic.end(),
-        [&](aud_channel_t& channel) { return channel.entchannel == CHAN_STREAM && channel.sound_source && channel.sound_source->IsPlaying(); }
-      );
-      if (voiceChannel != channels.dynamic.end())
-      {
-        return nullptr;
-      }
-    }
-
     // Remove channel if entity is already using for vox. We do not want the entity talking about two things at the same time.
-    if (entchannel != CHAN_AUTO)
-    {
-      auto entityChannel = std::find_if(
-        channels.dynamic.begin(),
-        channels.dynamic.end(),
-        [&](auto& channel) { return channel.entnum == entnum && (channel.entchannel == entchannel || entchannel == -1); }
-      );
-      if (entityChannel != channels.dynamic.end())
+    auto channel = std::find_if(
+      channels.dynamic.begin(),
+      channels.dynamic.end(),
+      [&](aud_channel_t& channel)
       {
-        channels.dynamic.erase(entityChannel);
+        if (channel.sfx && channel.entchannel == CHAN_STREAM)
+        {
+          return false;
+        }
+
+        if (channel.sfx && channel.entnum == *gAudEngine.cl_viewentity && entnum != *gAudEngine.cl_viewentity)
+        {
+          return false;
+        }
+
+        if (entchannel != CHAN_AUTO && channel.entnum == entnum && (channel.entchannel == entchannel || entchannel == -1))
+        {
+          return true;
+        }
+
+        return false;
+      });
+
+    if (channel != channels.dynamic.end())
+    {
+      if (channel->sfx)
+      {
+        auto sc = reinterpret_cast<aud_sfxcache_t*>(channel->sfx->cache.data);
+        if (sc && sc->looping)
+        {
+          if (channel->sfx == sfx && channel->entnum == entnum && channel->entchannel == entchannel)
+          {
+            return nullptr;
+          }
+        }
       }
+
+      channels.dynamic.erase(channel);
     }
 
     return &channels.dynamic.emplace_back();
