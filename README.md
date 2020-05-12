@@ -39,6 +39,7 @@ Working games and mods:
   - 0: Disabled.
   - 1: MetaAudio will also use the system clock to estimate when the sound effect ended. (preferred)
   - 2: MetaAudio will force all sound effects to be played as a stream.
+- al_occluder (when SteamAudio is available. 0 is GoldSrc-based occluder, 1 is SteamAudio-based occluder)
 
 # Console commands
 - al_version (shows current MetaAudio version, along with the current OpenAL device and the OpenAL version)
@@ -79,15 +80,13 @@ There should be an "audio.dll" entry in "plugins.lst".
 - Some sounds does not use the correct source origin
 
 # Maybe in the future
-- Integrate Steam Audio for reflections/reverb instead of OpenAL's native effects
+- Integrate SteamAudio for reflections/reverb in addition to OpenAL's native effects
 
 # Compiling
 Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
-Tested with MSVC 2017. Remember to install C++ CRT.
+Tested with MSVC 2019. Remember to install C++ CRT.
 
-You will also need to compile a custom Alure2 with slightly different API to use the audio plugin:
-
-https://github.com/LAGonauta/alure/tree/hasLoopPoints
+The include Alure2 has a slight different API than upstream, therefore must be compiled together.
 
 # Credits
 nagist, for MetaHook (https://github.com/nagist/metahook)
