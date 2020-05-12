@@ -2,6 +2,8 @@
 
 #include "plugins.h"
 #include "snd_local.h"
+#include "AudioEngine.hpp"
+#include "Loaders/SoundLoader.hpp"
 
 aud_engine_t gAudEngine;
 
@@ -52,7 +54,7 @@ aud_engine_t gAudEngine;
 #define SYS_ERROR_SIG "\x8B\x4C\x24\x04\x81\xEC\x00\x04\x00\x00\x8D\x84\x24\x08\x04\x00\x00\x8D\x54\x24\x00\x50\x51\x68\x00\x04\x00\x00\x52\xE8\x2A\x2A\x2A\x2A\xA1\x2A\x2A\x2A\x2A\x83\xC4\x10\x85\xC0"
 #endif
 
-void S_FillAddress(void)
+void S_FillAddress()
 {
   memset(&gAudEngine, 0, sizeof(gAudEngine));
 
@@ -210,8 +212,24 @@ void Sys_Error(char *fmt, ...)
 }
 #endif
 
-void S_InstallHook(void)
+static MetaAudio::AudioEngine* p_engine;
+static MetaAudio::SoundLoader* p_loader;
+
+static void S_Startup() { p_engine->S_Startup(); }
+static void S_Init() { p_engine->S_Init(); }
+static void S_Shutdown() { p_engine->S_Shutdown(); }
+static sfx_t* S_FindName(char* name, int* pfInCache) { return p_engine->S_FindName(name, pfInCache); }
+static void S_StartDynamicSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch) { p_engine->S_StartDynamicSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch); };
+static void S_StartStaticSound(int entnum, int entchannel, sfx_t* sfx, float* origin, float fvol, float attenuation, int flags, int pitch) { p_engine->S_StartStaticSound(entnum, entchannel, sfx, origin, fvol, attenuation, flags, pitch); };
+static void S_StopSound(int entnum, int entchannel) { p_engine->S_StopSound(entnum, entchannel); };
+static void S_StopAllSounds(qboolean clear) { p_engine->S_StopAllSounds(clear); }
+static void S_Update(float* origin, float* forward, float* right, float* up) { p_engine->S_Update(origin, forward, right, up); }
+static aud_sfxcache_t* S_LoadSound(sfx_t* s, aud_channel_t* ch) { return p_loader->S_LoadSound(s, ch); }
+
+void S_InstallHook(MetaAudio::AudioEngine* engine, MetaAudio::SoundLoader* loader)
 {
+  p_engine = engine;
+  p_loader = loader;
   InstallHook(S_Startup);
   InstallHook(S_Init);
   InstallHook(S_Shutdown);

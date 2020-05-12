@@ -10,19 +10,31 @@ project(MetaAudio)
 
 set(SOURCES
     src/exportfuncs.cpp
-    src/plugins.cpp
-    src/snd_dma.cpp
-    src/snd_fx.cpp
+    src/metaaudio.cpp
+    src/Effects/EnvEffects.cpp
+    src/Loaders/SteamAudioMapMeshLoader.cpp
     src/snd_hook.cpp
-    src/snd_loader.cpp
-    src/snd_mem.cpp
-    src/snd_voice.cpp
-    src/snd_vox.cpp
-    src/snd_wav.cpp
-    src/zone.cpp
+    src/Voice/VoiceDecoder.cpp
+    src/Vox/VoxManager.cpp
+    src/Loaders/LocalAudioDecoder.cpp
+    src/Utilities/AudioCache.cpp
     src/interface.cpp
-    src/snd_efx_reader.cpp
-)
+    src/Config/EfxJsonReader.cpp
+    src/Effects/GoldSrcOcclusionCalculator.cpp
+    src/Effects/SteamAudioOcclusionCalculator.cpp
+    src/Utilities/Fade.cpp
+    src/Workarounds/NoWorkarounds.cpp
+    src/Workarounds/XFiWorkarounds.cpp
+    src/Loaders/GoldSrcFileBuf.cpp
+    src/Loaders/GoldSrcFileStream.cpp
+    src/Loaders/GoldSrcFileFactory.cpp
+    src/Loaders/SoundLoader.cpp
+    src/AudioEngine.cpp
+    src/Utilities/ChannelManager.cpp
+    src/snd_local.cpp
+    src/SoundSources/SoundSourceFactory.cpp
+    src/SoundSources/StaticSoundSource.cpp
+    src/SoundSources/StreamingSoundSource.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
@@ -32,6 +44,7 @@ target_include_directories(MetaAudio
     PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/externals/picojson
+        ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
         ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/metahook/include
@@ -43,22 +56,30 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/pm_shared
 )
 
-set(ALSOFT_EXAMPLES OFF)
-set(ALSOFT_TESTS OFF)
-set(ALSOFT_UTILS OFF)
+if (NOT CMAKE_VERSION VERSION_LESS "3.13")
+    # CMP0077: option() honors normal variables
+    # https://cmake.org/cmake/help/latest/policy/CMP0077.html
+    cmake_policy(SET CMP0077 NEW)
+endif()
+
+OPTION(ALSOFT_EXAMPLES OFF)
+OPTION(ALSOFT_TESTS OFF)
+OPTION(ALSOFT_UTILS OFF)
 add_subdirectory(externals/openal-soft)
 
-set(ALURE_INSTALL OFF)
-set(ALURE_BUILD_STATIC OFF)
-set(ALURE_ENABLE_WAVE OFF)
-set(ALURE_ENABLE_VORBIS OFF)
-set(ALURE_ENABLE_FLAC OFF)
-set(ALURE_ENABLE_SNDFILE ON)
-set(SNDFILE_LIBRARY "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\lib\\libsndfile-1.lib")
-set(SNDFILE_INCLUDE_DIR "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\include")
-set(ALURE_BUILD_EXAMPLES OFF)
+OPTION(ALURE_INSTALL OFF)
+OPTION(ALURE_BUILD_STATIC OFF)
+OPTION(ALURE_ENABLE_WAVE OFF)
+OPTION(ALURE_ENABLE_VORBIS OFF)
+OPTION(ALURE_ENABLE_FLAC OFF)
+SET(ALURE_ENABLE_SNDFILE ON)
+SET(SNDFILE_LIBRARY "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\lib\\libsndfile-1.lib")
+SET(SNDFILE_INCLUDE_DIR "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\include")
+OPTION(ALURE_BUILD_EXAMPLES OFF)
 add_subdirectory(externals/alure)
 
 add_subdirectory(externals/metahook)
+
+add_dependencies(MetaAudio alure2)
 
 target_link_libraries(MetaAudio PRIVATE OpenAL alure2)

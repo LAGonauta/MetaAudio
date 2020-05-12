@@ -1,4 +1,6 @@
 #pragma once
+#include <metahook.h>
+#include <queue>
 
 #include "exportfuncs.h"
 #include "enginedef.h"
@@ -8,57 +10,78 @@
 
 typedef struct
 {
-  sfx_t *sfx;
-  float volume;
-  float pitch;
-  float attenuation;
-  int entnum;
-  int entchannel;
-  vec3_t origin;
-  uint64_t start;
-  uint64_t end;
+  float current{ 0 };
+  float elapsed_time{ 0 };
+  float initial_value{ 0 };
+  float last_target{ 0 };
+  float target{ 0 };
+} GainFading;
+
+namespace MetaAudio
+{
+  class AudioEngine;
+  class SoundLoader;
+  class VoxManager;
+  class BaseSoundSource;
+}
+
+struct aud_channel_t
+{
+  sfx_t* sfx{ nullptr };
+  float volume{ 1.0f };
+  float pitch{ 1.0f };
+  float attenuation{ 0 };
+  int entnum{ 0 };
+  int entchannel{ 0 };
+  vec3_t origin{ 0.0f, 0.0f, 0.0f };
+  uint64_t start{ 0 };
+  uint64_t end{ 0 };
   //for sentence
-  int isentence;
-  int iword;
+  std::queue<voxword_t> words;
   //for voice sound
-  sfxcache_t *voicecache;
+  sfxcache_t* voicecache{ nullptr };
 
   // For OpenAL
-  alure::SharedPtr<alure::Decoder> decoder;
-  alure::Buffer buffer;
-  alure::Source source;
+  alure::SharedPtr<MetaAudio::BaseSoundSource> sound_source;
 
-  //X-Fi workaround
-  std::chrono::time_point<std::chrono::steady_clock> playback_end_time;
+  MetaAudio::VoxManager* vox{ nullptr };
 
   // For OpenAL EFX
   bool firstpass{ true };
-  float ob_gain_current{ 0 };
-  float ob_gain_elapsed_time{ 0 };
-  float ob_gain_initial_value{ 0 };
-  float ob_gain_old_target{ 0 };
-  float ob_gain_target{ 0 };
-}aud_channel_t;
+  GainFading LowGain;
+  GainFading MidGain;
+  GainFading HighGain;
 
-typedef struct
+  aud_channel_t() = default;
+  ~aud_channel_t();
+
+  aud_channel_t(const aud_channel_t& other) = delete;
+  aud_channel_t& aud_channel_t::operator=(const aud_channel_t& other) = delete;
+
+  aud_channel_t(aud_channel_t&& other) = default;
+  aud_channel_t& operator=(aud_channel_t&& other) = default;
+};
+
+struct aud_sfxcache_t
 {
   //wave info
-  uint64_t length;
-  uint64_t loopstart;
-  uint64_t loopend;
-  ALuint samplerate;
-  bool looping;
-  alure::SampleType stype;
-  alure::ChannelConfig channels;
+  uint64_t length{};
+  uint64_t loopstart{};
+  uint64_t loopend{};
+  ALuint samplerate{};
+  bool looping{};
+  bool force_streaming{};
+  alure::SampleType stype{};
+  alure::ChannelConfig channels{};
 
   //OpenAL buffer
   alure::SharedPtr<alure::Decoder> decoder;
   alure::Buffer buffer;
 
   alure::Vector<ALubyte> data;
-}aud_sfxcache_t;
+};
 
-typedef struct
+struct aud_engine_t
 {
   int *cl_servercount;
   int *cl_parsecount;
@@ -105,33 +128,12 @@ typedef struct
 #ifdef _DEBUG
   void(*Sys_Error)(char *fmt, ...);
 #endif
-}aud_engine_t;
+};
 
 //snd_hook.cpp
 void S_FillAddress(void);
-void S_InstallHook(void);
 
-//snd_dma.cpp
-void S_Startup(void); // hooked
-void S_Init(void); // hooked
-void S_Shutdown(void); // hooked
-void S_ShutdownAL(void);
-sfx_t *S_FindName(char *name, int *pfInCache); // hooked
-void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
-void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, float *origin, float fvol, float attenuation, int flags, int pitch); // hooked
-void S_StopSound(int entnum, int entchannel); // hooked
-void S_StopAllSounds(qboolean clear); // hooked
-void S_Update(float *origin, float *forward, float *right, float *up); // hooked
-void S_FreeChannel(aud_channel_t *ch);
-void S_FreeCache(sfx_t *sfx);
-void S_FlushCaches(void);
-bool SND_IsPlaying(sfx_t *sfx);
-
-//snd_mem.cpp
-aud_sfxcache_t *S_LoadSound(sfx_t *s, aud_channel_t *ch); // hooked
+void S_InstallHook(MetaAudio::AudioEngine* engine, MetaAudio::SoundLoader* loader);
 
 //common
 extern aud_engine_t gAudEngine;
-
-//active control
-extern qboolean openal_started;
