@@ -55,12 +55,13 @@ namespace MetaAudio
     void ConfigureSource(aud_channel_t* channel, aud_sfxcache_t* data);
 
     bool OpenAL_Init();
-    void OpenAL_Shutdown();
 
     // SteamAudio
     IPLhandle sa_context = nullptr;
     IPLSimulationSettings sa_simulationSettings{};
     IPLhandle sa_environment = nullptr;
+
+    aud_channel_t sa_wetaudio;
 
     void SteamAudio_Init();
     void SteamAudio_Shutdown();

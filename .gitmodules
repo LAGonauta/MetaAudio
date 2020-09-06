@@ -12,3 +12,6 @@
 [submodule "externals/picojson"]
 	path = externals/picojson
 	url = https://github.com/kazuho/picojson/
+[submodule "externals/soxr"]
+	path = externals/soxr
+	url = https://git.code.sf.net/p/soxr/code

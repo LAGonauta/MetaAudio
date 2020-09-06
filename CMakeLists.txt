@@ -34,7 +34,8 @@ set(SOURCES
     src/snd_local.cpp
     src/SoundSources/SoundSourceFactory.cpp
     src/SoundSources/StaticSoundSource.cpp
-    src/SoundSources/StreamingSoundSource.cpp)
+    src/SoundSources/StreamingSoundSource.cpp
+    src/Utilities/SoxrResamplerHelper.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
@@ -45,6 +46,7 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/externals/picojson
         ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
+        ${PROJECT_SOURCE_DIR}/externals/soxr/src
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
         ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/metahook/include
@@ -80,6 +82,12 @@ add_subdirectory(externals/alure)
 
 add_subdirectory(externals/metahook)
 
-add_dependencies(MetaAudio alure2)
+option(BUILD_TESTS OFF)
+option(WITH_LSR_BINDINGS OFF)
 
-target_link_libraries(MetaAudio PRIVATE OpenAL alure2)
+list (APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Externals/soxr/cmake/Modules)
+add_subdirectory(Externals/soxr)
+
+add_dependencies(MetaAudio alure2 soxr)
+
+target_link_libraries(MetaAudio PRIVATE OpenAL alure2 soxr)

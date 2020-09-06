@@ -6,16 +6,17 @@ namespace MetaAudio
 {
   struct SteamAudio
   {
+    decltype(&iplCleanup) iplCleanup;
+    decltype(&iplCreateContext) iplCreateContext;
+    decltype(&iplCreateEnvironment) iplCreateEnvironment;
+    decltype(&iplCreateScene) iplCreateScene;
+    decltype(&iplCreateStaticMesh) iplCreateStaticMesh;
+    decltype(&iplDestroyContext) iplDestroyContext;
     decltype(&iplDestroyEnvironment) iplDestroyEnvironment;
     decltype(&iplDestroyScene) iplDestroyScene;
     decltype(&iplDestroyStaticMesh) iplDestroyStaticMesh;
     decltype(&iplGetDirectSoundPath) iplGetDirectSoundPath;
-    decltype(&iplCreateScene) iplCreateScene;
-    decltype(&iplCreateStaticMesh) iplCreateStaticMesh;
-    decltype(&iplCreateEnvironment) iplCreateEnvironment;
-    decltype(&iplCreateContext) iplCreateContext;
-    decltype(&iplDestroyContext) iplDestroyContext;
-    decltype(&iplCleanup) iplCleanup;
+    decltype(&iplGetMixedEnvironmentalAudio) iplGetMixedEnvironmentalAudio;
   };
 
 #define SetSteamAudioFunctionPointer(target, library, __function_name__) \
