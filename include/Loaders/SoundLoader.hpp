@@ -3,7 +3,7 @@
 #include <optional>
 
 #include "alure2.h"
-#include "LocalAudioDecoder.hpp"
+#include "LoadingBufferHandler.hpp"
 #include "../Utilities/AudioCache.hpp"
 
 namespace MetaAudio
@@ -12,7 +12,7 @@ namespace MetaAudio
   {
   private:
     std::shared_ptr<AudioCache> m_cache;
-    std::shared_ptr<LocalAudioDecoder> m_decoder;
+    std::shared_ptr<LoadingBufferHandler> m_loading_handler;
 
     // Check if file exists. Order: original, .wav, .flac, .ogg, .mp3
     std::optional<alure::String> S_GetFilePath(const alure::String& sfx_name, bool is_stream);

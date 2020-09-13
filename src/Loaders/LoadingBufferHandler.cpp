@@ -1,12 +1,12 @@
 #include <metahook.h>
 
-#include "Loaders/LocalAudioDecoder.hpp"
+#include "Loaders/LoadingBufferHandler.hpp"
 
 namespace MetaAudio
 {
-  const alure::Array<alure::String, 4> LocalAudioDecoder::SupportedExtensions = { ".wav", ".flac", ".ogg", ".mp3" };
+  const alure::Array<alure::String, 4> LoadingBufferHandler::SupportedExtensions = { ".wav", ".flac", ".ogg", ".mp3" };
 
-  bool LocalAudioDecoder::GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output)
+  bool LoadingBufferHandler::GetWavinfo(wavinfo_t& info, alure::String full_path, alure::Vector<ALubyte>& data_output)
   {
     auto context = alure::Context::GetCurrent();
     alure::SharedPtr<alure::Decoder> dec;
@@ -33,7 +33,7 @@ namespace MetaAudio
     return true;
   }
 
-  void LocalAudioDecoder::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept
+  void LoadingBufferHandler::bufferLoading(alure::StringView name, alure::ChannelConfig channels, alure::SampleType type, ALuint samplerate, alure::ArrayView<ALbyte> data) noexcept
   {
     auto temp_view = data.reinterpret_as<ALubyte>();
     Audio audio{};

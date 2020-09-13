@@ -6,7 +6,7 @@ namespace MetaAudio
   SoundLoader::SoundLoader(const std::shared_ptr<AudioCache>& cache)
   {
     m_cache = cache;
-    m_decoder = std::make_shared<LocalAudioDecoder>();
+    m_loading_handler = std::make_shared<LoadingBufferHandler>();
   }
 
   std::optional<alure::String> SoundLoader::S_GetFilePath(const alure::String& sfx_name, bool is_stream)
@@ -166,9 +166,9 @@ namespace MetaAudio
         return sc;
 
       auto context = alure::Context::GetCurrent();
-      if (m_decoder != context.getMessageHandler())
+      if (m_loading_handler != context.getMessageHandler())
       {
-        context.setMessageHandler(m_decoder);
+        context.setMessageHandler(m_loading_handler);
       }
 
       auto file_path = S_GetFilePath(s->name, false);
@@ -195,7 +195,7 @@ namespace MetaAudio
 
       wavinfo_t info = wavinfo_t();
       //We can't interfere with Alure, so we need a copy of the data for mouth movement.
-      if (!m_decoder->GetWavinfo(info, file_path.value(), sc->data))
+      if (!m_loading_handler->GetWavinfo(info, file_path.value(), sc->data))
         return nullptr;
 
       sc->buffer = al_buffer;

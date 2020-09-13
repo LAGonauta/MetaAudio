@@ -78,14 +78,17 @@ namespace MetaAudio
   {
     return static_cast<XFiWorkaround>(al_xfi_workaround->value);
   }
+
   OccluderType SettingsManager::Occluder()
   {
     return static_cast<OccluderType>(al_occluder->value);
   }
+
   bool SettingsManager::OcclusionEnabled()
   {
     return static_cast<bool>(al_occlusion->value);
   }
+
   bool SettingsManager::OcclusionFade()
   {
     return static_cast<bool>(al_occlusion_fade->value);

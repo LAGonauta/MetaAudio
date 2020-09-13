@@ -16,7 +16,7 @@ set(SOURCES
     src/snd_hook.cpp
     src/Voice/VoiceDecoder.cpp
     src/Vox/VoxManager.cpp
-    src/Loaders/LocalAudioDecoder.cpp
+    src/Loaders/LoadingBufferHandler.cpp
     src/Utilities/AudioCache.cpp
     src/interface.cpp
     src/Config/EfxJsonReader.cpp

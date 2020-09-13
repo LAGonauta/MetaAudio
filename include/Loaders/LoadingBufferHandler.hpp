@@ -4,7 +4,7 @@
 
 namespace MetaAudio
 {
-  class LocalAudioDecoder final : public alure::MessageHandler
+  class LoadingBufferHandler final : public alure::MessageHandler
   {
   public:
     static const alure::Array<alure::String, 4> SupportedExtensions;
