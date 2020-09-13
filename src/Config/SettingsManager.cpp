@@ -36,6 +36,7 @@ namespace MetaAudio
     if (volume == nullptr) volume = gEngfuncs.pfnGetCvarPointer("volume");
     if (sxroomwater_type == nullptr) sxroomwater_type = gEngfuncs.pfnGetCvarPointer("waterroom_type");
     if (sxroom_type == nullptr) sxroom_type = gEngfuncs.pfnGetCvarPointer("room_type");
+    if (sxroom_off == nullptr) sxroom_off = gEngfuncs.pfnGetCvarPointer("room_off");
     if (snd_show == nullptr) snd_show = gEngfuncs.pfnGetCvarPointer("snd_show");
   }
 

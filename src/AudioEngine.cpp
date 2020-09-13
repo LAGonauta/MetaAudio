@@ -17,7 +17,6 @@ namespace MetaAudio
 {
   AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : m_cache(cache), m_loader(loader)
   {
-    m_steamaudio = std::make_shared<SteamAudio>();
   }
 
   void AudioEngine::S_FreeCache(sfx_t* sfx)
@@ -629,7 +628,7 @@ namespace MetaAudio
 
       strncpy_s(al_device_name, al_device->getName().c_str(), sizeof(al_device_name));
 
-      al_context = alure::MakeAuto(al_device->createContext());
+      al_context = alure::MakeAuto(al_device->createContext(alure::Vector<alure::AttributePair>({ alure::AttributePair { ALC_FREQUENCY, 48000 }, alure::AttributePair { 0, 0 } })));
 
       alure::Version ver = al_device->getALCVersion();
       al_device_majorversion = ver.getMajor();
@@ -723,6 +722,8 @@ namespace MetaAudio
 
   void AudioEngine::SteamAudio_Init()
   {
+    m_steamaudio = std::make_shared<SteamAudio>();
+
     if (m_steamaudio->iplCleanup != nullptr)
     {
       IPLhandle* context = new IPLhandle;

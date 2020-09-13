@@ -6,10 +6,17 @@ namespace MetaAudio
 {
   struct AudioBuffer
   {
-    std::vector<float> data;
+    alure::Vector<ALubyte> data;
     alure::SampleType type;
     alure::ChannelConfig channels;
+    size_t sample_rate;
 
-    AudioBuffer(const std::vector<float>& data, alure::SampleType type, alure::ChannelConfig channels) : data(data), type(type), channels(channels) { }
+    AudioBuffer(
+      const alure::Vector<ALubyte>& data,
+      alure::SampleType type,
+      alure::ChannelConfig channels,
+      size_t sample_rate)
+      : data(data), type(type), channels(channels), sample_rate(sample_rate)
+    { }
   };
 }

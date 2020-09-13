@@ -1,5 +1,6 @@
 #include "Loaders/SoundLoader.hpp"
 #include "Voice/VoiceDecoder.hpp"
+#include "Loaders/SoxrDecoder.hpp"
 
 namespace MetaAudio
 {
@@ -29,7 +30,7 @@ namespace MetaAudio
     if (char_index != new_name.npos)
     {
       auto context = alure::Context::GetCurrent();
-      for (const alure::String& extension : MetaAudio::LocalAudioDecoder::SupportedExtensions)
+      for (const alure::String& extension : MetaAudio::LoadingBufferHandler::SupportedExtensions)
       {
         new_name.replace(char_index, new_name.npos, extension);
         try
@@ -181,6 +182,7 @@ namespace MetaAudio
       try
       {
         al_buffer = context.getBuffer(file_path.value());
+        //al_buffer = context.createBufferFrom(file_path.value(), alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value())));
       }
       catch (const std::exception& error)
       {
