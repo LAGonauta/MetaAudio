@@ -16,8 +16,6 @@ namespace MetaAudio
 
     alure::Buffer m_buffer;
 
-    float* al_xfi_workaround;
-
   public:
     StaticSoundSource(const alure::Buffer& buffer, alure::Source& source);
 

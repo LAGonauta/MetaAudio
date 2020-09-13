@@ -12,8 +12,6 @@ namespace MetaAudio
     friend AudioEngine;
 
   private:
-    cvar_t* al_xfi_workaround;
-
     struct
     {
       std::vector<aud_channel_t> static_;
@@ -23,7 +21,7 @@ namespace MetaAudio
     void FreeChannel(aud_channel_t* ch);
 
   public:
-    ChannelManager();
+    ChannelManager() = default;
 
     aud_channel_t* SND_PickStaticChannel(int entnum, int entchannel, sfx_t* sfx);
     aud_channel_t* SND_PickDynamicChannel(int entnum, int entchannel, sfx_t* sfx);

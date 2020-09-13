@@ -6,8 +6,10 @@
 #include "Loaders/SoundLoader.hpp"
 #include "Vox/VoxManager.hpp"
 #include "AudioEngine.hpp"
-#include "dynamic_steamaudio.hpp"
+#include "DynamicSteamAudio.hpp"
+#include "Config/SettingsManager.hpp"
 
+MetaAudio::SettingsManager settings;
 static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
 static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;
 

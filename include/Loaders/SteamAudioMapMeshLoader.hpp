@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "alure2.h"
-#include "dynamic_steamaudio.hpp"
+#include "DynamicSteamAudio.hpp"
 
 namespace MetaAudio
 {

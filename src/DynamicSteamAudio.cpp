@@ -1,4 +1,6 @@
-#include "dynamic_steamaudio.hpp"
+#include <metahook.h>
+
+#include "DynamicSteamAudio.hpp"
 
 namespace MetaAudio
 {
@@ -24,6 +26,15 @@ namespace MetaAudio
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplGetMixedEnvironmentalAudio);
 
       library_instance = std::shared_ptr<HINSTANCE>(new HINSTANCE(hSteamAudioInstance), [&](HINSTANCE* handle) { iplCleanup(); FreeLibrary(*handle); delete handle; });
+
+      gEngfuncs.Con_Printf("Loaded phonon.dll, SteamAudio is available.");
+
+      loaded = true;
     }
+  }
+
+  bool SteamAudio::IsLoaded()
+  {
+    return loaded;
   }
 }

@@ -4,11 +4,6 @@
 
 namespace MetaAudio
 {
-  ChannelManager::ChannelManager()
-  {
-    al_xfi_workaround = gEngfuncs.pfnGetCvarPointer("al_xfi_workaround");
-  }
-
   bool ChannelManager::IsPlaying(sfx_t* sfx)
   {
     auto functor = [&](aud_channel_t& channel) { return channel.sfx == sfx && channel.sound_source->IsPlaying(); };

@@ -26,5 +26,6 @@ namespace MetaAudio
     decltype(&iplGetMixedEnvironmentalAudio) iplGetMixedEnvironmentalAudio = nullptr;
 
     SteamAudio();
+    bool IsLoaded();
   };
 }
