@@ -25,12 +25,12 @@ namespace MetaAudio
 
   bool SoxrDecoder::hasLoopPoints() const noexcept
   {
-    return false;
+    return m_buffer->hasLoopPoints;
   }
 
   std::pair<uint64_t, uint64_t> SoxrDecoder::getLoopPoints() const noexcept
   {
-    return { 0, std::numeric_limits<uint64_t>::max() };
+    return m_buffer->loopPoints;
   }
 
   uint64_t SoxrDecoder::getLength() const noexcept

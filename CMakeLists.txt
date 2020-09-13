@@ -37,7 +37,8 @@ set(SOURCES
     src/SoundSources/StreamingSoundSource.cpp
     src/Utilities/SoxrResamplerHelper.cpp
     src/DynamicSteamAudio.cpp 
-    src/Config/SettingsManager.cpp)
+    src/Config/SettingsManager.cpp
+    src/Loaders/SoxrDecoder.cpp)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

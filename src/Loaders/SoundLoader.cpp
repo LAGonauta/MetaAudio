@@ -181,8 +181,15 @@ namespace MetaAudio
       alure::Buffer al_buffer;
       try
       {
-        al_buffer = context.getBuffer(file_path.value());
-        //al_buffer = context.createBufferFrom(file_path.value(), alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value())));
+        auto resampled = false;
+        if (resampled)
+        {
+          al_buffer = context.createBufferFrom(file_path.value(), alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value())));
+        }
+        else
+        {
+          al_buffer = context.getBuffer(file_path.value());
+        }
       }
       catch (const std::exception& error)
       {

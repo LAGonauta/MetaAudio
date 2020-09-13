@@ -28,6 +28,14 @@ namespace MetaAudio
     info.loopstart = loop_points.first;
     info.loopend = loop_points.second;
 
+    auto resampled = false;
+    if (resampled && info.looping)
+    {
+      auto ratio = 48000 / dec->getFrequency();
+      info.loopstart *= ratio;
+      info.loopend *= ratio;
+    }
+
     data_output.swap(audioData.data);
     m_data.erase(full_path);
     return true;
