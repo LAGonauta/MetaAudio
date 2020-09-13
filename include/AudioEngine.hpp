@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <memory>
 
 #include "snd_local.h"
 #include "alure2.h"
@@ -15,6 +16,7 @@ namespace MetaAudio
   {
   private:
     std::unordered_map<alure::String, sfx_t> known_sfx;
+    std::shared_ptr<SteamAudio> m_steamaudio = nullptr;
 
     //engine cvars
     cvar_t* nosound = nullptr;
@@ -57,17 +59,15 @@ namespace MetaAudio
     bool OpenAL_Init();
 
     // SteamAudio
-    IPLhandle sa_context = nullptr;
+    std::shared_ptr<IPLhandle> sa_context = nullptr;
     IPLSimulationSettings sa_simulationSettings{};
-    IPLhandle sa_environment = nullptr;
 
     aud_channel_t sa_wetaudio;
 
     void SteamAudio_Init();
-    void SteamAudio_Shutdown();
     std::shared_ptr<IOcclusionCalculator> GetOccluder();
 
-    std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader;
+    std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader = nullptr;
 
   public:
     AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader);

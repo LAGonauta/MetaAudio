@@ -9,10 +9,13 @@
 
 #include "SoundSources/SoundSourceFactory.hpp"
 
+#include "dynamic_steamaudio.hpp"
+
 namespace MetaAudio
 {
   AudioEngine::AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader) : m_cache(cache), m_loader(loader)
   {
+    m_steamaudio = std::make_shared<SteamAudio>();
   }
 
   void AudioEngine::S_FreeCache(sfx_t* sfx)
@@ -721,16 +724,16 @@ namespace MetaAudio
 
   void AudioEngine::SteamAudio_Init()
   {
-    if (gSteamAudio.iplCleanup != nullptr)
+    if (m_steamaudio->iplCleanup != nullptr)
     {
-      if (sa_context == nullptr)
+      IPLhandle* context = new IPLhandle;
+      auto error = m_steamaudio->iplCreateContext(SteamAudioLog, nullptr, nullptr, context);
+      if (error)
       {
-        auto error = gSteamAudio.iplCreateContext(SteamAudioLog, nullptr, nullptr, &sa_context);
-        if (error)
-        {
-          throw std::exception("Error creating SA context: " + error);
-        }
+        delete context;
+        throw std::exception("Error creating SA context: " + error);
       }
+      sa_context = std::shared_ptr<IPLhandle>(context, [=](IPLhandle* handle) { m_steamaudio->iplDestroyContext(handle); delete handle; });
       sa_simulationSettings.ambisonicsOrder = 1;
       sa_simulationSettings.bakingBatchSize = 1;
       sa_simulationSettings.irDuration = 1;
@@ -742,22 +745,7 @@ namespace MetaAudio
       sa_simulationSettings.numRays = 4096;
       sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
       sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
-      sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(sa_context, sa_simulationSettings);
-    }
-  }
-
-  void AudioEngine::SteamAudio_Shutdown()
-  {
-    if (gSteamAudio.iplCleanup != nullptr)
-    {
-      sa_meshloader.reset();
-      if (sa_context)
-      {
-        gSteamAudio.iplDestroyContext(&sa_context);
-        sa_context = nullptr;
-      }
-      gSteamAudio.iplCleanup();
-      gSteamAudio = SteamAudio();
+      sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(m_steamaudio, sa_context, sa_simulationSettings);
     }
   }
 
@@ -765,7 +753,7 @@ namespace MetaAudio
   {
     al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
     al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
-    if (gSteamAudio.iplCleanup != nullptr)
+    if (m_steamaudio->iplCleanup != nullptr)
     {
       al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "0", FCVAR_EXTDLL);
     }
@@ -798,7 +786,7 @@ namespace MetaAudio
     }
     else
     {
-      return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
+      return std::make_shared<SteamAudioOcclusionCalculator>(m_steamaudio, sa_meshloader, *gEngfuncs.pEventAPI);
     }
   }
 
@@ -814,8 +802,6 @@ namespace MetaAudio
     alure::Context::MakeCurrent(nullptr);
 
     openal_started = false;
-
-    SteamAudio_Shutdown();
   }
 
   void AudioEngine::S_Shutdown()

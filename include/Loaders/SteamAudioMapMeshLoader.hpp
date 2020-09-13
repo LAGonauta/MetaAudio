@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "alure2.h"
-#include "dynamic_steamaudio.h"
+#include "dynamic_steamaudio.hpp"
 
 namespace MetaAudio
 {
@@ -13,41 +13,19 @@ namespace MetaAudio
     {
     private:
       std::string mapName;
-      IPLhandle environment;
-      IPLhandle scene;
-      IPLhandle static_mesh;
+      
+      std::shared_ptr<IPLhandle> scene;
+      std::shared_ptr<IPLhandle> static_mesh;
+      std::shared_ptr<IPLhandle> environment;
 
     public:
-      ProcessedMap(const std::string& mapName, IPLhandle env, IPLhandle scene, IPLhandle mesh)
+
+      ProcessedMap() {}
+
+      ProcessedMap(const std::string& mapName, std::shared_ptr<IPLhandle> env, std::shared_ptr<IPLhandle> scene, std::shared_ptr<IPLhandle> mesh)
         : environment(env), scene(scene), static_mesh(mesh), mapName(mapName)
       {
       }
-
-      ~ProcessedMap()
-      {
-        if (environment != nullptr)
-        {
-          gSteamAudio.iplDestroyEnvironment(&environment);
-        }
-
-        if (scene != nullptr)
-        {
-          gSteamAudio.iplDestroyScene(&scene);
-        }
-
-        if (static_mesh != nullptr)
-        {
-          gSteamAudio.iplDestroyStaticMesh(&static_mesh);
-        }
-      }
-
-      // delete copy
-      ProcessedMap(const ProcessedMap& other) = delete;
-      ProcessedMap& ProcessedMap::operator=(const ProcessedMap& other) = delete;
-
-      // allow move
-      ProcessedMap(ProcessedMap&& other) = default;
-      ProcessedMap& operator=(ProcessedMap&& other) = default;
 
       const std::string& Name()
       {
@@ -56,12 +34,13 @@ namespace MetaAudio
 
       IPLhandle Env()
       {
-        return environment;
+        return *environment;
       }
     };
 
     IPLSimulationSettings sa_simul_settings;
-    IPLhandle sa_context;
+    std::shared_ptr<SteamAudio> sa = nullptr;
+    std::shared_ptr<IPLhandle> sa_context = nullptr;
 
     std::unique_ptr<ProcessedMap> current_map;
 
@@ -74,7 +53,7 @@ namespace MetaAudio
     // the attenuation `dB/m`, not how much is transmitted per meter. 
     std::array<IPLMaterial, 1> materials{ {0.10f, 0.20f, 0.30f, 0.05f, 2.0f, 4.0f, (1.0f / 0.15f)} };
   public:
-    SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings);
+    SteamAudioMapMeshLoader(std::shared_ptr<SteamAudio> sa, std::shared_ptr<IPLhandle> sa_context, IPLSimulationSettings simulSettings);
 
     // Checks if map is current , if not update it
     void update();

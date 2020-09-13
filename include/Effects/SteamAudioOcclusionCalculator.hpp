@@ -13,6 +13,7 @@ namespace MetaAudio
   private:
     static constexpr size_t NUMBER_OCCLUSION_RAYS = 512;
     std::shared_ptr<SteamAudioMapMeshLoader> meshLoader;
+    std::shared_ptr<SteamAudio> m_sa;
 
     const event_api_s& event_api;
     void PlayerTrace(Vector3* start, Vector3* end, pmtrace_s& tr);
@@ -24,6 +25,6 @@ namespace MetaAudio
       float sourceRadius,
       float attenuationMultiplier);
 
-    SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudioMapMeshLoader> meshLoader, const event_api_s& event_api);
+    SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudio> sa, std::shared_ptr<SteamAudioMapMeshLoader> meshLoader, const event_api_s& event_api);
   };
 }

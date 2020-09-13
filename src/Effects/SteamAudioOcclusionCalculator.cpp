@@ -4,7 +4,8 @@
 
 namespace MetaAudio
 {
-  SteamAudioOcclusionCalculator::SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudioMapMeshLoader> meshLoader, const event_api_s& event_api) : meshLoader(meshLoader), event_api(event_api)
+  SteamAudioOcclusionCalculator::SteamAudioOcclusionCalculator(std::shared_ptr<SteamAudio> sa, std::shared_ptr<SteamAudioMapMeshLoader> meshLoader, const event_api_s& event_api)
+    : meshLoader(meshLoader), event_api(event_api), m_sa(sa)
   {
   }
 
@@ -34,7 +35,7 @@ namespace MetaAudio
     IPLSource source{ toIPLVector3(&audioSourcePosition) };
     auto env = meshLoader->CurrentEnvironment();
     IPLDirectSoundPath result{};
-    result = gSteamAudio.iplGetDirectSoundPath(
+    result = m_sa->iplGetDirectSoundPath(
       env,
       toIPLVector3(&listenerPosition),
       toIPLVector3(&listenerAhead),

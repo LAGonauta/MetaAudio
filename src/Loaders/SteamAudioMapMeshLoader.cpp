@@ -18,10 +18,10 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings)
-    : sa_simul_settings(simulSettings), sa_context(sa_context)
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(std::shared_ptr<SteamAudio> sa, std::shared_ptr<IPLhandle> sa_context, IPLSimulationSettings simulSettings)
+    : sa_simul_settings(simulSettings), sa_context(sa_context), sa(sa)
   {
-    current_map = std::make_unique<ProcessedMap>("", nullptr, nullptr, nullptr);
+    current_map = std::make_unique<ProcessedMap>();
   }
 
   alure::Vector3 SteamAudioMapMeshLoader::Normalize(const alure::Vector3& vector)
@@ -146,27 +146,34 @@ namespace MetaAudio
           }
         }
 
-        IPLhandle scene = nullptr;
-        IPLerror error = gSteamAudio.iplCreateScene(sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
+        IPLhandle* scene = new IPLhandle;
+        auto error = sa->iplCreateScene(*sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, scene);
         if (error)
         {
+          delete scene;
           throw std::runtime_error("Error creating scene: " + std::to_string(error));
         }
+        std::shared_ptr<IPLhandle> scenePtr(scene, [&](IPLhandle* handle) { if (handle) sa->iplDestroyScene(handle); delete handle; });
 
-        IPLhandle staticmesh = nullptr;
-        error = gSteamAudio.iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
+        IPLhandle* staticmesh = new IPLhandle;
+        error = sa->iplCreateStaticMesh(*scenePtr, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), staticmesh);
         if (error)
         {
+          delete staticmesh;
           throw std::runtime_error("Error creating static mesh: " + std::to_string(error));
         }
+        std::shared_ptr<IPLhandle> meshPtr(staticmesh, [&](IPLhandle* handle) { if (handle) sa->iplDestroyStaticMesh(handle); delete handle; });
 
-        IPLhandle env = nullptr;
-        error = gSteamAudio.iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
+        IPLhandle* env = new IPLhandle;
+        error = sa->iplCreateEnvironment(*sa_context, nullptr, sa_simul_settings, *scenePtr, nullptr, env);
         if (error)
         {
+          delete env;
           throw std::runtime_error("Error creating environment: " + std::to_string(error));
         }
-        current_map = std::make_unique<ProcessedMap>(mapModel->name, env, scene, staticmesh);
+        std::shared_ptr<IPLhandle> envPtr(env, [&](IPLhandle* handle) { if (handle) sa->iplDestroyEnvironment(handle); delete handle; });
+
+        current_map = std::make_unique<ProcessedMap>(mapModel->name, envPtr, scenePtr, meshPtr);
       }
     }
   }

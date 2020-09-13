@@ -6,8 +6,8 @@
 #include "Loaders/SoundLoader.hpp"
 #include "Vox/VoxManager.hpp"
 #include "AudioEngine.hpp"
+#include "dynamic_steamaudio.hpp"
 
-MetaAudio::SteamAudio gSteamAudio;
 static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
 static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;
 
@@ -39,21 +39,6 @@ void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_engines
   g_pMetaHookAPI = pAPI;
   g_pMetaSave = pSave;
   g_hInstance = GetModuleHandle(NULL);
-
-  g_hSteamAudioInstance = LoadLibrary("phonon.dll");
-  if (g_hSteamAudioInstance)
-  {
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCleanup);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyEnvironment);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyScene);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyStaticMesh);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplGetDirectSoundPath);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateScene);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateStaticMesh);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateEnvironment);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateContext);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyContext);
-  }
 
   auto audio_cache = std::make_shared<MetaAudio::AudioCache>();
   sound_loader = std::make_shared<MetaAudio::SoundLoader>(audio_cache);
