@@ -5,7 +5,7 @@
 namespace MetaAudio
 {
   SoxrResamplerHelper::SoxrResamplerHelper()
-    : runtimeSpec(soxr_runtime_spec(0)), qualitySpec(soxr_quality_spec(SOXR_VHQ | SOXR_LINEAR_PHASE | SOXR_STEEP_FILTER, 0))
+    : runtimeSpec(soxr_runtime_spec(0)), qualitySpec(soxr_quality_spec(SOXR_VHQ, 0))
   {
   }
 
@@ -44,17 +44,16 @@ namespace MetaAudio
       audioData = alure::Vector<ALubyte>(reinterpreted.begin(), reinterpreted.end());
 
       inputSampleType = alure::SampleType::Int16;
-      inputSize = audioData.size();
     }
 
-    std::vector<float> resampledAudio(((inputSize / GetSampleSize(inputSampleType)) * (finalSampleRate / inputFrequency)) * 2 + 1);
+    std::vector<float> resampledAudio(dec->getLength() * GetChannelQuantity(dec->getChannelConfig()) * finalSampleRate / inputFrequency + .5);
 
     auto audioSpec = soxr_io_spec(GetSoxType(inputSampleType), SOXR_FLOAT32_I);
 
     size_t odone, idone;
     auto err = soxr_oneshot(
       inputFrequency, finalSampleRate, GetChannelQuantity(inputChannelConfig),
-      audioData.data(), alure::BytesToFrames(audioData.size(), inputChannelConfig, inputSampleType), &idone,
+      audioData.data(), dec->getLength(), &idone,
       resampledAudio.data(), resampledAudio.size() / GetChannelQuantity(inputChannelConfig), &odone,
       &audioSpec, &qualitySpec, &runtimeSpec
     );
