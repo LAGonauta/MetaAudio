@@ -13,12 +13,13 @@ namespace MetaAudio
     soxr_runtime_spec_t runtimeSpec;
     soxr_quality_spec_t qualitySpec;
 
-    size_t GetSampleSize(alure::SampleType type);
-    soxr_datatype_t GetSoxType(alure::SampleType type);
-    size_t GetChannelQuantity(alure::ChannelConfig config);
   public:
     SoxrResamplerHelper();
 
     std::shared_ptr<AudioBuffer> GetAudio(alure::SharedPtr<alure::Decoder> dec, size_t finalSampleRate);
+
+    size_t GetSampleSize(alure::SampleType type);
+    soxr_datatype_t GetSoxType(alure::SampleType type);
+    size_t GetChannelQuantity(alure::ChannelConfig config);
   };
 }
