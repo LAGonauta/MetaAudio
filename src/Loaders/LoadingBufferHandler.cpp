@@ -1,6 +1,7 @@
 #include <metahook.h>
 
 #include "Loaders/LoadingBufferHandler.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -28,8 +29,7 @@ namespace MetaAudio
     info.loopstart = loop_points.first;
     info.loopend = loop_points.second;
 
-    auto resampled = false;
-    if (resampled && info.looping)
+    if (settings.ResampleAll() && info.looping)
     {
       auto ratio = 48000 / dec->getFrequency();
       info.loopstart *= ratio;

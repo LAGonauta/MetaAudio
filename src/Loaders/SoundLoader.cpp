@@ -2,6 +2,7 @@
 #include "Voice/VoiceDecoder.hpp"
 #include "Loaders/SoxrDecoder.hpp"
 #include "Loaders/SoxrBitDepthNormalizerDecoder.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -182,12 +183,10 @@ namespace MetaAudio
       alure::Buffer al_buffer;
       try
       {
-        auto resampled = true;
-        if (resampled)
+        if (settings.ResampleAll())
         {
           alure::SharedPtr<alure::Decoder> decoder = alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value()));
-          auto supports_float = true;
-          if (!supports_float)
+          if (!alure::Context::GetCurrent().isSupported(decoder->getChannelConfig(), decoder->getSampleType()))
           {
             decoder = alure::MakeShared<SoxrBitDepthNormalizerDecoder>(decoder);
           }

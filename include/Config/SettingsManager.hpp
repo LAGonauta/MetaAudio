@@ -2,6 +2,7 @@
 
 #include "Enums/XFiWorkaround.hpp"
 #include "Enums/OccluderType.hpp"
+#include "Enums/ClampingMode.hpp"
 
 namespace MetaAudio
 {
@@ -9,6 +10,10 @@ namespace MetaAudio
   {
   public:
     void Init();
+
+    bool ResampleAll();
+
+    ClampingMode OnResamplerClipping();
 
     bool NoSound();
 

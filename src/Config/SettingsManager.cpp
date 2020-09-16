@@ -17,12 +17,16 @@ namespace MetaAudio
   static cvar_t* al_occlusion = nullptr;
   static cvar_t* al_occlusion_fade = nullptr;
   static cvar_t* al_xfi_workaround = nullptr;
+  static cvar_t* al_resample_all = nullptr;
+  static cvar_t* al_clamping_mode = nullptr;
 
   static constexpr char* DEFAULT_XFI_WORKAROUND = "0"; // Disabled
   static constexpr char* DEFAULT_OCCLUDER = "0"; // GoldSrc
   static constexpr char* DEFAULT_OCCLUSION = "1";
   static constexpr char* DEFAULT_OCCLUSION_FADE = "1";
   static constexpr char* DEFAULT_DOPPLER_FACTOR = "0.3";
+  static constexpr char* DEFAULT_RESAMPLE_ALL = "0";
+  static constexpr char* DEFAULT_CLAMPING_MODE = "1"; // ReduceGain
 
   void SettingsManager::Init()
   {
@@ -31,6 +35,8 @@ namespace MetaAudio
     if (al_occluder == nullptr) al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", DEFAULT_OCCLUDER, FCVAR_EXTDLL);
     if (al_occlusion == nullptr) al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", DEFAULT_OCCLUSION, FCVAR_EXTDLL);
     if (al_occlusion_fade == nullptr) al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", DEFAULT_OCCLUSION_FADE, FCVAR_EXTDLL);
+    if (al_resample_all == nullptr) al_resample_all = gEngfuncs.pfnRegisterVariable("al_resample_all", DEFAULT_RESAMPLE_ALL, FCVAR_EXTDLL);
+    if (al_clamping_mode == nullptr) al_clamping_mode = gEngfuncs.pfnRegisterVariable("al_clamping_mode", DEFAULT_CLAMPING_MODE, FCVAR_EXTDLL);
 
     if (nosound == nullptr) nosound = gEngfuncs.pfnGetCvarPointer("nosound");
     if (volume == nullptr) volume = gEngfuncs.pfnGetCvarPointer("volume");
@@ -38,6 +44,16 @@ namespace MetaAudio
     if (sxroom_type == nullptr) sxroom_type = gEngfuncs.pfnGetCvarPointer("room_type");
     if (sxroom_off == nullptr) sxroom_off = gEngfuncs.pfnGetCvarPointer("room_off");
     if (snd_show == nullptr) snd_show = gEngfuncs.pfnGetCvarPointer("snd_show");
+  }
+
+  bool SettingsManager::ResampleAll()
+  {
+    return static_cast<bool>(al_resample_all->value);
+  }
+
+  ClampingMode SettingsManager::OnResamplerClipping()
+  {
+    return static_cast<ClampingMode>(al_clamping_mode->value);
   }
 
   bool SettingsManager::NoSound()

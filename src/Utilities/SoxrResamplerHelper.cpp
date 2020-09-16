@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include "Utilities/SoxrResamplerHelper.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -62,14 +63,27 @@ namespace MetaAudio
     {
       resampledAudio.resize(odone);
 
-      auto max = std::abs(*std::max_element(
-        resampledAudio.cbegin(),
-        resampledAudio.cend(),
-        [](const auto& lhs, const auto& rhs) { return std::abs(lhs) < std::abs(rhs); }
-      ));
-      if (max > 1.0f)
+      switch (settings.OnResamplerClipping())
       {
-        std::for_each(resampledAudio.begin(), resampledAudio.end(), [=](auto& value) { value /= max; });
+      case ClampingMode::Clamp:
+        std::for_each(resampledAudio.begin(), resampledAudio.end(), [](auto& value) { value = std::clamp(value, -1.0f, 1.0f); });
+        break;
+      case ClampingMode::ReduceGain:
+      {
+        auto max = std::abs(*std::max_element(
+          resampledAudio.cbegin(),
+          resampledAudio.cend(),
+          [](const auto& lhs, const auto& rhs) { return std::abs(lhs) < std::abs(rhs); }
+        ));
+        if (max > 1.0f)
+        {
+          std::for_each(resampledAudio.begin(), resampledAudio.end(), [=](auto& value) { value /= max; });
+        }
+        break;
+      }
+      case ClampingMode::NoChange:
+      default:
+        break;
       }
     }
 
