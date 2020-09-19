@@ -36,7 +36,7 @@ namespace MetaAudio
     auto env = meshLoader->CurrentEnvironment();
     IPLDirectSoundPath result{};
     result = m_sa->iplGetDirectSoundPath(
-      env,
+      *env,
       toIPLVector3(&listenerPosition),
       toIPLVector3(&listenerAhead),
       toIPLVector3(&listenerUp),

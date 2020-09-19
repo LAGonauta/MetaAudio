@@ -14,7 +14,7 @@ namespace MetaAudio
     SoxrResamplerHelper m_helper;
 
   public:
-    SoxrDecoder(alure::SharedPtr<alure::Decoder> dec);
+    SoxrDecoder(alure::SharedPtr<alure::Decoder> dec, size_t frequency = 48000);
 
     ALuint getFrequency() const noexcept override;
     alure::ChannelConfig getChannelConfig() const noexcept override;

@@ -39,7 +39,9 @@ set(SOURCES
     src/DynamicSteamAudio.cpp 
     src/Config/SettingsManager.cpp
     src/Loaders/SoxrDecoder.cpp
-    src/Loaders/SoxrBitDepthNormalizerDecoder.cpp)
+    src/Loaders/SoxrBitDepthNormalizerDecoder.cpp
+    src/Loaders/SteamAudioSoundDecoder.cpp
+    )
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)

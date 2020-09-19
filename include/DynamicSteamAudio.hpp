@@ -23,6 +23,10 @@ namespace MetaAudio
     decltype(&iplDestroyScene) iplDestroyScene = nullptr;
     decltype(&iplDestroyStaticMesh) iplDestroyStaticMesh = nullptr;
     decltype(&iplGetDirectSoundPath) iplGetDirectSoundPath = nullptr;
+    decltype(&iplCreateDirectSoundEffect) iplCreateDirectSoundEffect = nullptr;
+    decltype(&iplDestroyDirectSoundEffect) iplDestroyDirectSoundEffect = nullptr;
+    decltype(&iplFlushDirectSoundEffect) iplFlushDirectSoundEffect = nullptr;
+    decltype(&iplApplyDirectSoundEffect) iplApplyDirectSoundEffect = nullptr;
     decltype(&iplGetMixedEnvironmentalAudio) iplGetMixedEnvironmentalAudio = nullptr;
 
     SteamAudio();

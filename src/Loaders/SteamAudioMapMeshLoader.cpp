@@ -18,7 +18,7 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(std::shared_ptr<SteamAudio> sa, std::shared_ptr<IPLhandle> sa_context, IPLSimulationSettings simulSettings)
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> sa_context, IPLSimulationSettings simulSettings)
     : sa_simul_settings(simulSettings), sa_context(sa_context), sa(sa)
   {
     current_map = std::make_unique<ProcessedMap>();
@@ -153,7 +153,7 @@ namespace MetaAudio
           delete scene;
           throw std::runtime_error("Error creating scene: " + std::to_string(error));
         }
-        std::shared_ptr<IPLhandle> scenePtr(scene, [&](IPLhandle* handle) { if (handle) sa->iplDestroyScene(handle); delete handle; });
+        alure::SharedPtr<IPLhandle> scenePtr(scene, [&](IPLhandle* handle) { if (handle) sa->iplDestroyScene(handle); delete handle; });
 
         IPLhandle* staticmesh = new IPLhandle;
         error = sa->iplCreateStaticMesh(*scenePtr, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), staticmesh);
@@ -162,7 +162,7 @@ namespace MetaAudio
           delete staticmesh;
           throw std::runtime_error("Error creating static mesh: " + std::to_string(error));
         }
-        std::shared_ptr<IPLhandle> meshPtr(staticmesh, [&](IPLhandle* handle) { if (handle) sa->iplDestroyStaticMesh(handle); delete handle; });
+        alure::SharedPtr<IPLhandle> meshPtr(staticmesh, [&](IPLhandle* handle) { if (handle) sa->iplDestroyStaticMesh(handle); delete handle; });
 
         IPLhandle* env = new IPLhandle;
         error = sa->iplCreateEnvironment(*sa_context, nullptr, sa_simul_settings, *scenePtr, nullptr, env);
@@ -171,14 +171,14 @@ namespace MetaAudio
           delete env;
           throw std::runtime_error("Error creating environment: " + std::to_string(error));
         }
-        std::shared_ptr<IPLhandle> envPtr(env, [&](IPLhandle* handle) { if (handle) sa->iplDestroyEnvironment(handle); delete handle; });
+        alure::SharedPtr<IPLhandle> envPtr(env, [&](IPLhandle* handle) { if (handle) sa->iplDestroyEnvironment(handle); delete handle; });
 
         current_map = std::make_unique<ProcessedMap>(mapModel->name, envPtr, scenePtr, meshPtr);
       }
     }
   }
 
-  IPLhandle SteamAudioMapMeshLoader::CurrentEnvironment()
+  alure::SharedPtr<IPLhandle> SteamAudioMapMeshLoader::CurrentEnvironment()
   {
     return current_map->Env();
   }

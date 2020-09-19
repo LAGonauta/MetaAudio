@@ -14,15 +14,15 @@ namespace MetaAudio
     private:
       std::string mapName;
       
-      std::shared_ptr<IPLhandle> scene;
-      std::shared_ptr<IPLhandle> static_mesh;
-      std::shared_ptr<IPLhandle> environment;
+      alure::SharedPtr<IPLhandle> scene;
+      alure::SharedPtr<IPLhandle> static_mesh;
+      alure::SharedPtr<IPLhandle> environment;
 
     public:
 
       ProcessedMap() {}
 
-      ProcessedMap(const std::string& mapName, std::shared_ptr<IPLhandle> env, std::shared_ptr<IPLhandle> scene, std::shared_ptr<IPLhandle> mesh)
+      ProcessedMap(const std::string& mapName, alure::SharedPtr<IPLhandle> env, alure::SharedPtr<IPLhandle> scene, alure::SharedPtr<IPLhandle> mesh)
         : environment(env), scene(scene), static_mesh(mesh), mapName(mapName)
       {
       }
@@ -32,17 +32,17 @@ namespace MetaAudio
         return mapName;
       }
 
-      IPLhandle Env()
+      alure::SharedPtr<IPLhandle> Env()
       {
-        return *environment;
+        return environment;
       }
     };
 
     IPLSimulationSettings sa_simul_settings;
-    std::shared_ptr<SteamAudio> sa = nullptr;
-    std::shared_ptr<IPLhandle> sa_context = nullptr;
+    alure::SharedPtr<SteamAudio> sa = nullptr;
+    alure::SharedPtr<IPLhandle> sa_context = nullptr;
 
-    std::unique_ptr<ProcessedMap> current_map;
+    alure::SharedPtr<ProcessedMap> current_map;
 
     alure::Vector3 Normalize(const alure::Vector3& vector);
     float DotProduct(const alure::Vector3& left, const alure::Vector3& right);
@@ -53,12 +53,12 @@ namespace MetaAudio
     // the attenuation `dB/m`, not how much is transmitted per meter. 
     std::array<IPLMaterial, 1> materials{ {0.10f, 0.20f, 0.30f, 0.05f, 2.0f, 4.0f, (1.0f / 0.15f)} };
   public:
-    SteamAudioMapMeshLoader(std::shared_ptr<SteamAudio> sa, std::shared_ptr<IPLhandle> sa_context, IPLSimulationSettings simulSettings);
+    SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> sa_context, IPLSimulationSettings simulSettings);
 
     // Checks if map is current , if not update it
     void update();
 
     // get current scene data as an IPLhandle
-    IPLhandle CurrentEnvironment();
+    alure::SharedPtr<IPLhandle> CurrentEnvironment();
   };
 }
