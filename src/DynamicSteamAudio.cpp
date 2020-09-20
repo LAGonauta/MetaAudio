@@ -23,6 +23,10 @@ namespace MetaAudio
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateEnvironment);
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateContext);
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplDestroyContext);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateDirectSoundEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplDestroyDirectSoundEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplFlushDirectSoundEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplApplyDirectSoundEffect);
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplGetMixedEnvironmentalAudio);
 
       library_instance = std::shared_ptr<HINSTANCE>(new HINSTANCE(hSteamAudioInstance), [&](HINSTANCE* handle) { iplCleanup(); FreeLibrary(*handle); delete handle; });

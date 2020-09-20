@@ -2,7 +2,6 @@
 
 #include "BaseSoundSource.hpp"
 
-
 namespace MetaAudio
 {
   class StaticSoundSource final : public BaseSoundSource

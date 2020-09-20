@@ -16,7 +16,6 @@ namespace MetaAudio
   {
   private:
     std::unordered_map<alure::String, sfx_t> known_sfx;
-    std::shared_ptr<SteamAudio> m_steamaudio = nullptr;
 
     //active control
     bool openal_started = false;
@@ -49,6 +48,7 @@ namespace MetaAudio
     bool OpenAL_Init();
 
     // SteamAudio
+    std::shared_ptr<SteamAudio> m_steamaudio = nullptr;
     std::shared_ptr<IPLhandle> sa_context = nullptr;
     IPLSimulationSettings sa_simulationSettings{};
 
@@ -58,6 +58,13 @@ namespace MetaAudio
     std::shared_ptr<IOcclusionCalculator> GetOccluder();
 
     std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader = nullptr;
+
+    struct
+    {
+      alure::Vector3 pos{};
+      alure::Vector3 ahead{};
+      alure::Vector3 up{};
+    } m_sa_listener;
 
   public:
     AudioEngine(std::shared_ptr<AudioCache> cache, std::shared_ptr<SoundLoader> loader);

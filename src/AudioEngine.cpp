@@ -12,6 +12,8 @@
 #include "Config/SettingsManager.hpp"
 
 #include "DynamicSteamAudio.hpp"
+#include "Loaders/SteamAudioSoundDecoder.hpp"
+#include "SoundSources/SteamAudioSoundSource.hpp"
 
 namespace MetaAudio
 {
@@ -169,13 +171,26 @@ namespace MetaAudio
             ch->end = sc->length;
 
             vox->TrimStartEndTimes(ch, sc);
-            if (ch->entchannel == CHAN_STREAM)
+            bool has_available_sa_channels = false;
+            if (has_available_sa_channels)
             {
-              ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 16348, 4);
+              ch->sound_source = SoundSourceFactory::GetSteamAudioSource(alure::String(ch->sfx->name), al_context, al_context->createSource(), 512, 4);
+              auto source = dynamic_cast<SteamAudioSoundSource*>(ch->sound_source.get());
+              if (source)
+              {
+                source->SetListener(m_sa_listener.pos, m_sa_listener.ahead, m_sa_listener.up);
+              }
             }
             else
             {
-              ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
+              if (ch->entchannel == CHAN_STREAM)
+              {
+                ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 16348, 4);
+              }
+              else
+              {
+                ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
+              }
             }
 
             ConfigureSource(ch, sc);
@@ -358,6 +373,10 @@ namespace MetaAudio
         al_listener.setPosition(AL_UnpackVector(origin));
         al_listener.setOrientation(alure_orientation);
 
+        m_sa_listener.pos = AL_UnpackVector(origin);
+        m_sa_listener.ahead = alure_orientation.first;
+        m_sa_listener.up = alure_orientation.second;
+
         int roomtype = 0;
         bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
         roomtype = underwater ? settings.ReverbUnderwaterType() : settings.ReverbType();
@@ -395,16 +414,17 @@ namespace MetaAudio
 
   void AudioEngine::ConfigureSource(aud_channel_t* channel, aud_sfxcache_t* audioData)
   {
-    channel->sound_source->SetOffset(channel->start);
-    channel->sound_source->SetPitch(channel->pitch);
-    channel->sound_source->SetRolloffFactors(channel->attenuation, channel->attenuation);
-    channel->sound_source->SetDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
-    channel->sound_source->SetAirAbsorptionFactor(1.0f);
+    auto& source = channel->sound_source;
+    source->SetOffset(channel->start);
+    source->SetPitch(channel->pitch);
+    source->SetRolloffFactors(channel->attenuation, channel->attenuation);
+    source->SetDistanceRange(0.0f, 1000.0f * AL_UnitToMeters);
+    source->SetAirAbsorptionFactor(1.0f);
 
     // Should also set source priority
     if (audioData)
     {
-      channel->sound_source->SetLooping(audioData->looping);
+      source->SetLooping(audioData->looping);
     }
 
     SND_Spatialize(channel, true);
@@ -529,9 +549,28 @@ namespace MetaAudio
     }
     else
     {
-      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming)
+      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming || (m_steamaudio && sa_meshloader->CurrentEnvironment()))
       {
-        ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
+        if (m_steamaudio)
+        {
+          size_t framesize = 1024;
+          auto name = sc->buffer.getName();
+          auto decoder = alure::MakeShared<SteamAudioSoundDecoder>(
+            m_steamaudio,
+            sa_meshloader,
+            al_context->createDecoder(sc->buffer.getName()),
+            nullptr,
+            nullptr,
+            framesize
+            );
+          decoder->SetListener(m_sa_listener.pos, m_sa_listener.ahead, m_sa_listener.up);
+          ch->sound_source = alure::MakeShared<SteamAudioSoundSource>(decoder, al_context->createSource(), framesize, 2);
+          //ch->sound_source = SoundSourceFactory::GetStreamingSource(decoder, al_context->createSource(), framesize, 2);
+        }
+        else
+        {
+          ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
+        }
       }
       else
       {
@@ -722,7 +761,7 @@ namespace MetaAudio
 
   void AudioEngine::SteamAudio_Init()
   {
-    m_steamaudio = std::make_shared<SteamAudio>();
+    m_steamaudio = alure::MakeShared<SteamAudio>();
 
     if (m_steamaudio->iplCleanup != nullptr)
     {
@@ -733,7 +772,7 @@ namespace MetaAudio
         delete context;
         throw std::exception("Error creating SA context: " + error);
       }
-      sa_context = std::shared_ptr<IPLhandle>(context, [=](IPLhandle* handle) { m_steamaudio->iplDestroyContext(handle); delete handle; });
+      sa_context = alure::SharedPtr<IPLhandle>(context, [=](IPLhandle* handle) { m_steamaudio->iplDestroyContext(handle); delete handle; });
       sa_simulationSettings.ambisonicsOrder = 1;
       sa_simulationSettings.bakingBatchSize = 1;
       sa_simulationSettings.irDuration = 1;
@@ -745,7 +784,7 @@ namespace MetaAudio
       sa_simulationSettings.numRays = 4096;
       sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
       sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
-      sa_meshloader = std::make_shared<SteamAudioMapMeshLoader>(m_steamaudio, sa_context, sa_simulationSettings);
+      sa_meshloader = alure::MakeShared<SteamAudioMapMeshLoader>(m_steamaudio, sa_context, sa_simulationSettings);
     }
   }
 

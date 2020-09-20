@@ -13,6 +13,7 @@ namespace MetaAudio
   private:
     const size_t FREQUENCY = 48000;
     const alure::ChannelConfig OUTPUT_CHANNEL_CONFIG = alure::ChannelConfig::Stereo; // TODO: add support for optional BFormat3D when context supports it
+    const size_t NUM_OCCLUSION_SAMPLES = 128;
 
     size_t m_frame_size = 0;
     alure::SharedPtr<SteamAudio> m_steamaudio = nullptr;
@@ -24,7 +25,6 @@ namespace MetaAudio
 
     alure::SharedPtr<IPLhandle> m_binaural_effect;
     alure::SharedPtr<IPLhandle> m_amb_binaural_effect;
-    alure::SharedPtr<IPLhandle> m_direct_effect = nullptr;
     alure::SharedPtr<IPLhandle> m_conv_effect;
 
     size_t GetChannelQuantity(alure::ChannelConfig channels);
@@ -33,10 +33,23 @@ namespace MetaAudio
 
     IPLChannelLayoutType GetChannelLayoutType(alure::ChannelConfig channels);
 
-    IPLAudioFormat m_input{};
-    IPLAudioFormat m_output{};
-    IPLAudioFormat m_intermediate_output{};
+    struct
+    {
+      IPLAudioFormat format{};
+      alure::Vector<float> data;
+      alure::SharedPtr<IPLhandle> handle = nullptr;
+    } m_direct_effect;
 
+    struct
+    {
+      alure::Vector3 position{};
+      alure::Vector3 ahead{};
+      alure::Vector3 up{};
+    } m_listener{};
+    float m_source_radius = 0;
+    bool m_looping = false;
+    alure::Vector3 m_position{};
+    bool m_relative = false;
 
   public:
     SteamAudioSoundDecoder(
@@ -57,5 +70,13 @@ namespace MetaAudio
     uint64_t getLength() const noexcept override;
     bool seek(uint64_t pos) noexcept override;
     ALuint read(ALvoid* ptr, ALuint count) noexcept override;
+
+    void SetListener(alure::Vector3 position, alure::Vector3 ahead, alure::Vector3 up);
+
+    void SetSourceRadius(float radius);
+
+    void SetLooping(bool looping);
+    void SetPosition(alure::Vector3 position);
+    void SetRelative(bool relative);
   };
 }

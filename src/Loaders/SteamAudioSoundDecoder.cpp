@@ -18,20 +18,15 @@ namespace MetaAudio
       m_decoder = alure::MakeShared<SoxrDecoder>(m_decoder, FREQUENCY);
     }
 
-    m_input.numSpeakers = GetChannelQuantity(m_decoder->getChannelConfig());
-    m_input.channelLayout = GetChannelLayout(m_decoder->getChannelConfig());
-    m_input.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
-    m_input.channelLayoutType = GetChannelLayoutType(m_decoder->getChannelConfig());
+    m_direct_effect.format.numSpeakers = GetChannelQuantity(m_decoder->getChannelConfig());
+    m_direct_effect.format.numSpeakers = GetChannelLayout(m_decoder->getChannelConfig());
+    m_direct_effect.format.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
+    m_direct_effect.format.channelLayoutType = GetChannelLayoutType(m_decoder->getChannelConfig());
 
-    m_output.numSpeakers = GetChannelQuantity(OUTPUT_CHANNEL_CONFIG);
-    m_output.channelLayout = GetChannelLayout(OUTPUT_CHANNEL_CONFIG);
-    m_output.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
-    m_output.channelLayoutType = GetChannelLayoutType(OUTPUT_CHANNEL_CONFIG);
-
-    m_intermediate_output.numSpeakers = GetChannelQuantity(OUTPUT_CHANNEL_CONFIG);
-    m_intermediate_output.channelLayout = GetChannelLayout(OUTPUT_CHANNEL_CONFIG);
-    m_intermediate_output.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_DEINTERLEAVED;
-    m_intermediate_output.channelLayoutType = GetChannelLayoutType(OUTPUT_CHANNEL_CONFIG);
+    //m_direct_effect.output.numSpeakers = GetChannelQuantity(OUTPUT_CHANNEL_CONFIG);
+    //m_direct_effect.output.channelLayout = GetChannelLayout(OUTPUT_CHANNEL_CONFIG);
+    //m_direct_effect.output.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
+    //m_direct_effect.output.channelLayoutType = GetChannelLayoutType(OUTPUT_CHANNEL_CONFIG);
 
     IPLRenderingSettings settings;
     settings.frameSize = m_frame_size;
@@ -40,13 +35,18 @@ namespace MetaAudio
 
     {
         auto effect = new IPLhandle;
-        auto error = m_steamaudio->iplCreateDirectSoundEffect(m_input, m_output, settings, effect);
+        auto error = m_steamaudio->iplCreateDirectSoundEffect(m_direct_effect.format, m_direct_effect.format, settings, effect);
         if (error)
         {
           delete effect;
           throw std::runtime_error("Unable to create direct effect. Error: " + std::to_string(error));
         }
-        m_direct_effect = alure::SharedPtr<IPLhandle>(effect, [=](IPLhandle* effect) { m_steamaudio->iplDestroyDirectSoundEffect(effect); delete effect; });
+        m_direct_effect.handle = alure::SharedPtr<IPLhandle>(effect,
+          [=](IPLhandle* effect)
+          {
+            m_steamaudio->iplDestroyDirectSoundEffect(effect);
+            delete effect;
+          });
     }
 
     //auto context = alure::Context::GetCurrent();
@@ -63,7 +63,8 @@ namespace MetaAudio
 
   alure::ChannelConfig SteamAudioSoundDecoder::getChannelConfig() const noexcept
   {
-    return OUTPUT_CHANNEL_CONFIG;
+//    return OUTPUT_CHANNEL_CONFIG;
+    return m_decoder->getChannelConfig();
   }
 
   alure::SampleType SteamAudioSoundDecoder::getSampleType() const noexcept
@@ -88,54 +89,109 @@ namespace MetaAudio
 
   bool SteamAudioSoundDecoder::seek(uint64_t pos) noexcept
   {
-    m_steamaudio->iplFlushDirectSoundEffect(*m_direct_effect);
+    m_steamaudio->iplFlushDirectSoundEffect(*m_direct_effect.handle);
 
     return m_decoder->seek(pos);
   }
 
   ALuint SteamAudioSoundDecoder::read(ALvoid* ptr, ALuint count) noexcept
   {
+    if (!count) return 0; // TODO: actually flushing
+
     alure::Vector<ALubyte> input_data(alure::FramesToBytes(count, m_decoder->getChannelConfig(), m_decoder->getSampleType()));
     auto input_count = m_decoder->read(input_data.data(), count);
     input_data.resize(alure::FramesToBytes(input_count,m_decoder->getChannelConfig(), m_decoder->getSampleType()));
 
-    IPLSource source{ 0.0f, 0.0f, 0.0f };
+    IPLSource source{};
+    if (m_relative)
+    {
+      source.position = { m_listener.position[0] - m_position[0], m_listener.position[1] - m_position[1], m_listener.position[2] - m_position[2] };
+    }
+    else
+    {
+      source.position = { m_position[0], m_position[1], m_position[2] };
+    }
+    source.right = { 0.0f, 0.0f, 1.0f };
+    source.up = { 0.0f, 1.0f, 0.0f };
+
     auto env = m_mesh_loader->CurrentEnvironment();
-    IPLDirectSoundPath sound_path{};
-    sound_path = m_steamaudio->iplGetDirectSoundPath(
-      *env,
-      { 0.0f, 0.0f, 0.0f },
-      { 1.0f, 0.0f, 0.0f },
-      { 0.0f, 1.0f, 0.0f },
-      source,
-      1.0f,
-      10,
-      IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY,
-      IPLDirectOcclusionMethod::IPL_DIRECTOCCLUSION_VOLUMETRIC
-    );
+    if (env)
+    {
+      IPLDirectSoundPath direct_path{};
+      direct_path = m_steamaudio->iplGetDirectSoundPath(
+        *env,
+        { m_listener.position[0], m_listener.position[1], m_listener.position[2] },
+        { m_listener.ahead[0], m_listener.ahead[1], m_listener.ahead[2] },
+        { m_listener.up[0], m_listener.up[1], m_listener.up[2] },
+        source,
+        m_source_radius,
+        NUM_OCCLUSION_SAMPLES,
+        IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY,
+        IPLDirectOcclusionMethod::IPL_DIRECTOCCLUSION_VOLUMETRIC
+      );
 
-    IPLDirectSoundEffectOptions opts{};
-    opts.applyAirAbsorption = IPL_TRUE;
-    opts.applyDistanceAttenuation = IPL_TRUE;
-    opts.applyDirectivity = IPL_FALSE;
-    opts.directOcclusionMode = IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY;
+      IPLDirectSoundEffectOptions opts{};
+      opts.applyAirAbsorption = IPL_TRUE;
+      opts.applyDistanceAttenuation = IPL_TRUE;
+      opts.applyDirectivity = IPL_FALSE;
+      opts.directOcclusionMode = IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY;
 
-    IPLAudioBuffer input{};
-    auto input_data_float = alure::ArrayView<ALubyte>(input_data).reinterpret_as<float>();
-    input.interleavedBuffer = const_cast<float*>(input_data_float.data());
-    input.numSamples = input_count * GetChannelQuantity(m_decoder->getChannelConfig());
-    input.format = m_input;
+      IPLAudioBuffer input{};
+      auto input_data_float = alure::ArrayView<ALubyte>(input_data).reinterpret_as<float>();
+      input.format = m_direct_effect.format;
+      input.numSamples = input_count * GetChannelQuantity(m_decoder->getChannelConfig());
+      input.interleavedBuffer = const_cast<float*>(input_data_float.data());
 
-    IPLAudioBuffer output{};
-    input.interleavedBuffer = reinterpret_cast<float*>(ptr);
-    input.numSamples = count * GetChannelQuantity(OUTPUT_CHANNEL_CONFIG);
-    input.format = m_output;
+      IPLAudioBuffer output{};
+      output.format = m_direct_effect.format;
+      output.numSamples = count * GetChannelQuantity(m_decoder->getChannelConfig());
+      //output.interleavedBuffer = static_cast<float*>(ptr);
 
-    m_steamaudio->iplApplyDirectSoundEffect(*m_direct_effect, input, sound_path, opts, output);
+      alure::Vector<float> data(output.numSamples);
+      output.interleavedBuffer = data.data();
 
-    return count;
+      m_steamaudio->iplApplyDirectSoundEffect(*m_direct_effect.handle, input, direct_path, opts, output);
+
+      memcpy_s(
+        ptr, alure::FramesToBytes(count, m_decoder->getChannelConfig(), alure::SampleType::Float32),
+        data.data(), data.size() * sizeof(float)
+      );
+
+      return count;
+    }
+
+    return 0; // actually should never get here when fully implemented
   }
 
+  void SteamAudioSoundDecoder::SetListener(alure::Vector3 position, alure::Vector3 ahead, alure::Vector3 up)
+  {
+    m_listener.position = position;
+    m_listener.ahead = ahead;
+    m_listener.up = up;
+  }
+
+  void SteamAudioSoundDecoder::SetSourceRadius(float radius)
+  {
+    if (!(radius < 0.0f))
+    {
+      m_source_radius = radius;
+    }
+  }
+
+  void SteamAudioSoundDecoder::SetLooping(bool looping)
+  {
+    m_looping = looping;
+  }
+
+  void SteamAudioSoundDecoder::SetPosition(alure::Vector3 position)
+  {
+    m_position = position;
+  }
+
+  void SteamAudioSoundDecoder::SetRelative(bool relative)
+  {
+    m_relative = relative;
+  }
 
   size_t SteamAudioSoundDecoder::GetChannelQuantity(alure::ChannelConfig channels)
   {
