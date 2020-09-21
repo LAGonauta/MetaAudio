@@ -29,6 +29,16 @@ namespace MetaAudio
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplApplyDirectSoundEffect);
       SetSteamAudioFunctionPointer(hSteamAudioInstance, iplGetMixedEnvironmentalAudio);
 
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateBinauralRenderer);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplDestroyBinauralRenderer);
+
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateAmbisonicsBinauralEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplApplyAmbisonicsBinauralEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplDestroyAmbisonicsBinauralEffect);
+
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplCreateBinauralEffect);
+      SetSteamAudioFunctionPointer(hSteamAudioInstance, iplApplyBinauralEffect);
+
       library_instance = std::shared_ptr<HINSTANCE>(new HINSTANCE(hSteamAudioInstance), [&](HINSTANCE* handle) { iplCleanup(); FreeLibrary(*handle); delete handle; });
 
       gEngfuncs.Con_Printf("Loaded phonon.dll, SteamAudio is available.");

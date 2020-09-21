@@ -40,7 +40,7 @@ namespace MetaAudio
 
     IPLSimulationSettings sa_simul_settings;
     alure::SharedPtr<SteamAudio> sa = nullptr;
-    alure::SharedPtr<IPLhandle> sa_context = nullptr;
+    alure::SharedPtr<IPLhandle> m_sa_context = nullptr;
 
     alure::SharedPtr<ProcessedMap> current_map;
 
@@ -53,7 +53,7 @@ namespace MetaAudio
     // the attenuation `dB/m`, not how much is transmitted per meter. 
     std::array<IPLMaterial, 1> materials{ {0.10f, 0.20f, 0.30f, 0.05f, 2.0f, 4.0f, (1.0f / 0.15f)} };
   public:
-    SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> sa_context, IPLSimulationSettings simulSettings);
+    SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> m_sa_context, IPLSimulationSettings simulSettings);
 
     // Checks if map is current , if not update it
     void update();

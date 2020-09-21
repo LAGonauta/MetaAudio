@@ -18,8 +18,8 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> sa_context, IPLSimulationSettings simulSettings)
-    : sa_simul_settings(simulSettings), sa_context(sa_context), sa(sa)
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(alure::SharedPtr<SteamAudio> sa, alure::SharedPtr<IPLhandle> m_sa_context, IPLSimulationSettings simulSettings)
+    : sa_simul_settings(simulSettings), m_sa_context(m_sa_context), sa(sa)
   {
     current_map = std::make_unique<ProcessedMap>();
   }
@@ -147,7 +147,7 @@ namespace MetaAudio
         }
 
         IPLhandle* scene = new IPLhandle;
-        auto error = sa->iplCreateScene(*sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, scene);
+        auto error = sa->iplCreateScene(*m_sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, scene);
         if (error)
         {
           delete scene;
@@ -165,7 +165,7 @@ namespace MetaAudio
         alure::SharedPtr<IPLhandle> meshPtr(staticmesh, [&](IPLhandle* handle) { if (handle) sa->iplDestroyStaticMesh(handle); delete handle; });
 
         IPLhandle* env = new IPLhandle;
-        error = sa->iplCreateEnvironment(*sa_context, nullptr, sa_simul_settings, *scenePtr, nullptr, env);
+        error = sa->iplCreateEnvironment(*m_sa_context, nullptr, sa_simul_settings, *scenePtr, nullptr, env);
         if (error)
         {
           delete env;

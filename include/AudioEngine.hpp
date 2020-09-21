@@ -48,16 +48,17 @@ namespace MetaAudio
     bool OpenAL_Init();
 
     // SteamAudio
-    std::shared_ptr<SteamAudio> m_steamaudio = nullptr;
-    std::shared_ptr<IPLhandle> sa_context = nullptr;
-    IPLSimulationSettings sa_simulationSettings{};
+    alure::SharedPtr<SteamAudio> m_steamaudio = nullptr;
+    alure::SharedPtr<IPLhandle> m_sa_context = nullptr;
+    IPLSimulationSettings m_sa_simulationSettings{};
 
     aud_channel_t sa_wetaudio;
 
     void SteamAudio_Init();
-    std::shared_ptr<IOcclusionCalculator> GetOccluder();
+    alure::SharedPtr<IOcclusionCalculator> GetOccluder();
 
-    std::shared_ptr<SteamAudioMapMeshLoader> sa_meshloader = nullptr;
+    alure::SharedPtr<SteamAudioMapMeshLoader> m_sa_meshloader = nullptr;
+    alure::SharedPtr<IPLhandle> m_sa_binaural_renderer = nullptr;
 
     struct
     {

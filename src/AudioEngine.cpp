@@ -313,7 +313,7 @@ namespace MetaAudio
 
         // Update Alure's OpenAL context at the start of processing.
         al_context->update();
-        sa_meshloader->update();
+        m_sa_meshloader->update();
         channel_pool->ClearFinished();
 
         // Print buffer and clear it.
@@ -549,7 +549,7 @@ namespace MetaAudio
     }
     else
     {
-      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming || (m_steamaudio && sa_meshloader->CurrentEnvironment()))
+      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming || (m_steamaudio && m_sa_meshloader->CurrentEnvironment()))
       {
         if (m_steamaudio)
         {
@@ -557,9 +557,9 @@ namespace MetaAudio
           auto name = sc->buffer.getName();
           auto decoder = alure::MakeShared<SteamAudioSoundDecoder>(
             m_steamaudio,
-            sa_meshloader,
+            m_sa_meshloader,
             al_context->createDecoder(sc->buffer.getName()),
-            nullptr,
+            m_sa_binaural_renderer,
             nullptr,
             framesize
             );
@@ -765,26 +765,49 @@ namespace MetaAudio
 
     if (m_steamaudio->iplCleanup != nullptr)
     {
-      IPLhandle* context = new IPLhandle;
-      auto error = m_steamaudio->iplCreateContext(SteamAudioLog, nullptr, nullptr, context);
-      if (error)
       {
-        delete context;
-        throw std::exception("Error creating SA context: " + error);
+        auto context = new IPLhandle;
+        auto error = m_steamaudio->iplCreateContext(SteamAudioLog, nullptr, nullptr, context);
+        if (error)
+        {
+          delete context;
+          throw std::exception(("Error creating SA context: " + std::to_string(error)).c_str());
+        }
+        m_sa_context = alure::SharedPtr<IPLhandle>(context, [=](IPLhandle* handle) { m_steamaudio->iplDestroyContext(handle); delete handle; });
       }
-      sa_context = alure::SharedPtr<IPLhandle>(context, [=](IPLhandle* handle) { m_steamaudio->iplDestroyContext(handle); delete handle; });
-      sa_simulationSettings.ambisonicsOrder = 1;
-      sa_simulationSettings.bakingBatchSize = 1;
-      sa_simulationSettings.irDuration = 1;
-      sa_simulationSettings.irradianceMinDistance = 0.1f;
-      sa_simulationSettings.maxConvolutionSources = 1;
-      sa_simulationSettings.numBounces = 2;
-      sa_simulationSettings.numDiffuseSamples = 1024;
-      sa_simulationSettings.maxNumOcclusionSamples = 512;
-      sa_simulationSettings.numRays = 4096;
-      sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
-      sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
-      sa_meshloader = alure::MakeShared<SteamAudioMapMeshLoader>(m_steamaudio, sa_context, sa_simulationSettings);
+
+      m_sa_simulationSettings.ambisonicsOrder = 1;
+      m_sa_simulationSettings.bakingBatchSize = 1;
+      m_sa_simulationSettings.irDuration = 1;
+      m_sa_simulationSettings.irradianceMinDistance = 0.1f;
+      m_sa_simulationSettings.maxConvolutionSources = 1;
+      m_sa_simulationSettings.numBounces = 2;
+      m_sa_simulationSettings.numDiffuseSamples = 1024;
+      m_sa_simulationSettings.maxNumOcclusionSamples = 512;
+      m_sa_simulationSettings.numRays = 4096;
+      m_sa_simulationSettings.numThreads = std::thread::hardware_concurrency();
+      m_sa_simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_PHONON;
+
+      m_sa_meshloader = alure::MakeShared<SteamAudioMapMeshLoader>(m_steamaudio, m_sa_context, m_sa_simulationSettings);
+
+      {
+        IPLRenderingSettings settings{};
+        settings.convolutionType = IPLConvolutionType::IPL_CONVOLUTIONTYPE_PHONON;
+        settings.frameSize = 1024;
+        settings.samplingRate = 48000;
+
+        IPLHrtfParams params{};
+        params.type = IPLHrtfDatabaseType::IPL_HRTFDATABASETYPE_DEFAULT;
+
+        auto bin_renderer = new IPLhandle;
+        auto error = m_steamaudio->iplCreateBinauralRenderer(*m_sa_context, settings, params, bin_renderer);
+        if (error)
+        {
+          delete bin_renderer;
+          throw std::exception(("Error creating bin renderer: " + std::to_string(error)).c_str());
+        }
+        m_sa_binaural_renderer = alure::SharedPtr<IPLhandle>(bin_renderer, [=](IPLhandle* handle) { m_steamaudio->iplDestroyBinauralRenderer(handle); delete handle; });
+      }
     }
   }
 
@@ -811,7 +834,7 @@ namespace MetaAudio
   {
     if (m_steamaudio->IsLoaded() && settings.Occluder() == OccluderType::SteamAudio)
     {
-      return std::make_shared<SteamAudioOcclusionCalculator>(m_steamaudio, sa_meshloader, *gEngfuncs.pEventAPI);
+      return std::make_shared<SteamAudioOcclusionCalculator>(m_steamaudio, m_sa_meshloader, *gEngfuncs.pEventAPI);
     }
     else
     {

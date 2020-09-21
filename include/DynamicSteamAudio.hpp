@@ -29,6 +29,17 @@ namespace MetaAudio
     decltype(&iplApplyDirectSoundEffect) iplApplyDirectSoundEffect = nullptr;
     decltype(&iplGetMixedEnvironmentalAudio) iplGetMixedEnvironmentalAudio = nullptr;
 
+    decltype(&iplCreateBinauralRenderer) iplCreateBinauralRenderer = nullptr;
+    decltype(&iplDestroyBinauralRenderer) iplDestroyBinauralRenderer = nullptr;
+
+    decltype(&iplCreateAmbisonicsBinauralEffect) iplCreateAmbisonicsBinauralEffect = nullptr;
+    decltype(&iplApplyAmbisonicsBinauralEffect) iplApplyAmbisonicsBinauralEffect = nullptr;
+    decltype(&iplDestroyAmbisonicsBinauralEffect) iplDestroyAmbisonicsBinauralEffect = nullptr;
+
+    decltype(&iplCreateBinauralEffect) iplCreateBinauralEffect = nullptr;
+    decltype(&iplApplyBinauralEffect) iplApplyBinauralEffect = nullptr;
+    decltype(&iplDestroyBinauralEffect) iplDestroyBinauralEffect = nullptr;
+
     SteamAudio();
     bool IsLoaded();
   };

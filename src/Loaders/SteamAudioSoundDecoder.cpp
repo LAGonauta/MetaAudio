@@ -18,11 +18,6 @@ namespace MetaAudio
       m_decoder = alure::MakeShared<SoxrDecoder>(m_decoder, FREQUENCY);
     }
 
-    m_direct_effect.format.numSpeakers = GetChannelQuantity(m_decoder->getChannelConfig());
-    m_direct_effect.format.numSpeakers = GetChannelLayout(m_decoder->getChannelConfig());
-    m_direct_effect.format.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
-    m_direct_effect.format.channelLayoutType = GetChannelLayoutType(m_decoder->getChannelConfig());
-
     //m_direct_effect.output.numSpeakers = GetChannelQuantity(OUTPUT_CHANNEL_CONFIG);
     //m_direct_effect.output.channelLayout = GetChannelLayout(OUTPUT_CHANNEL_CONFIG);
     //m_direct_effect.output.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
@@ -34,6 +29,11 @@ namespace MetaAudio
     settings.convolutionType = IPLConvolutionType::IPL_CONVOLUTIONTYPE_PHONON;
 
     {
+        m_direct_effect.format.numSpeakers = GetChannelQuantity(m_decoder->getChannelConfig());
+        m_direct_effect.format.channelLayout = GetChannelLayout(m_decoder->getChannelConfig());
+        m_direct_effect.format.channelOrder = IPLChannelOrder::IPL_CHANNELORDER_INTERLEAVED;
+        m_direct_effect.format.channelLayoutType = GetChannelLayoutType(m_decoder->getChannelConfig());
+
         auto effect = new IPLhandle;
         auto error = m_steamaudio->iplCreateDirectSoundEffect(m_direct_effect.format, m_direct_effect.format, settings, effect);
         if (error)
@@ -47,6 +47,11 @@ namespace MetaAudio
             m_steamaudio->iplDestroyDirectSoundEffect(effect);
             delete effect;
           });
+    }
+
+    {
+      auto effect = new IPLhandle;
+      auto error = m_steamaudio->iplCreateBinauralEffect(*m_binaural_renderer, m_direct_effect.format, m_binaural_effect.format, effect);
     }
 
     //auto context = alure::Context::GetCurrent();
@@ -105,7 +110,7 @@ namespace MetaAudio
     IPLSource source{};
     if (m_relative)
     {
-      source.position = { m_listener.position[0] - m_position[0], m_listener.position[1] - m_position[1], m_listener.position[2] - m_position[2] };
+      source.position = { m_listener.position[0] + m_position[0], m_listener.position[1] + m_position[1], m_listener.position[2] + m_position[2] };
     }
     else
     {
@@ -137,25 +142,15 @@ namespace MetaAudio
       opts.directOcclusionMode = IPLDirectOcclusionMode::IPL_DIRECTOCCLUSION_TRANSMISSIONBYFREQUENCY;
 
       IPLAudioBuffer input{};
-      auto input_data_float = alure::ArrayView<ALubyte>(input_data).reinterpret_as<float>();
       input.format = m_direct_effect.format;
       input.numSamples = input_count * GetChannelQuantity(m_decoder->getChannelConfig());
-      input.interleavedBuffer = const_cast<float*>(input_data_float.data());
+      input.interleavedBuffer = static_cast<float*>(static_cast<void*>(input_data.data()));
 
-      IPLAudioBuffer output{};
-      output.format = m_direct_effect.format;
-      output.numSamples = count * GetChannelQuantity(m_decoder->getChannelConfig());
-      //output.interleavedBuffer = static_cast<float*>(ptr);
+      m_steamaudio->iplApplyDirectSoundEffect(*m_direct_effect.handle, input, direct_path, opts, input);
 
-      alure::Vector<float> data(output.numSamples);
-      output.interleavedBuffer = data.data();
 
-      m_steamaudio->iplApplyDirectSoundEffect(*m_direct_effect.handle, input, direct_path, opts, output);
 
-      memcpy_s(
-        ptr, alure::FramesToBytes(count, m_decoder->getChannelConfig(), alure::SampleType::Float32),
-        data.data(), data.size() * sizeof(float)
-      );
+
 
       return count;
     }

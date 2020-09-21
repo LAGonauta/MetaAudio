@@ -23,8 +23,6 @@ namespace MetaAudio
     alure::SharedPtr<IPLhandle> m_binaural_renderer = nullptr;
     alure::SharedPtr<IPLhandle> m_env_renderer = nullptr;
 
-    alure::SharedPtr<IPLhandle> m_binaural_effect;
-    alure::SharedPtr<IPLhandle> m_amb_binaural_effect;
     alure::SharedPtr<IPLhandle> m_conv_effect;
 
     size_t GetChannelQuantity(alure::ChannelConfig channels);
@@ -39,6 +37,14 @@ namespace MetaAudio
       alure::Vector<float> data;
       alure::SharedPtr<IPLhandle> handle = nullptr;
     } m_direct_effect;
+
+    struct
+    {
+      IPLAudioFormat format{};
+      alure::Vector<float> data_input;
+      alure::Vector<float> data;
+      alure::SharedPtr<IPLhandle> handle = nullptr;
+    } m_binaural_effect;
 
     struct
     {
