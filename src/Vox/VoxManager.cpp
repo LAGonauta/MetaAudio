@@ -402,7 +402,7 @@ namespace MetaAudio
 
   aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
   {
-    auto check_spaces = [](auto& value) { return std::isspace(value); };
+    auto check_spaces = [](unsigned char value) { return std::isspace(value); };
 
     if (pszin.empty() ||
         std::all_of(pszin.begin(), pszin.end(), check_spaces))
