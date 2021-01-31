@@ -56,27 +56,15 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/pm_shared
 )
 
-if (NOT CMAKE_VERSION VERSION_LESS "3.13")
-    # CMP0077: option() honors normal variables
-    # https://cmake.org/cmake/help/latest/policy/CMP0077.html
-    cmake_policy(SET CMP0077 NEW)
-endif()
-
-OPTION(ALSOFT_EXAMPLES OFF)
-OPTION(ALSOFT_TESTS OFF)
-OPTION(ALSOFT_UTILS OFF)
 add_subdirectory(externals/openal-soft)
 
-OPTION(ALURE_INSTALL OFF)
-OPTION(ALURE_BUILD_STATIC OFF)
-OPTION(ALURE_ENABLE_WAVE OFF)
-OPTION(ALURE_ENABLE_VORBIS OFF)
-OPTION(ALURE_ENABLE_FLAC OFF)
-SET(ALURE_ENABLE_SNDFILE ON)
-SET(SNDFILE_LIBRARY "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\lib\\libsndfile-1.lib")
-SET(SNDFILE_INCLUDE_DIR "C:\\Program Files (x86)\\Mega-Nerd\\libsndfile\\include")
-OPTION(ALURE_BUILD_EXAMPLES OFF)
 add_subdirectory(externals/alure)
+
+if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    target_compile_options(alure2 PUBLIC "/Zc:__cplusplus")
+endif()
+
+set_property(TARGET alure2 PROPERTY CXX_STANDARD 17)
 
 add_subdirectory(externals/metahook)
 

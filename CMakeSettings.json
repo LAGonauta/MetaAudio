@@ -7,7 +7,7 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-DSNDFILE_LIBRARY=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\lib\\\\libsndfile-1.lib\" -DSNDFILE_INCLUDE_DIR=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\include\" -DALSOFT_EXAMPLES=OFF -DALSOFT_UTILS=OFF -DALURE_INSTALL=OFF -DALURE_BUILD_STATIC=OFF -DALURE_ENABLE_WAVE=OFF -DALURE_ENABLE_VORBIS=OFF -DALURE_ENABLE_FLAC=OFF -DALURE_ENABLE_SNDFILE=ON -DALURE_BUILD_EXAMPLES=OFF",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "variables": []
@@ -19,7 +19,7 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-DSNDFILE_LIBRARY=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\lib\\\\libsndfile-1.lib\" -DSNDFILE_INCLUDE_DIR=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\include\" -DALSOFT_EXAMPLES=OFF -DALSOFT_UTILS=OFF -DALURE_INSTALL=OFF -DALURE_BUILD_STATIC=OFF -DALURE_ENABLE_WAVE=OFF -DALURE_ENABLE_VORBIS=OFF -DALURE_ENABLE_FLAC=OFF -DALURE_ENABLE_SNDFILE=ON -DALURE_BUILD_EXAMPLES=OFF",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "variables": []
