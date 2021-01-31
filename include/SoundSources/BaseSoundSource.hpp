@@ -9,99 +9,44 @@ namespace MetaAudio
     alure::AutoObj<alure::Source> m_source;
 
   public:
+    ~BaseSoundSource();
+
     virtual void Play() = 0;
 
-    virtual bool IsPlaying()
-    {
-      return m_source->isPlaying();
-    }
+    virtual bool IsPlaying();
 
-    void SetPosition(alure::Vector3 position)
-    {
-      m_source->setPosition(position);
-    }
+    void SetPosition(alure::Vector3 position);
 
-    void SetRelative(bool value)
-    {
-      m_source->setRelative(value);
-    }
+    void SetRelative(bool value);
 
-    virtual void SetVelocity(alure::Vector3 velocity)
-    {
-      m_source->setVelocity(velocity);
-    }
+    virtual void SetVelocity(alure::Vector3 velocity);
 
-    virtual void SetRadius(float radius)
-    {
-      m_source->setRadius(radius);
-    }
+    virtual void SetRadius(float radius);
 
-    void SetPitch(float pitch)
-    {
-      m_source->setPitch(pitch);
-    }
+    void SetPitch(float pitch);
 
-    void SetGain(float gain)
-    {
-      m_source->setGain(gain);
-    }
+    void SetGain(float gain);
 
-    void SetLooping(bool value)
-    {
-      m_source->setLooping(value);
-    }
+    void SetLooping(bool value);
 
-    void Stop()
-    {
-      m_source->stop();
-    }
+    bool IsLooping();
 
-    void SetDirectFilter(const alure::FilterParams& filter)
-    {
-      m_source->setDirectFilter(filter);
-    }
+    void Stop();
 
-    void SetDopplerFactor(float factor)
-    {
-      m_source->setDopplerFactor(factor);
-    }
+    void SetDirectFilter(const alure::FilterParams& filter);
 
-    void SetAuxiliarySendFilter(alure::AuxiliaryEffectSlot auxslot, ALuint send, const alure::FilterParams& filter)
-    {
-      m_source->setAuxiliarySendFilter(auxslot, send, filter);
-    }
+    void SetDopplerFactor(float factor);
 
-    void SetOffset(uint64_t offset)
-    {
-      m_source->setOffset(offset);
-    }
+    void SetAuxiliarySendFilter(alure::AuxiliaryEffectSlot auxslot, ALuint send, const alure::FilterParams& filter);
 
-    void SetRolloffFactors(float factor, float roomfactor)
-    {
-      m_source->setRolloffFactors(factor, roomfactor);
-    }
+    void SetOffset(uint64_t offset);
 
-    void SetDistanceRange(float refdist, float maxdist)
-    {
-      m_source->setDistanceRange(refdist, maxdist);
-    }
+    void SetRolloffFactors(float factor, float roomfactor);
 
-    void SetAirAbsorptionFactor(float factor)
-    {
-      m_source->setAirAbsorptionFactor(factor);
-    }
+    void SetDistanceRange(float refdist, float maxdist);
 
-    uint64_t GetSampleOffset()
-    {
-      return m_source->getSampleOffset();
-    }
+    void SetAirAbsorptionFactor(float factor);
 
-    ~BaseSoundSource()
-    {
-      if (m_source)
-      {
-        m_source->stop();
-      }
-    }
+    uint64_t GetSampleOffset();
   };
 }
