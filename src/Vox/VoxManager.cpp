@@ -1,4 +1,6 @@
 #include <metahook.h>
+#include <algorithm>
+#include <regex>
 #include <cctype>
 
 #include "Vox/VoxManager.hpp"
@@ -281,6 +283,11 @@ namespace MetaAudio
     return alure::String(psz, charscan_index + 1, psz.length());
   }
 
+  // Regex for matching:
+  // 1. Comma and periods
+  // 2. Words with parameters and just parameteres. For ex.: (p110 t40) clik!(p120)
+  // 3. Full words. For ex.: clik
+  static const std::regex regex_match_vox(R"([,.]|[^\s,.]*\(.+?\)|\b[^\s,.]*[^\s.,])");
   alure::Vector<alure::String> VoxManager::ParseString(const alure::String& psz)
   {
     std::vector<alure::String> words;
@@ -288,67 +295,24 @@ namespace MetaAudio
     if (!psz.length())
       return words;
 
-    // Split over space, comma, and periods.
-    // If comma or periods, add them to own slot.
-    int psz_size = psz.length();
-    int charscan_initial_index = 0;
-    int charscan_last_index = 0;
-    while (words.size() < CVOXWORDMAX && charscan_last_index < psz_size)
-    {
-      if (psz[charscan_last_index] == ' ')
+    auto matches_begin = std::sregex_iterator(psz.cbegin(), psz.cend(), regex_match_vox);
+    auto matches_end = std::sregex_iterator();
+    while (matches_begin != matches_end) {
+      auto& match = *matches_begin;
+      const alure::String& sub_match = match[0];
+      if (sub_match == ",")
       {
-        if ((charscan_last_index - 1 >= 0) &&
-          psz[charscan_last_index - 1] != ',' &&
-          psz[charscan_last_index - 1] != '.' &&
-          charscan_initial_index != charscan_last_index)
-        {
-          auto& word = words.emplace_back();
-          word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-        }
-        charscan_initial_index = charscan_last_index + 1;
+        words.push_back(voxcomma);
       }
-      else if (psz[charscan_last_index] == '(')
+      else if (sub_match == ".")
       {
-        // search for matching ')'
-        while (charscan_last_index < psz.length() && psz[charscan_last_index] != ')')
-        {
-          ++charscan_last_index;
-        }
+        words.push_back(voxperiod);
       }
-      else if (psz[charscan_last_index] == '.' || psz[charscan_last_index] == ',')
+      else
       {
-        if ((charscan_last_index - 1 >= 0) && psz[charscan_last_index - 1] != ' ')
-        {
-          auto& word = words.emplace_back();
-          word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-        }
-
-        switch (psz[charscan_last_index])
-        {
-        case ',':
-          {
-            auto& word = words.emplace_back();
-            word.assign(voxcomma);
-            break;
-          }
-
-        case '.':
-          {
-            auto& word = words.emplace_back();
-            word.assign(voxperiod);
-            break;
-          }
-        }
-        charscan_initial_index = charscan_last_index + 1;
+        words.push_back(sub_match);
       }
-      ++charscan_last_index;
-
-      // Finished parsing, add last word
-      if (charscan_last_index == psz_size)
-      {
-        auto& word = words.emplace_back();
-        word.assign(psz, charscan_initial_index, charscan_last_index - charscan_initial_index);
-      }
+      ++matches_begin;
     }
 
     return words;
@@ -438,8 +402,10 @@ namespace MetaAudio
 
   aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
   {
+    auto check_spaces = [](auto& value) { return std::isspace(value); };
+
     if (pszin.empty() ||
-        std::all_of(pszin.begin(), pszin.end(), std::isspace))
+        std::all_of(pszin.begin(), pszin.end(), check_spaces))
     {
       return nullptr;
     }
