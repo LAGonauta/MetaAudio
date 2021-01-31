@@ -34,6 +34,7 @@ namespace MetaAudio
     void ClearAllChannels();
     void ClearEntityChannels(int entnum, int entchannel);
     void ClearFinished();
+    void ClearLoopingRemovedEntities();
 
     template<class Functor>
     void ForEachChannel(Functor& lambda)

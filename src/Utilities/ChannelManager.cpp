@@ -127,6 +127,22 @@ namespace MetaAudio
     channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
   }
 
+  void ChannelManager::ClearLoopingRemovedEntities()
+  {
+    auto functor = [&](aud_channel_t& channel) {
+      if (channel.entnum == 0 || !channel.sound_source->IsLooping())
+      {
+        return false;
+      }
+
+      auto entity = gEngfuncs.GetEntityByIndex(channel.entnum);
+      return entity == nullptr;
+    };
+
+    channels.dynamic.erase(std::remove_if(channels.dynamic.begin(), channels.dynamic.end(), functor), channels.dynamic.end());
+    channels.static_.erase(std::remove_if(channels.static_.begin(), channels.static_.end(), functor), channels.static_.end());
+  }
+
   int ChannelManager::S_AlterChannel(int entnum, int entchannel, sfx_t* sfx, float fvol, float pitch, int flags)
   {
     std::function<bool(aud_channel_t& channel)> functor;
