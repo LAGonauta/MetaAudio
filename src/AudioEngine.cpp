@@ -292,7 +292,10 @@ namespace MetaAudio
 
       // Update Alure's OpenAL context at the start of processing.
       al_context->update();
-      sa_meshloader->update();
+      if (sa_meshloader)
+      {
+        sa_meshloader->update();
+      }
       channel_pool->ClearFinished();
 
       // Print buffer and clear it.
