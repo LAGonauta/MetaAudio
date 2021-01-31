@@ -33,8 +33,10 @@ set(SOURCES
     src/Utilities/ChannelManager.cpp
     src/snd_local.cpp
     src/SoundSources/SoundSourceFactory.cpp
+    src/SoundSources/BaseSoundSource.cpp
     src/SoundSources/StaticSoundSource.cpp
-    src/SoundSources/StreamingSoundSource.cpp)
+    src/SoundSources/StreamingSoundSource.cpp
+)
 
 add_library(MetaAudio SHARED ${SOURCES})
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
