@@ -22,7 +22,7 @@ namespace MetaAudio
       return;
 
     //2015-12-12 fixed a bug that a buffer in use is freed
-    if (channel_pool->IsPlaying(sfx))
+    if (channel_manager->IsPlaying(sfx))
     {
       return;
     }
@@ -217,7 +217,7 @@ namespace MetaAudio
       ch->sound_source->SetRelative(false);
       if (ch->entnum > 0 && ch->entnum < *gAudEngine.cl_num_entities)
       {
-        cl_entity_t* sent = gEngfuncs.GetEntityByIndex(ch->entnum);
+        auto sent = gEngfuncs.GetEntityByIndex(ch->entnum);
 
         if (sent && sent->model && sent->curstate.messagenum == *gAudEngine.cl_parsecount)
         {
@@ -296,7 +296,8 @@ namespace MetaAudio
       {
         sa_meshloader->update();
       }
-      channel_pool->ClearFinished();
+      channel_manager->ClearFinished();
+      channel_manager->ClearLoopingRemovedEntities();
 
       // Print buffer and clear it.
       if (dprint_buffer.length())
@@ -366,13 +367,13 @@ namespace MetaAudio
       }
       al_efx->InterplEffect(roomtype);
 
-      channel_pool->ForEachChannel([&](aud_channel_t& channel) { SND_Spatialize(&channel, false); });
+      channel_manager->ForEachChannel([&](aud_channel_t& channel) { SND_Spatialize(&channel, false); });
 
       if (snd_show && snd_show->value)
       {
         std::string output;
         size_t total = 0;
-        channel_pool->ForEachChannel([&](aud_channel_t& channel)
+        channel_manager->ForEachChannel([&](aud_channel_t& channel)
           {
             if (channel.sfx && channel.volume > 0)
             {
@@ -456,7 +457,7 @@ namespace MetaAudio
 
     if (flags & (SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH))
     {
-      if (channel_pool->S_AlterChannel(entnum, entchannel, sfx, fvol, fpitch, flags))
+      if (channel_manager->S_AlterChannel(entnum, entchannel, sfx, fvol, fpitch, flags))
         return;
 
       if (flags & SND_STOP)
@@ -471,11 +472,11 @@ namespace MetaAudio
 
     if (is_static)
     {
-      ch = channel_pool->SND_PickStaticChannel(entnum, entchannel, sfx);
+      ch = channel_manager->SND_PickStaticChannel(entnum, entchannel, sfx);
     }
     else
     {
-      ch = channel_pool->SND_PickDynamicChannel(entnum, entchannel, sfx);
+      ch = channel_manager->SND_PickDynamicChannel(entnum, entchannel, sfx);
     }
 
     if (!ch)
@@ -502,7 +503,7 @@ namespace MetaAudio
 
     if (!sc)
     {
-      channel_pool->FreeChannel(ch);
+      channel_manager->FreeChannel(ch);
       return;
     }
 
@@ -583,7 +584,7 @@ namespace MetaAudio
   {
     try
     {
-      channel_pool->ClearEntityChannels(entnum, entchannel);
+      channel_manager->ClearEntityChannels(entnum, entchannel);
     }
     catch (const std::exception& e)
     {
@@ -596,9 +597,9 @@ namespace MetaAudio
   {
     try
     {
-      if (channel_pool != nullptr)
+      if (channel_manager != nullptr)
       {
-        channel_pool->ClearAllChannels();
+        channel_manager->ClearAllChannels();
       }
     }
     catch (const std::exception& e)
@@ -789,7 +790,7 @@ namespace MetaAudio
     SteamAudio_Init();
     AL_ResetEFX();
 
-    channel_pool = alure::MakeUnique<ChannelManager>();
+    channel_manager = alure::MakeUnique<ChannelManager>();
     vox = alure::MakeUnique<VoxManager>(this, m_loader);
   }
 
@@ -810,7 +811,7 @@ namespace MetaAudio
     S_StopAllSounds(true);
     S_FlushCaches();
     al_efx.reset();
-    channel_pool.reset();
+    channel_manager.reset();
     vox.reset();
 
     alure::FileIOFactory::set(nullptr);
