@@ -382,17 +382,25 @@ namespace MetaAudio
   {
     std::array<char, 256> directory;
     g_pInterface->FileSystem->GetCurrentDirectoryA(directory.data(), directory.size());
-    std::filesystem::path filePath = directory.data();
-    filePath.append("efx-reverb.json");
 
+    auto possible_file_names = { "efx-reverb.json", "efx-reverbs.json" };
     EfxJsonReader reader;
-    auto reverbFromJson = reader.GetProperties(filePath.string());
-    for (const auto& reverb : reverbFromJson)
+    for (const auto& name : possible_file_names)
     {
-      auto index = std::get<0>(reverb);
-      if (index < presets_room.size())
+      auto filePath = alure::String(directory.data()).append(R"(\)").append(name);
+      auto reverbFromJson = reader.GetProperties(filePath);
+      for (const auto& reverb : reverbFromJson)
       {
-        presets_room[index] = std::get<1>(reverb);
+        auto index = std::get<0>(reverb);
+        if (index < presets_room.size())
+        {
+          presets_room[index] = std::get<1>(reverb);
+        }
+      }
+
+      if (reverbFromJson.size() > 0)
+      {
+        break;
       }
     }
   }
