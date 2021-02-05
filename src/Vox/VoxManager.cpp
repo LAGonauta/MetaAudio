@@ -258,29 +258,63 @@ namespace MetaAudio
     return std::nullopt;
   }
 
-  alure::String VoxManager::GetDirectory(alure::String& szpath, alure::String& psz)
+  alure::Vector<std::tuple<alure::StringView, alure::StringView>> VoxManager::GetDirectory(const alure::String& psz)
   {
+    auto ret = alure::Vector<std::tuple<alure::StringView, alure::StringView>>();
+
     if (psz.length() == 0)
     {
-      return alure::String();
-    }
-    int charscan_index = psz.length() - 1;
-
-    // scan backwards until first '/' or start of string
-    while (charscan_index > 0 && psz[charscan_index] != '/')
-    {
-      --charscan_index;
+      return ret;
     }
 
-    if (psz[charscan_index] != '/')
-    {
-      // didn't find '/', return default directory
-      szpath = "vox/";
-      return psz;
+    alure::Vector<alure::StringView> string_views;
+    { // split over '/'
+      auto haystack = alure::StringView(psz);
+      size_t current_position = 0;
+      while (current_position < haystack.length())
+      {
+        auto next_pos = haystack.find_first_of('/', current_position);
+        next_pos = next_pos == alure::StringView::npos ? next_pos : next_pos + 1;
+
+        string_views.push_back(haystack.substr(current_position, next_pos - current_position));
+
+        current_position = next_pos;
+      }
     }
 
-    szpath.assign(psz, 0, charscan_index + 1);
-    return alure::String(psz, charscan_index + 1, psz.length());
+    { // generate voice list
+      const auto find_last_of = [](const alure::StringView& haystack) -> size_t
+      {
+        for (auto position = haystack.crbegin(); position != haystack.crend(); ++position)
+        {
+          if (std::isspace(*position))
+          {
+            return std::distance(position, haystack.crend());
+          }
+        }
+
+        return alure::StringView::npos;
+      };
+
+      alure::StringView last_folder = "vox/";
+      for (size_t i = 0; i < string_views.size() - 1; ++i)
+      {
+        auto& folder = string_views[i];
+
+        auto last_space = find_last_of(folder);
+        if (last_space != alure::StringView::npos)
+        {
+          ret.push_back(std::make_tuple(last_folder, folder.substr(0, last_space)));
+          folder = folder.substr(last_space, folder.size() - 1);
+        }
+
+        last_folder = folder;
+      }
+
+      ret.push_back(std::make_tuple(last_folder, string_views.back()));
+    }
+
+    return ret;
   }
 
   // Regex for matching:
@@ -288,9 +322,11 @@ namespace MetaAudio
   // 2. Words with parameters and just parameteres. For ex.: (p110 t40) clik!(p120)
   // 3. Full words. For ex.: clik
   static const std::regex regex_match_vox(R"([,.]|[^\s,.]*\(.+?\)|\b[^\s,.]*[^\s.,])");
-  alure::Vector<alure::String> VoxManager::ParseString(const alure::String& psz)
+  alure::Vector<alure::String> VoxManager::ParseString(const alure::StringView& input)
   {
-    std::vector<alure::String> words;
+    const auto psz = alure::String(input);
+
+    alure::Vector<alure::String> words;
 
     if (!psz.length())
       return words;
@@ -320,8 +356,7 @@ namespace MetaAudio
 
   std::optional<voxword_t> VoxManager::ParseWordParams(alure::String& initial_string, int fFirst)
   {
-    size_t charscan_index;
-    alure::String psz = initial_string;
+    const auto psz = alure::StringView(initial_string);
 
     // init to defaults if this is the first word in string.
     if (fFirst)
@@ -336,7 +371,7 @@ namespace MetaAudio
 
     // look at next to last char to see if we have a
     // valid format:
-    charscan_index = psz.length() - 1;
+    size_t charscan_index = psz.length() - 1;
 
     if (psz[charscan_index] != ')')
       return voxword;  // no formatting, return
@@ -349,10 +384,11 @@ namespace MetaAudio
     if (psz[charscan_index] == ')')
       return std::nullopt;  // bogus formatting
 
-    // remove parameter block from initial string
-    initial_string.assign(initial_string, 0, charscan_index);
+    // to eventually remove parameter block from initial string
+    auto parameter_block_index = charscan_index;
 
-    alure::String ct; ct = psz[++charscan_index];
+    alure::String ct;
+    ct = psz[++charscan_index];
     auto ValidCharacter = [](char& character) { return character == 'v' || character == 'p' || character == 's' || character == 'e' || character == 't'; };
     while (1)
     {
@@ -393,11 +429,15 @@ namespace MetaAudio
     // isolated parameter block
     if (psz[0] == '(')
     {
+      initial_string.assign(initial_string, 0, parameter_block_index);
       voxwordDefault = voxword;
       return std::nullopt;
     }
     else
+    {
+      initial_string.assign(initial_string, 0, parameter_block_index);
       return voxword;
+    }
   }
 
   aud_sfxcache_t* VoxManager::LoadSound(aud_channel_t* channel, const alure::String& pszin)
@@ -425,28 +465,30 @@ namespace MetaAudio
     }
 
     // get directory from string, advance psz
-    alure::String szpath;
-    psz = GetDirectory(szpath, psz);
+    auto sentences = GetDirectory(psz);
 
-    // parse sentence
-    auto words = ParseString(psz);
-
-    // for each word in the sentence, construct the filename,
-    // lookup the sfx and save each pointer in a temp array
-    for (size_t i = 0, final = words.size(); i < final; ++i)
+    // parse sentences
+    for (const auto& sentence : sentences)
     {
-      // Get any pitch, volume, start, end params into voxword
-      if (auto voxParameter = ParseWordParams(words[i], i == 0))
+      auto words = ParseString(std::get<1>(sentence));
+
+      // for each word in the sentence, construct the filename,
+      // lookup the sfx and save each pointer in a temp array
+      for (size_t i = 0, final = words.size(); i < final; ++i)
       {
-        auto& value = voxParameter.value();
-        // this is a valid word (as opposed to a parameter block)
-        auto pathbuffer = szpath + words[i] + ".wav";
+        // Get any pitch, volume, start, end params into voxword
+        if (auto voxParameter = ParseWordParams(words[i], i == 0))
+        {
+          auto& value = voxParameter.value();
+          // this is a valid word (as opposed to a parameter block)
+          auto pathbuffer = std::get<0>(sentence) + words[i] + ".wav";
 
-        // find name, if already in cache, mark voxword
-        // so we don't discard when word is done playing
-        value.sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &value.fKeepCached);
+          // find name, if already in cache, mark voxword
+          // so we don't discard when word is done playing
+          value.sfx = m_engine->S_FindName(const_cast<char*>(pathbuffer.c_str()), &value.fKeepCached);
 
-        channel->words.emplace(value);
+          channel->words.emplace(value);
+        }
       }
     }
 

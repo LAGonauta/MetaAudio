@@ -22,8 +22,8 @@ namespace MetaAudio
 
     // Voice file lookup
     std::optional<alure::String> LookupString(const alure::String& pszin, int* psentencenum);
-    alure::String GetDirectory(alure::String& szpath, alure::String& psz);
-    alure::Vector<alure::String> ParseString(const alure::String& psz);
+    alure::Vector<std::tuple<alure::StringView, alure::StringView>> GetDirectory(const alure::String& psz);
+    alure::Vector<alure::String> ParseString(const alure::StringView& psz);
     std::optional<voxword_t> ParseWordParams(alure::String& psz, int fFirst);
 
     // Mouth movement
