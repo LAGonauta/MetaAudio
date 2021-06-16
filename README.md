@@ -94,6 +94,5 @@ nagist, for MetaHook (https://github.com/nagist/metahook)
 hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
 
 # Support
-Support group available on FreeNode through IRC, come join: #metaaudio
-
-Prefers Jabber/XMPP? xmpp:metaaudio@conference.xmpp.zone?join
+Support group available through an XMPP MUC:
+xmpp:metaaudio@conference.xmpp.zone?join
