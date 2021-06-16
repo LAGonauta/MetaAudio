@@ -95,4 +95,5 @@ hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
 
 # Support
 Support group available through an XMPP MUC:
+
 xmpp:metaaudio@conference.xmpp.zone?join
