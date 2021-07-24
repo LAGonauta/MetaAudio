@@ -82,9 +82,26 @@ There should be an "audio.dll" entry in "plugins.lst".
 # Maybe in the future
 - Integrate SteamAudio for reflections/reverb in addition to OpenAL's native effects
 
+# Build Requirements
+
+1. Visual Studio 2017 or 2019, with vc141 or vc142 toolset.
+
+2. CMake
+
+3. git client
+
 # Compiling
-Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
-Tested with MSVC 2019. Remember to install C++ CRT.
+
+1. Run build-initdeps.bat, wait until all required submodules / dependencies are pulled. (this may takes couple of minutes, depending on your network connection and download speed)
+
+2. (optional) Run `install-to-GameName.bat` to tell MSVC where the GameInstallDir is and where to install MetaAudio.
+
+* You should have .NET Framework 4.5 installed in your system otherwise the SteamAppsLocation will probably not work.
+
+3. Run build-MetaAudio.bat, wail until all binary files generated.
+
+(legacy) ~~Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
+Tested with MSVC 2019. Remember to install C++ CRT.~~
 
 The include Alure2 has a slight different API than upstream, therefore must be compiled together.
 
