@@ -7,10 +7,30 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DSNDFILE_LIBRARY=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\lib\\\\libsndfile-1.lib\" -DSNDFILE_INCLUDE_DIR=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\include\" -DALSOFT_EXAMPLES=OFF -DALSOFT_UTILS=OFF -DALURE_INSTALL=OFF -DALURE_BUILD_STATIC=OFF -DALURE_ENABLE_WAVE=OFF -DALURE_ENABLE_VORBIS=OFF -DALURE_ENABLE_FLAC=OFF -DALURE_ENABLE_SNDFILE=ON -DALURE_BUILD_EXAMPLES=OFF",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "variables": []
+      "variables": [
+        {
+          "name": "SNDFILE_LIBRARY",
+          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/lib/sndfile.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "SNDFILE_INCLUDE_DIR",
+          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/include",
+          "type": "PATH"
+        },
+        {
+          "name": "OPENAL_LIBRARY",
+          "value": "${projectDir}\\OpenAL-SDK\\libs\\Win32\\OpenAL32.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "OPENAL_INCLUDE_DIR",
+          "value": "${projectDir}\\OpenAL-SDK\\include",
+          "type": "PATH"
+        }
+      ]
     },
     {
       "name": "x86-Release",
@@ -19,10 +39,30 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "cmakeCommandArgs": "-DSNDFILE_LIBRARY=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\lib\\\\libsndfile-1.lib\" -DSNDFILE_INCLUDE_DIR=\"F:\\\\Program Files (x86)\\\\Mega-Nerd\\\\libsndfile\\\\include\" -DALSOFT_EXAMPLES=OFF -DALSOFT_UTILS=OFF -DALURE_INSTALL=OFF -DALURE_BUILD_STATIC=OFF -DALURE_ENABLE_WAVE=OFF -DALURE_ENABLE_VORBIS=OFF -DALURE_ENABLE_FLAC=OFF -DALURE_ENABLE_SNDFILE=ON -DALURE_BUILD_EXAMPLES=OFF",
+      "variables": [
+        {
+          "name": "SNDFILE_LIBRARY",
+          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/lib/sndfile.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "SNDFILE_INCLUDE_DIR",
+          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/include",
+          "type": "PATH"
+        },
+        {
+          "name": "OPENAL_LIBRARY",
+          "value": "F:/_Development/_Project_Libraries/openal-soft-1.21.1-bin/libs/Win32/OpenAL32.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "OPENAL_INCLUDE_DIR",
+          "value": "F:/_Development/_Project_Libraries/openal-soft-1.21.1-bin/include/AL",
+          "type": "PATH"
+        }
+      ],
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": "",
-      "variables": []
+      "ctestCommandArgs": ""
     }
   ]
 }
