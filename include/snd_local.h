@@ -8,14 +8,14 @@
 
 //internal structures
 
-typedef struct
+struct GainFading
 {
   float current{ 0 };
   float elapsed_time{ 0 };
   float initial_value{ 0 };
   float last_target{ 0 };
   float target{ 0 };
-} GainFading;
+};
 
 namespace MetaAudio
 {

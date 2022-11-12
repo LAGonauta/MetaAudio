@@ -1,12 +1,24 @@
 cmake_minimum_required(VERSION 3.9)
 
-if(NOT CMAKE_BUILD_TYPE STREQUAL Debug)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
-
-set(CMAKE_CXX_STANDARD 17)
-
 project(MetaAudio)
+
+# Configure Alure2 the way we need it
+option(METAAUDIO_STATIC_ALURE "Link Alure2 statically" ON)
+if(METAAUDIO_STATIC_ALURE)
+    set(ALURE2_LIBRARY alure2_s)
+    option(ALURE_BUILD_SHARED "Shared Alure disabled" OFF)
+else()
+    set(ALURE2_LIBRARY alure2)
+    option(ALURE_BUILD_STATIC "Static Alure disabled" OFF)
+endif()
+option(ALURE_ENABLE_MINIMP3 "" OFF)
+option(ALURE_ENABLE_WAVE "" OFF)
+option(ALURE_ENABLE_OPUS "" OFF)
+option(ALURE_ENABLE_VORBIS "" OFF)
+option(ALURE_ENABLE_FLAC "" OFF)
+option(ALURE_INSTALL "" OFF)
+option(ALURE_BUILD_EXAMPLES "" OFF)
+# MetaAudio requires libSndFile
 
 set(SOURCES
     src/exportfuncs.cpp
@@ -39,6 +51,9 @@ set(SOURCES
 )
 
 add_library(MetaAudio SHARED ${SOURCES})
+
+set_property(TARGET MetaAudio PROPERTY CXX_STANDARD 17)
+
 target_compile_definitions(MetaAudio PRIVATE AUDIO_EXPORTS)
 add_compile_definitions(NOMINMAX PICOJSON_USE_INT64)
 
@@ -58,18 +73,19 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/pm_shared
 )
 
-add_subdirectory(externals/openal-soft)
-
+find_package(OpenAL REQUIRED)
 add_subdirectory(externals/alure)
-
-if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
-    target_compile_options(alure2 PUBLIC "/Zc:__cplusplus")
-endif()
-
-set_property(TARGET alure2 PROPERTY CXX_STANDARD 17)
 
 add_subdirectory(externals/metahook)
 
-add_dependencies(MetaAudio alure2)
+if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+    # Force C++17 as mpark/variant doesn't compile with MSVC
+    set_property(TARGET ${ALURE2_LIBRARY} PROPERTY CXX_STANDARD 17)
+    target_compile_options(${ALURE2_LIBRARY} PUBLIC "/Zc:__cplusplus")
+    target_compile_options(MetaAudio PUBLIC "/Zc:__cplusplus")
+    target_compile_options(metahook PUBLIC "/Zc:__cplusplus")
+endif()
 
-target_link_libraries(MetaAudio PRIVATE OpenAL alure2)
+add_dependencies(MetaAudio ${ALURE2_LIBRARY})
+
+target_link_libraries(MetaAudio PRIVATE ${OPENAL_LIBRARY} ${ALURE2_LIBRARY})
