@@ -1,29 +1,44 @@
 echo off
 
+if not exist "%~dp0build\externals\metahook\Release\metahook.exe" goto fail_nobuild
+if not exist "%~dp0build\Release\MetaAudio.dll" goto fail_nobuild
+
 set LauncherExe=metahook.exe
 set LauncherMod=bshift
 
-for /f "delims=" %%a in ('%~dp0SteamAppsLocation/SteamAppsLocation 130 InstallDir') do set GameDir=%%a
+for /f "delims=" %%a in ('"%~dp0SteamAppsLocation/SteamAppsLocation" 130 InstallDir') do set GameDir=%%a
 
 if "%GameDir%"=="" goto fail
 
 echo -----------------------------------------------------
 
-echo Writing debug configuration...
-copy global_template.props global.props /y
-call powershell -Command "(gc global.props) -replace '<MetaHookLaunchName>.*</MetaHookLaunchName>', '<MetaHookLaunchName>%LauncherExe%</MetaHookLaunchName>' | Out-File global.props"
-call powershell -Command "(gc global.props) -replace '<MetaHookLaunchCommnand>.*</MetaHookLaunchCommnand>', '<MetaHookLaunchCommnand>-game %LauncherMod%</MetaHookLaunchCommnand>' | Out-File global.props"
-call powershell -Command "(gc global.props) -replace '<MetaHookGameDirectory>.*</MetaHookGameDirectory>', '<MetaHookGameDirectory>%GameDir%\</MetaHookGameDirectory>' | Out-File global.props"
-call powershell -Command "(gc global.props) -replace '<MetaHookModName>.*</MetaHookModName>', '<MetaHookModName>%LauncherMod%</MetaHookModName>' | Out-File global.props"
+echo Copying files...
+
+if not exist "%GameDir%\%LauncherExe%" copy "%~dp0build\externals\metahook\Release\metahook.exe" "%GameDir%\%LauncherExe%" /y
+copy "%~dp0externals\libsndfile\bin\sndfile.dll" "%GameDir%\" /y
+md "%GameDir%\%LauncherMod%\metahook\plugins"
+copy "%~dp0build\Release\MetaAudio.dll" "%GameDir%\%LauncherMod%\metahook\plugins" /y
+
+powershell $shell = New-Object -ComObject WScript.Shell;$shortcut = $shell.CreateShortcut(\"MetaHook for BlueShift.lnk\");$shortcut.TargetPath = \"%GameDir%\%LauncherExe%\";$shortcut.WorkingDirectory = \"%GameDir%\";$shortcut.Arguments = \"-steam -insecure -game %LauncherMod%\";$shortcut.Save();
+
+notepad "%GameDir%\%LauncherMod%\metahook\configs\plugins.lst"
 
 echo -----------------------------------------------------
 
-echo done
+echo Done
+echo Make sure that "MetaAudio.dll" is in the metahook plugin load list (plugins.lst) and it's on top of any other plugins.
+echo Launch game from "MetaHook for BlueShift" shortcut.
 pause
 exit
 
 :fail
 
 echo Failed to locate GameInstallDir of Half-Life : Blue Shift, please make sure Steam is running and you have Half-Life : Blue Shift installed correctly.
+pause
+exit
+
+:fail_nobuild
+
+echo Compiled binaries not found ! You have to download compiled zip from github release page or compile the sources by yourself before installing !!!
 pause
 exit
