@@ -51,7 +51,8 @@ Working games and mods:
 - al_maxsends (sets the max number of simultaneous EFX effects, MetaAudio uses a maximum of 2 but this can limit it to less)
 - al_device (sets the OpenAL device to use, can be _OpenAL Soft_ or _OpenAL Soft on Realtek_, for example)
 
-# Installing
+# Manual Installation
+
 Copy the "metahook" folder to your mod dir.
 
 Copy the other files to Steam's Half-Life dir.
@@ -73,6 +74,16 @@ One should load the game through "MetaHook.exe". It is recommended to create a s
 "-steam -insecure -game <game>". There are two sample shorcut files included, "OpenAL Half-Life" and "OpenAL Natural-Selection".
 
 There should be an "MetaAudio.dll" entry in "plugins.lst".
+
+# One Click Installation
+
+1. You have to compile the MetaAudio by yourself before installation. see Compiling
+
+2. Run `install-to-(WhateverGameYouWant).bat`
+
+3. Launch game from shortcut `MetaHook for (WhateverGameYouWant)`
+
+* You should have your Steam running otherwise the [SteamAppsLocation](SteamAppsLocation/README.md) will probably not going to find GameInstallDir.
 
 # Known bugs
 
@@ -113,16 +124,6 @@ The include Alure2 has a slight different API than upstream, therefore must be c
 * Other games follow the same instruction.
 
 * You should restart Visual Studio IDE to apply changes to debugging profile, if Visual Studio IDE was running.
-
-# Installation
-
-1. You have to compile the MetaAudio by yourself before installation.
-
-2. Run `install-to-(WhateverGameYouWant).bat`
-
-3. Launch game from shortcut `MetaHook for (WhateverGameYouWant)`
-
-* You should have your Steam running otherwise the [SteamAppsLocation](SteamAppsLocation/README.md) will probably not going to find GameInstallDir.
 
 # Credits
 
