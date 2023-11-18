@@ -51,7 +51,8 @@ Working games and mods:
 - al_maxsends (sets the max number of simultaneous EFX effects, MetaAudio uses a maximum of 2 but this can limit it to less)
 - al_device (sets the OpenAL device to use, can be _OpenAL Soft_ or _OpenAL Soft on Realtek_, for example)
 
-# Installing
+# Manual Installation
+
 Copy the "metahook" folder to your mod dir.
 
 Copy the other files to Steam's Half-Life dir.
@@ -59,58 +60,79 @@ Copy the other files to Steam's Half-Life dir.
 Example folder structure, where <game> can be "valve", "cstrike", "ns", "gearbox" or any other mod:
 ```
 |%STEAM%\steamapps\common\Half-Life\
-|----> Metahook.exe
-|----> alure2.dll
-|----> libsndfile-1.dll
+|----> metahook.exe
+|----> sndfile.dll
 |----> OpenAL32.dll (remove to use X-Fi hardware acceleration)
 |----> <game>\
   |----> metahook\
     |----> plugins\
-      |----> audio.dll
+      |----> MetaAudio.dll
     |----> configs\
       |----> plugins.lst
 ```
 One should load the game through "MetaHook.exe". It is recommended to create a shortcut with at least the following launch options:
-"-steam -game <game> -insecure". There are two sample shorcut files included, "OpenAL Half-Life" and "OpenAL Natural-Selection".
+"-steam -insecure -game <game>". There are two sample shorcut files included, "OpenAL Half-Life" and "OpenAL Natural-Selection".
 
-There should be an "audio.dll" entry in "plugins.lst".
+There should be an "MetaAudio.dll" entry in "plugins.lst".
+
+# One Click Installation
+
+1. You have to compile the MetaAudio by yourself before installation. see Compiling
+
+2. Run `install-to-(WhateverGameYouWant).bat`
+
+3. Launch game from shortcut `MetaHook for (WhateverGameYouWant)`
+
+* You should have your Steam running otherwise the [SteamAppsLocation](SteamAppsLocation/README.md) will probably not going to find GameInstallDir.
 
 # Known bugs
+
 - Some sounds are too quiet
 - Some sounds does not use the correct source origin
 
 # Maybe in the future
+
 - Integrate SteamAudio for reflections/reverb in addition to OpenAL's native effects
 
 # Build Requirements
 
-1. Visual Studio 2017 or 2019, with vc141 or vc142 toolset.
+1. [Visual Studio 2017 / 2019 / 2022, with vc141 / vc142 / vc143 toolset](https://visualstudio.microsoft.com/)
 
-2. CMake
+2. [CMake](https://cmake.org/download/)
 
-3. git client
+3. [Git for Windows](https://gitforwindows.org/)
 
 # Compiling
 
-1. Run build-initdeps.bat, wait until all required submodules / dependencies are pulled. (this may takes couple of minutes, depending on your network connection and download speed)
+1. Run `build-initdeps.bat`, wait until all required submodules / dependencies are pulled. (this may takes couple of minutes, depending on your network connection and download speed)
 
-2. (optional) Run `install-to-GameName.bat` to tell MSVC where the GameInstallDir is and where to install MetaAudio.
-
-* You should have .NET Framework 4.5 installed in your system otherwise the SteamAppsLocation will probably not work.
-
-3. Run build-MetaAudio.bat, wail until all binary files generated.
+2. Run `build-MetaAudio.bat`, wail until all binary files generated.
 
 (legacy) ~~Just load the MetaHook solution, set your post-build event to your desired folder and compile normally with Visual Studio.
 Tested with MSVC 2019. Remember to install C++ CRT.~~
 
 The include Alure2 has a slight different API than upstream, therefore must be compiled together.
 
+# Debugging
+
+1. Run `build-initdeps.bat`, wait until all required submodules / dependencies are pulled. (this may takes couple of minutes, depending on your network connection and download speed)
+
+2. Run `debug-(WhateverGameYouWant).bat`, depends on which you are going to debug with
+
+3. Open MetaHook.sln with Visual Studio IDE, set specified project as launch project, compile the project, then press F5 to start debugging.
+
+* Other games follow the same instruction.
+
+* You should restart Visual Studio IDE to apply changes to debugging profile, if Visual Studio IDE was running.
+
 # Credits
+
 nagist, for MetaHook (https://github.com/nagist/metahook)
 
 hzqst, for the original MetaAudio (https://github.com/hzqst/MetaRenderer)
 
 # Support
+
 Support group available through an XMPP MUC:
 
 xmpp:metaaudio@conference.xmpp.zone?join
