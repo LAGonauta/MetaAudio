@@ -1,7 +1,7 @@
-set(SndFile_VERSION 1.2.0)
+set(SndFile_VERSION 1.2.2)
 set(SndFile_VERSION_MAJOR 1)
 set(SndFile_VERSION_MINOR 2)
-set(SndFile_VERSION_PATCH 0)
+set(SndFile_VERSION_PATCH 2)
 
 set (SndFile_WITH_EXTERNAL_LIBS 1)
 set (SndFile_WITH_MPEG 1)
@@ -34,6 +34,10 @@ endmacro()
 
 include (CMakeFindDependencyMacro)
 
+if (NOT TRUE)
+	list (APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+endif ()
+
 if (SndFile_WITH_EXTERNAL_LIBS AND NOT TRUE)
 	find_dependency (Ogg 1.3)
 	find_dependency (Vorbis)
@@ -43,7 +47,11 @@ endif ()
 
 if (SndFile_WITH_MPEG AND NOT TRUE)
 	find_dependency (mp3lame)
-	find_dependency (MPG123)
+	find_dependency (mpg123)
+endif ()
+
+if (NOT TRUE)
+	list (REMOVE_ITEM CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 endif ()
 
 include (${CMAKE_CURRENT_LIST_DIR}/SndFileTargets.cmake)

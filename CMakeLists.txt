@@ -1,8 +1,14 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.27)
 
 project(MetaAudio)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+set(OPENAL_LIBRARY ${PROJECT_SOURCE_DIR}/externals/OpenAL-SDK/libs/Win32/OpenAL32.lib)
+set(OPENAL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/externals/OpenAL-SDK/include)
+
+set(SNDFILE_LIBRARY ${PROJECT_SOURCE_DIR}/externals/libsndfile/lib/sndfile.lib)
+set(SNDFILE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/externals/libsndfile/include)
 
 # Configure Alure2 the way we need it
 option(METAAUDIO_STATIC_ALURE "Link Alure2 statically" ON)
@@ -65,7 +71,6 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/picojson
         ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
-        ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/Interface
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/common
