@@ -18,6 +18,10 @@ jobs:
     if: github.repository == 'LAGonauta/MetaAudio'
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: recursive
+
       - name: Build MetaAudio.dll
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: build-MetaAudio.bat
