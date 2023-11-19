@@ -1,0 +1,77 @@
+name: windows
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    tags:
+      - "v*"
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+
+    runs-on: windows-2019
+    if: github.repository == 'LAGonauta/MetaAudio'
+
+    steps:
+      - name: Build MetaAudio.dll
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: build-MetaAudio.bat
+        shell: cmd
+
+      - name: Create Output directory
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: mkdir Output
+        shell: cmd
+
+      - name: Copy Build to Output
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          mkdir "Output\Build"
+          xcopy "Build" "Output\Build" /y /e
+        shell: cmd
+        
+      - name: Copy SteamAppsLocation to Output
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          mkdir "Output\SteamAppsLocation"
+          copy "SteamAppsLocation\SteamAppsLocation.exe" "Output\SteamAppsLocation" /y
+          copy "SteamAppsLocation\steam_appid.txt" "Output\SteamAppsLocation" /y
+          copy "SteamAppsLocation\steam_api.dll" "Output\SteamAppsLocation" /y
+        shell: cmd
+
+      - name: Copy install bat to Output
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          copy "install-to-OpposingForce.bat" "Output" /y
+          copy "install-to-HalfLife.bat" "Output" /y
+          copy "install-to-DayOfDefeat.bat" "Output" /y
+          copy "install-to-CSCZDeletedScenes.bat" "Output" /y
+          copy "install-to-CounterStrike.bat" "Output" /y
+          copy "install-to-ConditionZero.bat" "Output" /y
+          copy "install-to-BlueShift.bat" "Output" /y
+        shell: cmd
+
+      - name: Zipping All
+        uses: vimtor/action-zip@v1
+        with:
+          files: Output/
+          dest: MetaAudio-windows-x86.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: MetaAudio-${{ github.ref }}
+          files: |
+            MetaAudio-windows-x86.zip
