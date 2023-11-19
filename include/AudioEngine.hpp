@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <sstream>
 
 #include "snd_local.h"
 #include "alure2.h"
@@ -76,7 +77,7 @@ namespace MetaAudio
     void AL_ResetEFX();
     void AL_Devices(bool basic);
 
-    void S_Startup();
+    int SNDDMA_Init();
     void S_Init();
     void S_Shutdown();
 

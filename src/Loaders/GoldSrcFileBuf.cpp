@@ -1,3 +1,4 @@
+
 #include "Loaders/GoldSrcFileBuf.hpp"
 #include "FileSystem.h"
 
@@ -7,7 +8,7 @@ namespace MetaAudio
   {
     if (mFile && gptr() == egptr())
     {
-      auto got = g_pFileSystem->Read(mBuffer.data(), mBuffer.size(), mFile);
+      auto got = FILESYSTEM_ANY_READ(mBuffer.data(), mBuffer.size(), mFile);
       if (got)
       {
         setg(mBuffer.data(), mBuffer.data(), mBuffer.data() + got);
@@ -44,9 +45,9 @@ namespace MetaAudio
       if ((offset >= 0 && offset < off_type(egptr() - gptr())) ||
         (offset < 0 && -offset <= off_type(gptr() - eback())))
       {
-        auto initialPos = g_pFileSystem->Tell(mFile);
-        g_pFileSystem->Seek(mFile, static_cast<int>(offset), seekType);
-        auto newPos = g_pFileSystem->Tell(mFile);
+        auto initialPos = FILESYSTEM_ANY_TELL(mFile);
+        FILESYSTEM_ANY_SEEK(mFile, static_cast<int>(offset), seekType);
+        auto newPos = FILESYSTEM_ANY_TELL(mFile);
         if (newPos - initialPos != offset)
         {
           return traits_type::eof();
@@ -58,14 +59,14 @@ namespace MetaAudio
       break;
 
     case std::ios_base::end:
-      offset += g_pFileSystem->Size(mFile);
+      offset += FILESYSTEM_ANY_SIZE(mFile);
       break;
 
     default:
       return traits_type::eof();
     }
 
-    g_pFileSystem->Seek(mFile, static_cast<int>(offset), seekType);
+    FILESYSTEM_ANY_SEEK(mFile, static_cast<int>(offset), seekType);
     auto curPosition = g_pFileSystem->Tell(mFile);
 
     setg(nullptr, nullptr, nullptr);
@@ -79,12 +80,12 @@ namespace MetaAudio
       return traits_type::eof();
     }
 
-    g_pFileSystem->Seek(mFile, static_cast<int>(pos), FILESYSTEM_SEEK_HEAD);
-    if (g_pFileSystem->EndOfFile(mFile))
+    FILESYSTEM_ANY_SEEK(mFile, static_cast<int>(pos), FILESYSTEM_SEEK_HEAD);
+    if (FILESYSTEM_ANY_EOF(mFile))
     {
       return traits_type::eof();
     }
-    auto curPosition = g_pFileSystem->Tell(mFile);
+    auto curPosition = FILESYSTEM_ANY_TELL(mFile);
 
     setg(nullptr, nullptr, nullptr);
     return curPosition;
@@ -92,13 +93,13 @@ namespace MetaAudio
 
   bool GoldSrcFileBuf::open(const char* filename) noexcept
   {
-    mFile = g_pFileSystem->Open(filename, "rb");
+    mFile = FILESYSTEM_ANY_OPEN(filename, "rb");
     return mFile;
   }
 
   GoldSrcFileBuf::~GoldSrcFileBuf()
   {
-    g_pFileSystem->Close(mFile);
+      FILESYSTEM_ANY_CLOSE(mFile);
     mFile = nullptr;
   }
 }

@@ -9,3 +9,6 @@
 [submodule "externals/picojson"]
 	path = externals/picojson
 	url = https://github.com/kazuho/picojson/
+[submodule "externals/MetaHookSv"]
+	path = externals/MetaHookSv
+	url = https://github.com/hzqst/MetaHookSv

@@ -98,7 +98,8 @@ struct aud_engine_t
   int *cszrawsentences;
 
   //s_dma.c
-  void(*S_Startup)(void);//hooked
+  int(*SNDDMA_Init)(void);//hooked
+  void(*S_Startup)(void);//deprecated, use SNDDMA_Init instead
   void(*S_Init)(void);//hooked
   void(*S_Shutdown)(void);//hooked
   sfx_t *(*S_FindName)(char *name, int *pfInCache);//hooked
@@ -134,6 +135,8 @@ struct aud_engine_t
 void S_FillAddress(void);
 
 void S_InstallHook(MetaAudio::AudioEngine* engine, MetaAudio::SoundLoader* loader);
+
+void S_UninstallHook();
 
 //common
 extern aud_engine_t gAudEngine;

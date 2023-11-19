@@ -1,12 +1,16 @@
 class IFileSystem;
 
 extern HINSTANCE g_hInstance, g_hThisModule, g_hEngineModule;
-extern DWORD g_dwEngineBase, g_dwEngineSize;
+extern PVOID g_dwEngineBase;
+extern DWORD g_dwEngineSize;
+extern PVOID g_dwEngineTextBase;
+extern DWORD g_dwEngineTextSize;
+extern PVOID g_dwEngineDataBase;
+extern DWORD g_dwEngineDataSize;
+extern PVOID g_dwEngineRdataBase;
+extern DWORD g_dwEngineRdataSize;
 extern DWORD g_dwEngineBuildnum;
-extern DWORD g_iVideoMode;
-extern bool g_bIsNewEngine;
-extern int g_iVideoWidth, g_iVideoHeight;
-extern bool g_bWindowed;
-extern bool g_bIsDebuggerPresent;
-extern IFileSystem *g_pFileSystem;
-extern int g_fExternalLoad;
+extern int g_iEngineType;
+
+extern IFileSystem* g_pFileSystem;
+extern IFileSystem_HL25* g_pFileSystem_HL25;

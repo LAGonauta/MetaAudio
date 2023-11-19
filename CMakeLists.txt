@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 
 project(MetaAudio)
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 # Configure Alure2 the way we need it
 option(METAAUDIO_STATIC_ALURE "Link Alure2 statically" ON)
 if(METAAUDIO_STATIC_ALURE)
@@ -64,26 +66,24 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
         ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
-        ${PROJECT_SOURCE_DIR}/externals/metahook/include
-        ${PROJECT_SOURCE_DIR}/externals/metahook/include/interface
-        ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/common
-        ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/cl_dll
-        ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/engine
-        ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/public
-        ${PROJECT_SOURCE_DIR}/externals/metahook/HLSDK/pm_shared
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/Interface
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/common
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/cl_dll
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/engine
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/public
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/pm_shared
+        ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/capstone/include/capstone
 )
 
 find_package(OpenAL REQUIRED)
 add_subdirectory(externals/alure)
-
-add_subdirectory(externals/metahook)
 
 if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
     # Force C++17 as mpark/variant doesn't compile with MSVC
     set_property(TARGET ${ALURE2_LIBRARY} PROPERTY CXX_STANDARD 17)
     target_compile_options(${ALURE2_LIBRARY} PUBLIC "/Zc:__cplusplus")
     target_compile_options(MetaAudio PUBLIC "/Zc:__cplusplus")
-    target_compile_options(metahook PUBLIC "/Zc:__cplusplus")
 endif()
 
 add_dependencies(MetaAudio ${ALURE2_LIBRARY})

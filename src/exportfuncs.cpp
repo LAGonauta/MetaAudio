@@ -18,59 +18,10 @@ void Sys_ErrorEx(const char *fmt, ...)
   if (gEngfuncs.pfnClientCmd)
     gEngfuncs.pfnClientCmd("escape\n");
 
-  MessageBox(NULL, msg, "Error", MB_ICONERROR);
-  exit(0);
+  MessageBox(NULL, msg, "Fatal Error", MB_ICONERROR);
+  TerminateProcess((HANDLE)-1, 0);
 }
 
-cl_exportfuncs_t gClientfuncs =
-{
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+cl_exportfuncs_t gClientfuncs ={ 0 };
 
-cl_enginefunc_t gEngfuncs;
-
-aud_export_t gAudExports =
-{
-};
+cl_enginefunc_t gEngfuncs = { 0 };
