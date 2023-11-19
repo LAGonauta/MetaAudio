@@ -2,10 +2,6 @@
 	path = externals/alure
 	url = https://github.com/LAGonauta/alure
 	branch = hasLoopPoints
-[submodule "externals/metahook"]
-	path = externals/metahook
-	url = https://github.com/LAGonauta/metahook
-	branch = cmake
 [submodule "externals/picojson"]
 	path = externals/picojson
 	url = https://github.com/kazuho/picojson/
