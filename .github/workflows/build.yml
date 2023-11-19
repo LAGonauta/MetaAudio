@@ -42,7 +42,6 @@ jobs:
         run: |
           mkdir "Output\${{env.BUILD_CONFIGURATION}}"
           xcopy "Build\${{env.BUILD_CONFIGURATION}}\MetaAudio.dll" "Output\${{env.BUILD_CONFIGURATION}}" /y /e
-          xcopy "externals\libsndfile\lib\sndfile.dll" "Output\${{env.BUILD_CONFIGURATION}}" /y /e
         shell: cmd
         
       - name: Copy SteamAppsLocation to Output
