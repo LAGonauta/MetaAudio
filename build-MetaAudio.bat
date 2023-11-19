@@ -1,4 +1,4 @@
-call cmake -B "build" -A Win32 -D "OPENAL_INCLUDE_DIR=%~dp0OpenAL-SDK\include" -D "OPENAL_LIBRARY=%~dp0OpenAL-SDK\libs\Win32\OpenAL32.lib" -D "SNDFILE_LIBRARY=%~dp0externals\libsndfile\lib\sndfile.lib" -D "SNDFILE_INCLUDE_DIR=%~dp0externals\libsndfile\include"
+call cmake -B "build" -A Win32
 
 call powershell -Command "(gc build\MetaAudio.vcxproj) -replace 'Label=\"PropertySheets\">', 'Label=\"PropertySheets\" ><Import Project=\"..\global.props\" /><Import Project=\"..\MetaAudio.props\" />' | Out-File build\MetaAudio.vcxproj"
 
