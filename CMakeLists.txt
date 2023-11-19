@@ -4,8 +4,8 @@ project(MetaAudio)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-set(OPENAL_LIBRARY ${PROJECT_SOURCE_DIR}/OpenAL-SDK/libs/Win32/OpenAL32.lib)
-set(OPENAL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/OpenAL-SDK/include)
+set(OPENAL_LIBRARY ${PROJECT_SOURCE_DIR}/externals/OpenAL-SDK/libs/Win32/OpenAL32.lib)
+set(OPENAL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/externals/OpenAL-SDK/include)
 
 set(SNDFILE_LIBRARY ${PROJECT_SOURCE_DIR}/externals/libsndfile/lib/sndfile.lib)
 set(SNDFILE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/externals/libsndfile/include)
