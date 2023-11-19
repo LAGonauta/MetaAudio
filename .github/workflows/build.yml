@@ -79,7 +79,7 @@ jobs:
             Exit -1
           }
           Expand-Archive ./MetaHook.zip -DestinationPath MetaHook/
-          New-Item -Type dir ./Output/${{env.BUILD_CONFIGURATION}}
+          New-Item -Type dir -Force ./Output/${{env.BUILD_CONFIGURATION}}
           Copy-Item ./MetaHook/Build/svencoop.exe ./Output/${{env.BUILD_CONFIGURATION}}/metahook.exe
         shell: pwsh
 
