@@ -1,6 +1,12 @@
 name: windows
 
-on: push
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    tags:
+      - "v*"
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -21,6 +27,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
             submodules: recursive
+
+      - name: Init dependencies
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: build-initdeps.bat
+        shell: cmd
 
       - name: Build MetaAudio.dll
         working-directory: ${{env.GITHUB_WORKSPACE}}
