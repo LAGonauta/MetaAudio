@@ -15,7 +15,6 @@ if exist "%InstallDir%\Common7\Tools\vsdevcmd.bat" (
     "%InstallDir%\Common7\Tools\vsdevcmd.bat" -arch=x86
     
     MSBuild.exe "build\MetaAudio.sln" /t:MetaAudio /p:Configuration=Release /p:Platform="Win32"
-    MSBuild.exe "build\MetaAudio.sln" /t:metahook /p:Configuration=Release /p:Platform="Win32"
 )
 
 rmdir /s /q "%temp%\OpenAL-SDK"
