@@ -71,6 +71,17 @@ jobs:
           copy "install-to-BlueShift.bat" "Output" /y
         shell: cmd
 
+      - name: Download MetaHook
+        run: |
+          Invoke-WebRequest -Uri https://github.com/hzqst/MetaHookSv/releases/download/v20231119b/MetaHookSv-windows-x86.zip -OutFile MetaHook.zip
+          if (!(Get-FileHash ./MetaHook.zip).Hash.Equals("BEC1D222274B43B2A2F1E2BFA619BE59A3361F8C0AB1FEA08A375ECC6FBB4ED4")) {
+            Exit -1
+          }
+          Expand-Archive ./MetaHook.zip -DestinationPath MetaHook/
+          New-Item -Type dir ./Output/Release
+          Copy-Item ./MetaHook/Build/svencoop.exe ./Output/Release/metahook.exe
+        shell: pwsh
+
       - name: Zipping All
         uses: vimtor/action-zip@v1.1
         with:

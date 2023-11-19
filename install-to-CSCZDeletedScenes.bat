@@ -1,6 +1,6 @@
 echo off
 
-if not exist "%~dp0build\externals\metahook\Release\metahook.exe" goto fail_nobuild
+if not exist "%~dp0build\Release\metahook.exe" goto fail_nobuild
 if not exist "%~dp0build\Release\MetaAudio.dll" goto fail_nobuild
 
 set LauncherExe=metahook.exe
@@ -14,7 +14,7 @@ echo -----------------------------------------------------
 
 echo Copying files...
 
-if not exist "%GameDir%\%LauncherExe%" copy "%~dp0build\externals\metahook\Release\metahook.exe" "%GameDir%\%LauncherExe%" /y
+if not exist "%GameDir%\%LauncherExe%" copy "%~dp0build\Release\metahook.exe" "%GameDir%\%LauncherExe%" /y
 copy "%~dp0externals\libsndfile\bin\sndfile.dll" "%GameDir%\" /y
 md "%GameDir%\%LauncherMod%\metahook\plugins"
 copy "%~dp0build\Release\MetaAudio.dll" "%GameDir%\%LauncherMod%\metahook\plugins" /y
