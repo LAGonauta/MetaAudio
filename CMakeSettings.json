@@ -9,28 +9,7 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "SNDFILE_LIBRARY",
-          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/lib/sndfile.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "SNDFILE_INCLUDE_DIR",
-          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/include",
-          "type": "PATH"
-        },
-        {
-          "name": "OPENAL_LIBRARY",
-          "value": "${projectDir}\\OpenAL-SDK\\libs\\Win32\\OpenAL32.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "OPENAL_INCLUDE_DIR",
-          "value": "${projectDir}\\OpenAL-SDK\\include",
-          "type": "PATH"
-        }
-      ]
+      "variables": []
     },
     {
       "name": "x86-Release",
@@ -39,28 +18,7 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "buildRoot": "${projectDir}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\MetaAudio\\${workspaceHash}\\install\\${name}",
-      "variables": [
-        {
-          "name": "SNDFILE_LIBRARY",
-          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/lib/sndfile.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "SNDFILE_INCLUDE_DIR",
-          "value": "F:/_Development/_Project_Libraries/libsndfile-1.0.31-win32/include",
-          "type": "PATH"
-        },
-        {
-          "name": "OPENAL_LIBRARY",
-          "value": "F:/_Development/_Project_Libraries/openal-soft-1.21.1-bin/libs/Win32/OpenAL32.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "OPENAL_INCLUDE_DIR",
-          "value": "F:/_Development/_Project_Libraries/openal-soft-1.21.1-bin/include/AL",
-          "type": "PATH"
-        }
-      ],
+      "variables": [],
       "buildCommandArgs": "-v",
       "ctestCommandArgs": ""
     }
