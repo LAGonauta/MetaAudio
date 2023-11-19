@@ -66,7 +66,12 @@ jobs:
         shell: cmd
 
       - name: Zipping All
-        uses: vimtor/action-zip@v1
+        uses: vimtor/action-zip@v1.1
         with:
           files: Output/
           dest: MetaAudio-windows-x86.zip
+
+      - uses: actions/upload-artifact@v3
+        with:
+         name: MetaAudio
+         path: ${{ github.workspace }}/Output/MetaAudio-windows-x86.zip
