@@ -46,8 +46,8 @@ jobs:
       - name: Copy Build to Output
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          mkdir "Output\Build"
-          xcopy "Build" "Output\Build" /y /e
+          mkdir "Output\${{env.BUILD_CONFIGURATION}}"
+          xcopy "Build\${{env.BUILD_CONFIGURATION}}\MetaAudio.dll" "Output\${{env.BUILD_CONFIGURATION}}" /y /e
         shell: cmd
         
       - name: Copy SteamAppsLocation to Output

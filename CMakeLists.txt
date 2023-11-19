@@ -71,7 +71,6 @@ target_include_directories(MetaAudio
         ${PROJECT_SOURCE_DIR}/externals/picojson
         ${PROJECT_SOURCE_DIR}/externals/steamaudio/include
         ${PROJECT_SOURCE_DIR}/externals/alure/include/AL
-        ${PROJECT_SOURCE_DIR}/externals/openal-soft/include/AL
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/Interface
         ${PROJECT_SOURCE_DIR}/externals/MetaHookSv/HLSDK/common
