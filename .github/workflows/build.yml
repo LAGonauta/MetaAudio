@@ -57,7 +57,7 @@ jobs:
       - name: Copy sndfile to Output
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
-          xcopy "externals\libsndfile\lib\sndfile.dll" "Output\externals\libsndfile\lib" /y /e
+          xcopy "externals\libsndfile\lib\sndfile.dll" "Output\externals\libsndfile\lib\" /y /e
         shell: cmd
 
       - name: Copy install bat to Output
