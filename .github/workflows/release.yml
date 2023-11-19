@@ -59,6 +59,12 @@ jobs:
           copy "SteamAppsLocation\steam_api.dll" "Output\SteamAppsLocation" /y
         shell: cmd
 
+      - name: Copy sndfile to Output
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          xcopy "externals\libsndfile\lib\sndfile.dll" "Output\externals\libsndfile\lib" /y /e
+        shell: cmd
+
       - name: Copy install bat to Output
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
@@ -78,8 +84,8 @@ jobs:
             Exit -1
           }
           Expand-Archive ./MetaHook.zip -DestinationPath MetaHook/
-          New-Item -Type dir ./Output/Release
-          Copy-Item ./MetaHook/Build/svencoop.exe ./Output/Release/metahook.exe
+          New-Item -Type dir ./Output/${{env.BUILD_CONFIGURATION}}
+          Copy-Item ./MetaHook/Build/svencoop.exe ./Output/${{env.BUILD_CONFIGURATION}}/metahook.exe
         shell: pwsh
 
       - name: Zipping All
