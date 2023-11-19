@@ -74,4 +74,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
          name: MetaAudio
-         path: ${{ github.workspace }}/Output/MetaAudio-windows-x86.zip
+         path: MetaAudio-windows-x86.zip
