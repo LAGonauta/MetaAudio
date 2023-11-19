@@ -644,35 +644,22 @@ namespace MetaAudio
     catch (const std::exception& e)
     {
       const size_t size = 4096;
-      char ar[size] = "Unable to load. Reason:\n";
-      int zero_index = 0;
-      for (int i = 0; i < size; ++i)
-      {
-        if (ar[i] == 0)
-        {
-          zero_index = i;
-          break;
-        }
-      }
 
-      for (int i = 0; i < size - zero_index; ++i)
-      {
-        if (e.what()[i] == 0 || i == size - zero_index - 1)
-        {
-          ar[i + zero_index] = '\0';
-          break;
-        }
+      std::stringstream ss;
 
-        ar[i + zero_index] = e.what()[i];
-      }
-      MessageBox(NULL, ar, "OpenAL plugin error", MB_ICONERROR);
+      ss << "Unable to load. Reason:\n";
+      ss << e.what();
+
+      auto msg = ss.str();
+      MessageBox(NULL, msg.c_str(), "OpenAL Error", MB_ICONERROR);
+
       return false;
     }
   }
 
-  void AudioEngine::S_Startup()
+  int AudioEngine::SNDDMA_Init()
   {
-    gAudEngine.S_Startup();
+    int r = gAudEngine.SNDDMA_Init();
 
     //stop mute me first
     openal_mute = false;
@@ -684,6 +671,8 @@ namespace MetaAudio
         openal_started = true;
       }
     }
+
+    return r;
   }
 
   void AudioEngine::AL_Version()

@@ -1,5 +1,4 @@
 #include <metahook.h>
-#include <IAudio.h>
 
 #include "snd_local.h"
 #include "Utilities/AudioCache.hpp"
@@ -16,17 +15,24 @@ static void AL_ResetEFX() { audio_engine->AL_ResetEFX(); }
 static void AL_BasicDevices() { audio_engine->AL_Devices(true); }
 static void AL_FullDevices() { audio_engine->AL_Devices(false); }
 
-cl_exportfuncs_t gExportfuncs;
-mh_interface_t *g_pInterface;
-metahook_api_t *g_pMetaHookAPI;
-mh_enginesave_t *g_pMetaSave;
-IFileSystem *g_pFileSystem;
+cl_exportfuncs_t gExportfuncs = {0};
+mh_interface_t *g_pInterface = nullptr;
+metahook_api_t *g_pMetaHookAPI = nullptr;
+mh_enginesave_t *g_pMetaSave = nullptr;
+IFileSystem *g_pFileSystem = nullptr;
+IFileSystem_HL25* g_pFileSystem_HL25 = nullptr;
 
-extern aud_export_t gAudExports;
-
-HINSTANCE g_hInstance, g_hThisModule, g_hSteamAudioInstance;
-DWORD g_dwEngineBase, g_dwEngineSize;
-DWORD g_dwEngineBuildnum;
+HINSTANCE g_hInstance = nullptr, g_hThisModule = nullptr, g_hEngineModule = nullptr, g_hSteamAudioInstance = nullptr;
+PVOID g_dwEngineBase = 0;
+DWORD g_dwEngineSize = 0;
+PVOID g_dwEngineTextBase = 0;
+DWORD g_dwEngineTextSize = 0;
+PVOID g_dwEngineDataBase = 0;
+DWORD g_dwEngineDataSize = 0;
+PVOID g_dwEngineRdataBase = 0;
+DWORD g_dwEngineRdataSize = 0;
+DWORD g_dwEngineBuildnum = 0;
+int g_iEngineType = 0;
 
 ICommandLine *CommandLine()
 {
@@ -74,10 +80,17 @@ void IPlugins::Shutdown()
 void IPlugins::LoadEngine()
 {
   g_pFileSystem = g_pInterface->FileSystem;
-  g_dwEngineBuildnum = g_pMetaHookAPI->GetEngineBuildnum();
+  if (!g_pFileSystem)//backward compatibility
+      g_pFileSystem_HL25 = g_pInterface->FileSystem_HL25;
 
+  g_iEngineType = g_pMetaHookAPI->GetEngineType();
+  g_dwEngineBuildnum = g_pMetaHookAPI->GetEngineBuildnum();
+  g_hEngineModule = g_pMetaHookAPI->GetEngineModule();
   g_dwEngineBase = g_pMetaHookAPI->GetEngineBase();
   g_dwEngineSize = g_pMetaHookAPI->GetEngineSize();
+  g_dwEngineTextBase = g_pMetaHookAPI->GetSectionByName(g_dwEngineBase, ".text\x0\x0\x0", &g_dwEngineTextSize);
+  g_dwEngineDataBase = g_pMetaHookAPI->GetSectionByName(g_dwEngineBase, ".data\x0\x0\x0", &g_dwEngineDataSize);
+  g_dwEngineRdataBase = g_pMetaHookAPI->GetSectionByName(g_dwEngineBase, ".rdata\x0\x0", &g_dwEngineRdataSize);
 
   S_FillAddress();
   S_InstallHook(audio_engine.get(), sound_loader.get());
@@ -96,23 +109,8 @@ void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
 
 void IPlugins::ExitGame(int iResult)
 {
-  Shutdown();
+    S_UninstallHook();
+    Shutdown();
 }
 
 EXPOSE_SINGLE_INTERFACE(IPlugins, IPlugins, METAHOOK_PLUGIN_API_VERSION);
-
-//renderer exports
-
-void IAudio::GetInterface(aud_export_t *pAudExports, const char *version)
-{
-  if (!strcmp(version, META_AUDIO_VERSION))
-  {
-    memcpy(pAudExports, &gAudExports, sizeof(aud_export_t));
-  }
-  else
-  {
-    Sys_ErrorEx("Meta Audio interface version (%s) should be (%s)\n", version, META_AUDIO_VERSION);
-  }
-}
-
-EXPOSE_SINGLE_INTERFACE(IAudio, IAudio, AUDIO_API_VERSION);

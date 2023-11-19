@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <algorithm>
 
+#include "plugins.h"
 #include "pm_defs.h"
 #include "event_api.h"
 #include "snd_local.h"
@@ -381,7 +382,8 @@ namespace MetaAudio
   void EnvEffects::OverrideEffects()
   {
     std::array<char, 256> directory;
-    g_pInterface->FileSystem->GetCurrentDirectoryA(directory.data(), directory.size());
+
+    FILESYSTEM_ANY_GETCURRENTDIRECTORY(directory.data(), directory.size());
 
     auto possible_file_names = { "efx-reverb.json", "efx-reverbs.json" };
     EfxJsonReader reader;

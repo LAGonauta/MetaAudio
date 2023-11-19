@@ -7,8 +7,10 @@
 
 #include "interface.h"
 #include "IFileSystem.h"
+#include <metahook.h>
 
 extern IFileSystem *g_pFileSystem;
+extern IFileSystem_HL25 *g_pFileSystem_HL25;
 extern IFileSystem *g_pFullFileSystem;
 
 #endif
