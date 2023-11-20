@@ -10,11 +10,11 @@ namespace MetaAudio
     decltype(&iplDestroyScene) iplDestroyScene;
     decltype(&iplDestroyStaticMesh) iplDestroyStaticMesh;
     decltype(&iplGetDirectSoundPath) iplGetDirectSoundPath;
-    decltype(&iplCreateScene) iplCreateScene;
-    decltype(&iplCreateStaticMesh) iplCreateStaticMesh;
-    decltype(&iplCreateEnvironment) iplCreateEnvironment;
-    decltype(&iplCreateContext) iplCreateContext;
-    decltype(&iplDestroyContext) iplDestroyContext;
+    decltype(&iplSceneCreate) iplSceneCreate;
+    decltype(&iplStaticMeshCreate) iplStaticMeshCreate;
+    decltype(&iplEnvironmentCreate) iplEnvironmentCreate;
+    decltype(&iplContextCreate) iplContextCreate;
+    decltype(&iplContextRelease) iplContextRelease;
     decltype(&iplCleanup) iplCleanup;
   };
 
