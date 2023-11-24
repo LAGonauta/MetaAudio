@@ -2,84 +2,58 @@
 #include <unordered_map>
 
 #include "alure2.h"
-#include "dynamic_steamaudio.h"
+#include "SteamAudio/Context.hpp"
+#include "SteamAudio/Scene.hpp"
+#include "SteamAudio/Simulator.hpp"
 
 namespace MetaAudio
 {
-  class SteamAudioMapMeshLoader final
-  {
-  private:
-    class ProcessedMap final
-    {
-    private:
-      std::string mapName;
-      IPLhandle environment;
-      IPLhandle scene;
-      IPLhandle static_mesh;
+	class SteamAudioMapMeshLoader final
+	{
+	private:
+		class ProcessedMap final
+		{
+		private:
+			SteamAudio::Scene scene = nullptr;
+			SteamAudio::StaticMesh static_mesh = nullptr;
+			SteamAudio::Simulator simulator = nullptr;
+			std::string mapName;
 
-    public:
-      ProcessedMap(const std::string& mapName, IPLhandle env, IPLhandle scene, IPLhandle mesh)
-        : environment(env), scene(scene), static_mesh(mesh), mapName(mapName)
-      {
-      }
+		public:
+			ProcessedMap(const std::string& mapName, SteamAudio::Scene scene, SteamAudio::StaticMesh mesh, SteamAudio::Simulator simulator)
+				: scene(scene), static_mesh(mesh), simulator(simulator), mapName(mapName)
+			{
+			}
 
-      ~ProcessedMap()
-      {
-        if (environment != nullptr)
-        {
-          gSteamAudio.iplDestroyEnvironment(&environment);
-        }
+			const std::string& Name()
+			{
+				return mapName;
+			}
 
-        if (scene != nullptr)
-        {
-          gSteamAudio.iplDestroyScene(&scene);
-        }
+			SteamAudio::Simulator Simulator() {
+				return simulator;
+			}
+		};
 
-        if (static_mesh != nullptr)
-        {
-          gSteamAudio.iplDestroyStaticMesh(&static_mesh);
-        }
-      }
+		IPLSimulationSettings sa_simul_settings;
+		SteamAudio::Context sa_context;
 
-      // delete copy
-      ProcessedMap(const ProcessedMap& other) = delete;
-      ProcessedMap& ProcessedMap::operator=(const ProcessedMap& other) = delete;
+		std::unique_ptr<ProcessedMap> current_map = nullptr;
 
-      // allow move
-      ProcessedMap(ProcessedMap&& other) = default;
-      ProcessedMap& operator=(ProcessedMap&& other) = default;
+		alure::Vector3 Normalize(const alure::Vector3& vector);
+		float DotProduct(const alure::Vector3& left, const alure::Vector3& right);
 
-      const std::string& Name()
-      {
-        return mapName;
-      }
+		// Transmission details:
+		// SteamAudio returns the transmission property of the material that was hit, not how much was transmitted
+		// We should calculate ourselves how much is actually transmitted. The unit used in MetaAudio is actually
+		// the attenuation `dB/m`, not how much is transmitted per meter. 
+		std::array<IPLMaterial, 1> materials{ {0.10f,0.20f,0.30f,0.05f,0.100f,0.050f,0.030f} };
+	public:
+		SteamAudioMapMeshLoader(SteamAudio::Context sa_context, IPLSimulationSettings simulSettings);
 
-      IPLhandle Env()
-      {
-        return environment;
-      }
-    };
+		// Checks if map is current, if not update it
+		void update();
 
-    IPLSimulationSettings sa_simul_settings;
-    IPLhandle sa_context;
-
-    std::unique_ptr<ProcessedMap> current_map;
-
-    alure::Vector3 Normalize(const alure::Vector3& vector);
-    float DotProduct(const alure::Vector3& left, const alure::Vector3& right);
-
-    // Transmission details:
-    // SteamAudio returns the transmission property of the material that was hit, not how much was transmitted
-    // We should calculate ourselves how much is actually transmitted. The unit used in MetaAudio is actually
-    // the attenuation `dB/m`, not how much is transmitted per meter. 
-    std::array<IPLMaterial, 1> materials{ {0.10f, 0.20f, 0.30f, 0.05f, 2.0f, 4.0f, (1.0f / 0.15f)} };
-  public:
-    SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings);
-
-    // Checks if map is current , if not update it
-    void update();
-
-    // get current scene data as an IPLhandle
-    IPLhandle CurrentEnvironment();
-  };
+		SteamAudio::Simulator CurrentSimulator();
+	};
 }

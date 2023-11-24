@@ -9,6 +9,7 @@
 #include "Utilities/AudioCache.hpp"
 #include "Loaders/SoundLoader.hpp"
 #include "Utilities/ChannelManager.hpp"
+#include "SteamAudio/Context.hpp"
 
 namespace MetaAudio
 {
@@ -59,9 +60,7 @@ namespace MetaAudio
     void OpenAL_Shutdown();
 
     // SteamAudio
-    IPLhandle sa_context = nullptr;
-    IPLSimulationSettings sa_simulationSettings{};
-    IPLhandle sa_environment = nullptr;
+    SteamAudio::Context sa_context = nullptr;
 
     void SteamAudio_Init();
     void SteamAudio_Shutdown();

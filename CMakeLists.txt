@@ -56,7 +56,9 @@ set(SOURCES
     src/SoundSources/BaseSoundSource.cpp
     src/SoundSources/StaticSoundSource.cpp
     src/SoundSources/StreamingSoundSource.cpp
-)
+    src/SteamAudio/Context.cpp
+    src/SteamAudioLib.cpp
+ "src/SteamAudio/Simulator.cpp" "src/SteamAudio/Scene.cpp" "src/SteamAudio/StaticMesh.cpp" "src/SteamAudio/Source.cpp")
 
 add_library(MetaAudio SHARED ${SOURCES})
 

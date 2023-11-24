@@ -67,7 +67,7 @@ namespace MetaAudio
     }
 
     FILESYSTEM_ANY_SEEK(mFile, static_cast<int>(offset), seekType);
-    auto curPosition = g_pFileSystem->Tell(mFile);
+    auto curPosition = FILESYSTEM_ANY_TELL(mFile);
 
     setg(nullptr, nullptr, nullptr);
     return curPosition;

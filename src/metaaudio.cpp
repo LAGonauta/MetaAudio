@@ -5,8 +5,9 @@
 #include "Loaders/SoundLoader.hpp"
 #include "Vox/VoxManager.hpp"
 #include "AudioEngine.hpp"
+#include "SteamAudioLib.h"
 
-MetaAudio::SteamAudio gSteamAudio;
+MetaAudio::SteamAudioLib gSteamAudio;
 static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
 static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;
 
@@ -22,7 +23,7 @@ mh_enginesave_t *g_pMetaSave = nullptr;
 IFileSystem *g_pFileSystem = nullptr;
 IFileSystem_HL25* g_pFileSystem_HL25 = nullptr;
 
-HINSTANCE g_hInstance = nullptr, g_hThisModule = nullptr, g_hEngineModule = nullptr, g_hSteamAudioInstance = nullptr;
+HINSTANCE g_hInstance = nullptr, g_hThisModule = nullptr, g_hEngineModule = nullptr;
 PVOID g_dwEngineBase = 0;
 DWORD g_dwEngineSize = 0;
 PVOID g_dwEngineTextBase = 0;
@@ -46,21 +47,7 @@ void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_engines
   g_pMetaSave = pSave;
   g_hInstance = GetModuleHandle(NULL);
 
-  g_hSteamAudioInstance = LoadLibrary("phonon.dll");
-  if (g_hSteamAudioInstance)
-  {
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCleanup);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyEnvironment);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyScene);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyStaticMesh);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplGetDirectSoundPath);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateScene);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateStaticMesh);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateEnvironment);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplCreateContext);
-    SetSteamAudioFunctionPointer(gSteamAudio, g_hSteamAudioInstance, iplDestroyContext);
-  }
-
+  gSteamAudio = MetaAudio::SteamAudioLib::Load();
   auto audio_cache = std::make_shared<MetaAudio::AudioCache>();
   sound_loader = std::make_shared<MetaAudio::SoundLoader>(audio_cache);
   audio_engine = std::make_unique<MetaAudio::AudioEngine>(audio_cache, sound_loader);
@@ -70,11 +57,8 @@ void IPlugins::Shutdown()
 {
   sound_loader.reset();
   audio_engine.reset();
-  if (g_hSteamAudioInstance)
-  {
-    FreeLibrary(g_hSteamAudioInstance);
-    g_hSteamAudioInstance = nullptr;
-  }
+  gSteamAudio = MetaAudio::SteamAudioLib();
+  MetaAudio::SteamAudioLib::Unload();
 }
 
 void IPlugins::LoadEngine()

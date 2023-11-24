@@ -18,10 +18,9 @@ namespace MetaAudio
     return (left[0] - right[0]) < EPSILON && (left[1] - right[1]) < EPSILON && (left[2] - right[2]) < EPSILON;
   }
 
-  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(IPLhandle sa_context, IPLSimulationSettings simulSettings)
+  SteamAudioMapMeshLoader::SteamAudioMapMeshLoader(SteamAudio::Context sa_context, IPLSimulationSettings simulSettings)
     : sa_simul_settings(simulSettings), sa_context(sa_context)
   {
-    current_map = std::make_unique<ProcessedMap>("", nullptr, nullptr, nullptr);
   }
 
   alure::Vector3 SteamAudioMapMeshLoader::Normalize(const alure::Vector3& vector)
@@ -57,13 +56,14 @@ namespace MetaAudio
       else
       {
         auto mapModel = map->model;
-        if (current_map->Name() == mapModel->name)
+        if (current_map != nullptr && current_map->Name() == mapModel->name)
         {
           return;
         }
 
         std::vector<IPLTriangle> triangles;
         std::vector<IPLVector3> vertices;
+        std::vector<IPLint32> materialIndices;
 
         for (int i = 0; i < mapModel->nummodelsurfaces; ++i)
         {
@@ -139,6 +139,10 @@ namespace MetaAudio
               triangle.indices[0] = indexoffset + i + 2;
               triangle.indices[1] = indexoffset + i + 1;
               triangle.indices[2] = indexoffset;
+
+              // in the future, each triangle will have its own texture set
+              // which wil be used to select the proper material
+              materialIndices.push_back(0);
             }
 
             // Add vertices to final array
@@ -146,33 +150,48 @@ namespace MetaAudio
           }
         }
 
-        IPLhandle scene = nullptr;
-        IPLerror error = gSteamAudio.iplCreateScene(sa_context, nullptr, IPLSceneType::IPL_SCENETYPE_PHONON, materials.size(), materials.data(), nullptr, nullptr, nullptr, nullptr, nullptr, &scene);
-        if (error)
-        {
-          throw std::runtime_error("Error creating scene: " + std::to_string(error));
+        IPLSceneSettings settings{};
+        settings.type = IPLSceneType::IPL_SCENETYPE_DEFAULT;
+        auto sceneResult = this->sa_context.CreateScene(settings);
+        if (std::get<1>(sceneResult) != IPLerror::IPL_STATUS_SUCCESS) {
+            // TODO: log error and return instead of throw?
+            throw std::runtime_error("Error creating scene: " + std::to_string(std::get<1>(sceneResult)));
+            //return;
         }
 
-        IPLhandle staticmesh = nullptr;
-        error = gSteamAudio.iplCreateStaticMesh(scene, vertices.size(), triangles.size(), vertices.data(), triangles.data(), std::vector<int>(triangles.size(), 0).data(), &staticmesh);
-        if (error)
-        {
-          throw std::runtime_error("Error creating static mesh: " + std::to_string(error));
-        }
+        auto& scene = std::get<0>(sceneResult);
+        IPLStaticMeshSettings staticMeshSettings{};
+        staticMeshSettings.numVertices = vertices.size();
+        staticMeshSettings.vertices = vertices.data();
+        staticMeshSettings.numTriangles = triangles.size();
+        staticMeshSettings.triangles = triangles.data();
+        staticMeshSettings.numMaterials = materials.size();
+        staticMeshSettings.materials = materials.data();
+        staticMeshSettings.materialIndices = materialIndices.data();
 
-        IPLhandle env = nullptr;
-        error = gSteamAudio.iplCreateEnvironment(sa_context, nullptr, sa_simul_settings, scene, nullptr, &env);
-        if (error)
-        {
-          throw std::runtime_error("Error creating environment: " + std::to_string(error));
+        auto staticMeshResult = scene.StaticMeshCreate(staticMeshSettings);
+        if (std::get<1>(staticMeshResult) != IPLerror::IPL_STATUS_SUCCESS) {
+            throw std::runtime_error("Error creating static mesh: " + std::to_string(std::get<1>(staticMeshResult)));
         }
-        current_map = std::make_unique<ProcessedMap>(mapModel->name, env, scene, staticmesh);
+        auto& staticMesh = std::get<0>(staticMeshResult);
+        scene.StaticMeshAdd(staticMesh);
+        scene.Commit();
+
+        auto simulatorResult = sa_context.CreateSimulator(sa_simul_settings);
+        if (std::get<1>(simulatorResult) != IPLerror::IPL_STATUS_SUCCESS) {
+            throw std::runtime_error("Error creating simulator: " + std::to_string(std::get<1>(simulatorResult)));
+        }
+        auto& simulator = std::get<0>(simulatorResult);
+        simulator.SetScene(scene);
+        simulator.Commit();
+
+        current_map = std::make_unique<ProcessedMap>(mapModel->name, scene, staticMesh, simulator);
       }
     }
   }
 
-  IPLhandle SteamAudioMapMeshLoader::CurrentEnvironment()
+  SteamAudio::Simulator SteamAudioMapMeshLoader::CurrentSimulator()
   {
-    return current_map->Env();
+    return current_map->Simulator();
   }
 }
