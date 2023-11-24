@@ -20,11 +20,6 @@ namespace MetaAudio {
 			void StaticMeshAdd(const StaticMesh& staticMesh);
 
 			void Commit();
-
-		protected:
-			// Inherited via ObjectPtr
-			void retain(IPLScene handle) override;
-			void release(IPLScene handle) override;
 		};
 	}
 }

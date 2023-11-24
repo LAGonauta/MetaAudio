@@ -36,15 +36,5 @@ namespace MetaAudio {
 
 			return std::variant<Scene, IPLerror>(std::in_place_type<Scene>, scene);
 		}
-
-		void Context::retain(IPLContext handle)
-		{
-			gSteamAudio.iplContextRetain(handle);
-		}
-
-		void Context::release(IPLContext handle)
-		{
-			gSteamAudio.iplContextRelease(&handle);
-		}
 	}
 }

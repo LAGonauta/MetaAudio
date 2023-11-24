@@ -2,16 +2,6 @@
 
 namespace MetaAudio {
 	namespace SteamAudio {
-		void Scene::retain(IPLScene handle)
-		{
-			gSteamAudio.iplSceneRetain(handle);
-		}
-
-		void Scene::release(IPLScene handle)
-		{
-			gSteamAudio.iplSceneRelease(&handle);
-		}
-
 		std::variant<StaticMesh, IPLerror> Scene::StaticMeshCreate(IPLStaticMeshSettings& staticMeshSettings)
 		{
 			IPLStaticMesh staticMesh(nullptr);

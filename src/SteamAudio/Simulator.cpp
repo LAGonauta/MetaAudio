@@ -2,16 +2,6 @@
 
 namespace MetaAudio {
 	namespace SteamAudio {
-		void Simulator::retain(IPLSimulator handle)
-		{
-			gSteamAudio.iplSimulatorRetain(handle);
-		}
-
-		void Simulator::release(IPLSimulator handle)
-		{
-			gSteamAudio.iplSimulatorRelease(&handle);
-		}
-
 		std::variant<Source, IPLerror> Simulator::SourceCreate(IPLSourceSettings& sourceSettings)
 		{
 			IPLSource source(nullptr);

@@ -13,15 +13,5 @@ namespace MetaAudio {
 			gSteamAudio.iplSourceGetOutputs(this->m_handle, flags, &result);
 			return result;
 		}
-
-		void Source::retain(IPLSource handle)
-		{
-			gSteamAudio.iplSourceRetain(handle);
-		}
-
-		void Source::release(IPLSource handle)
-		{
-			gSteamAudio.iplSourceRelease(&handle);
-		}
 	}
 }

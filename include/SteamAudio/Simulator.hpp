@@ -11,7 +11,6 @@ namespace MetaAudio {
 	namespace SteamAudio {
 		class Simulator final : public ObjectPtr<IPLSimulator> {
 		public:
-			//constexpr Simulator() : ObjectPtr() {};
 			constexpr Simulator(nullptr_t) noexcept : ObjectPtr(nullptr) {}
 			Simulator(IPLSimulator ptr) : ObjectPtr(ptr) {};
 			std::variant<Source, IPLerror> SourceCreate(IPLSourceSettings& sourceSettings);
@@ -22,11 +21,6 @@ namespace MetaAudio {
 
 			void SetSharedInputs(IPLSimulationFlags flags, IPLSimulationSharedInputs& inputs);
 			void RunDirect();
-
-		protected:
-			// Inherited via ObjectPtr
-			void retain(IPLSimulator handle) override;
-			void release(IPLSimulator handle) override;
 		};
 	}
 }

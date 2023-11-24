@@ -17,11 +17,6 @@ namespace MetaAudio {
 
 			std::variant<Simulator, IPLerror> CreateSimulator(IPLSimulationSettings& simulationSettings);
 			std::variant<Scene, IPLerror> CreateScene(IPLSceneSettings& sceneSettings);
-
-		protected:
-			// Inherited via ObjectPtr
-			void retain(IPLContext handle) override;
-			void release(IPLContext handle) override;
 		};
 	}
 }

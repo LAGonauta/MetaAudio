@@ -16,11 +16,6 @@ namespace MetaAudio {
 			Source(IPLSource ptr) : ObjectPtr(ptr) {};
 			void SetInputs(IPLSimulationFlags flags, IPLSimulationInputs& inputs);
 			IPLSimulationOutputs GetOutputs(IPLSimulationFlags flags);
-
-		protected:
-			// Inherited via ObjectPtr
-			void retain(IPLSource handle) override;
-			void release(IPLSource handle) override;
 		};
 	}
 }
