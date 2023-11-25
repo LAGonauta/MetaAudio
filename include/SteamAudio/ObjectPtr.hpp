@@ -18,7 +18,11 @@ namespace MetaAudio {
 		class ObjectPtr {
 			static_assert(IsSupported<HANDLE>::value, "Invalid type for ObjectPtr");
 		public:
-			virtual ~ObjectPtr() {}
+			virtual ~ObjectPtr() {
+				if (m_handle != nullptr) {
+					release(m_handle);
+				}
+			}
 
 			ObjectPtr(const ObjectPtr& other) : ObjectPtr(other.m_handle) {
 				if (m_handle != nullptr) {
