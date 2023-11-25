@@ -6,6 +6,7 @@ extern "C" {
 
 namespace MetaAudio
 {
+#pragma pack(push, 1)
 	class SteamAudioLib
 	{
 	public:
@@ -47,6 +48,7 @@ namespace MetaAudio
 	private:
 		bool m_valid{ false };
 	};
+#pragma pack(pop)
 }
 
 extern MetaAudio::SteamAudioLib gSteamAudio;
