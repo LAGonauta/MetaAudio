@@ -15,12 +15,21 @@ jobs:
   build:
 
     runs-on: windows-2019
-    if: github.repository == 'LAGonauta/MetaAudio'
 
     steps:
       - uses: actions/checkout@v4
         with:
             submodules: recursive
+            fetch-depth: 0
+
+      - name: Get commit hash
+        run: echo "CommitHash=$(git rev-parse --short=7 HEAD)" >> $env:GITHUB_ENV
+  
+      - name: Get commit count
+        run: echo "CommitCount=$(git rev-list --count master)" >> $env:GITHUB_ENV
+
+      - name: Get current date
+        run: echo "CurrentDate=$(date +'%Y-%m-%d')" >> $env:GITHUB_ENV
 
       - name: Init dependencies
         working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -84,5 +93,26 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-         name: MetaAudio
+         name: '${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}'
          path: Output/
+
+      - name: Make Release folder
+        run: mkdir "Release"
+
+      - name: Compress artifacts
+        uses: papeloto/action-zip@v1
+        with:
+          files: 'Output/'
+          dest: 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}.zip'
+
+      - name: Make copy for static download URL
+        run: copy 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}.zip' 'Release/MetaAudio.zip'
+  
+      - name: GitHub pre-release
+        uses: 'marvinpinto/action-automatic-releases@latest'
+        with:
+          repo_token: '${{secrets.GITHUB_TOKEN}}'
+          automatic_release_tag: 'latest'
+          prerelease: true
+          title: '[${{env.CurrentDate}}] MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}'
+          files: "Release/*"
