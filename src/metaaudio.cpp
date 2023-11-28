@@ -39,7 +39,7 @@ ICommandLine *CommandLine()
   return g_pInterface->CommandLine;
 }
 
-void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_enginesave_t *pSave)
+void IPluginsV4::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_enginesave_t *pSave)
 {
   g_pInterface = pInterface;
   g_pMetaHookAPI = pAPI;
@@ -66,7 +66,7 @@ void IPlugins::Init(metahook_api_t *pAPI, mh_interface_t *pInterface, mh_engines
   audio_engine = std::make_unique<MetaAudio::AudioEngine>(audio_cache, sound_loader);
 }
 
-void IPlugins::Shutdown()
+void IPluginsV4::Shutdown()
 {
   sound_loader.reset();
   audio_engine.reset();
@@ -77,7 +77,7 @@ void IPlugins::Shutdown()
   }
 }
 
-void IPlugins::LoadEngine()
+void IPluginsV4::LoadEngine(cl_enginefunc_t* pEngfuncs)
 {
   g_pFileSystem = g_pInterface->FileSystem;
   if (!g_pFileSystem)//backward compatibility
@@ -92,14 +92,15 @@ void IPlugins::LoadEngine()
   g_dwEngineDataBase = g_pMetaHookAPI->GetSectionByName(g_dwEngineBase, ".data\x0\x0\x0", &g_dwEngineDataSize);
   g_dwEngineRdataBase = g_pMetaHookAPI->GetSectionByName(g_dwEngineBase, ".rdata\x0\x0", &g_dwEngineRdataSize);
 
+  memcpy(&gEngfuncs, pEngfuncs, sizeof(gEngfuncs));
+
   S_FillAddress();
   S_InstallHook(audio_engine.get(), sound_loader.get());
 }
 
-void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
+void IPluginsV4::LoadClient(cl_exportfuncs_t *pExportFunc)
 {
   memcpy(&gExportfuncs, pExportFunc, sizeof(gExportfuncs));
-  memcpy(&gEngfuncs, g_pMetaSave->pEngineFuncs, sizeof(gEngfuncs));
 
   gEngfuncs.pfnAddCommand("al_version", AL_Version);
   gEngfuncs.pfnAddCommand("al_reset_efx", AL_ResetEFX);
@@ -107,10 +108,31 @@ void IPlugins::LoadClient(cl_exportfuncs_t *pExportFunc)
   gEngfuncs.pfnAddCommand("al_show_full_devices", AL_FullDevices);
 }
 
-void IPlugins::ExitGame(int iResult)
+void IPluginsV4::ExitGame(int iResult)
 {
     S_UninstallHook();
     Shutdown();
 }
 
-EXPOSE_SINGLE_INTERFACE(IPlugins, IPlugins, METAHOOK_PLUGIN_API_VERSION);
+const char completeVersion[] =
+{
+    BUILD_YEAR_CH0, BUILD_YEAR_CH1, BUILD_YEAR_CH2, BUILD_YEAR_CH3,
+    '-',
+    BUILD_MONTH_CH0, BUILD_MONTH_CH1,
+    '-',
+    BUILD_DAY_CH0, BUILD_DAY_CH1,
+    'T',
+    BUILD_HOUR_CH0, BUILD_HOUR_CH1,
+    ':',
+    BUILD_MIN_CH0, BUILD_MIN_CH1,
+    ':',
+    BUILD_SEC_CH0, BUILD_SEC_CH1,
+    '\0'
+};
+
+const char* IPluginsV4::GetVersion(void)
+{
+    return completeVersion;
+}
+
+EXPOSE_SINGLE_INTERFACE(IPluginsV4, IPluginsV4, METAHOOK_PLUGIN_API_VERSION_V4);
