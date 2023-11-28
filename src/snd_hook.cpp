@@ -401,7 +401,10 @@ void S_FillAddress()
       {
           typedef struct
           {
-              int unused;
+              int cmp_instCount;
+              void* branch_succ;
+              int mov2BC_instCount;
+              int mov2BC_reg;
           }SND_Spatializing_Ctx;
 
           SND_Spatializing_Ctx ctx = { 0 };
@@ -439,9 +442,23 @@ void S_FillAddress()
                   (PUCHAR)pinst->detail->x86.operands[1].mem.disp < (PUCHAR)g_dwEngineDataBase + g_dwEngineDataSize)
               {//3B 05 8C 61 3E 11                                   cmp     eax, cl_viewentity
                   gAudEngine.cl_viewentity = (decltype(gAudEngine.cl_viewentity))pinst->detail->x86.operands[1].mem.disp;
+                  ctx->cmp_instCount = instCount;
               }
 
-              if (gAudEngine.cl_viewentity)
+              if (!ctx->branch_succ && instCount == ctx->cmp_instCount + 1)
+              {
+                  if ((pinst->id == X86_INS_JMP || (pinst->id >= X86_INS_JAE && pinst->id <= X86_INS_JS)) &&
+                      pinst->detail->x86.op_count == 1 &&
+                      pinst->detail->x86.operands[0].type == X86_OP_IMM)
+                  {
+                      void* imm = (void*)pinst->detail->x86.operands[0].imm;
+
+                      ctx->branch_succ = imm;
+                  }
+              }
+
+
+              if (gAudEngine.cl_viewentity && ctx->branch_succ)
                   return TRUE;
 
               if (address[0] == 0xCC)
@@ -454,6 +471,73 @@ void S_FillAddress()
           }, 0, &ctx);
 
           Sig_FuncNotFound(cl_viewentity);
+
+          if (!ctx.branch_succ)
+          {
+              Sig_NotFound("SND_Spatialize_branch_succ");
+          }
+
+          g_pMetaHookAPI->DisasmRanges(ctx.branch_succ, 0x100, [](void* inst, PUCHAR address, size_t instLen, int instCount, int depth, PVOID context)
+          {
+              auto pinst = (cs_insn*)inst;
+              auto ctx = (SND_Spatializing_Ctx*)context;
+
+              if (!gAudEngine.cl_num_entities &&
+                  pinst->id == X86_INS_CMP &&
+                  pinst->detail->x86.op_count == 2 &&
+                  pinst->detail->x86.operands[0].type == X86_OP_REG &&
+                  pinst->detail->x86.operands[1].type == X86_OP_MEM &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp > (PUCHAR)g_dwEngineDataBase &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp < (PUCHAR)g_dwEngineDataBase + g_dwEngineDataSize)
+              {// cmp     eax, cl_num_entities
+
+                  if ((ULONG_PTR)pinst->detail->x86.operands[1].mem.disp > (ULONG_PTR)gAudEngine.cl_viewentity &&
+                      (ULONG_PTR)pinst->detail->x86.operands[1].mem.disp < (ULONG_PTR)gAudEngine.cl_viewentity + 4 * sizeof(ULONG_PTR))
+                  {
+                      gAudEngine.cl_num_entities = (decltype(gAudEngine.cl_num_entities))pinst->detail->x86.operands[1].mem.disp;
+                  }
+              }
+
+              if (!ctx->mov2BC_instCount &&
+                  pinst->id == X86_INS_MOV &&
+                  pinst->detail->x86.op_count == 2 &&
+                  pinst->detail->x86.operands[0].type == X86_OP_REG &&
+                  pinst->detail->x86.operands[1].type == X86_OP_MEM &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.base != 0 &&
+                  pinst->detail->x86.operands[1].mem.disp == 0x2BC)
+              {
+                 // mov     eax, [ecx + 2BCh]
+
+                  ctx->mov2BC_instCount = instCount;
+                  ctx->mov2BC_reg = pinst->detail->x86.operands[0].reg;
+              }
+
+              if (!gAudEngine.cl_parsecount &&ctx->mov2BC_instCount &&
+                  instCount > ctx->mov2BC_instCount && instCount < ctx->mov2BC_instCount + 5 &&
+                  pinst->id == X86_INS_CMP &&
+                  pinst->detail->x86.op_count == 2 &&
+                  pinst->detail->x86.operands[0].type == X86_OP_REG &&
+                  pinst->detail->x86.operands[0].reg == ctx->mov2BC_reg &&
+                  pinst->detail->x86.operands[1].type == X86_OP_MEM &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp >(PUCHAR)g_dwEngineDataBase &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp < (PUCHAR)g_dwEngineDataBase + g_dwEngineDataSize)
+              {
+                  //cmp     eax, cl_parsecount
+
+                  gAudEngine.cl_parsecount = (decltype(gAudEngine.cl_parsecount))pinst->detail->x86.operands[1].mem.disp;
+              }
+
+              if (gAudEngine.cl_num_entities && gAudEngine.cl_parsecount)
+                  return TRUE;
+
+              if (address[0] == 0xCC)
+                  return TRUE;
+
+              if (pinst->id == X86_INS_RET)
+                  return TRUE;
+
+              return FALSE;
+          }, 0, & ctx);
       }
 
       if (1)
@@ -588,6 +672,33 @@ void S_FillAddress()
           Sig_FuncNotFound(g_SND_VoiceOverdrive);
       }
 
+      if (1)
+      {
+          g_pMetaHookAPI->DisasmRanges(gAudEngine.S_FindName, 0x120, [](void* inst, PUCHAR address, size_t instLen, int instCount, int depth, PVOID context)
+          {
+              auto pinst = (cs_insn*)inst;
+
+              if (pinst->id == X86_INS_CMP && pinst->detail->x86.op_count == 2 &&
+                  pinst->detail->x86.operands[0].type == X86_OP_REG &&
+                  pinst->detail->x86.operands[1].type == X86_OP_MEM &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp > (PUCHAR)g_dwEngineDataBase &&
+                  (PUCHAR)pinst->detail->x86.operands[1].mem.disp < (PUCHAR)g_dwEngineDataBase + g_dwEngineDataSize)
+              {   //8B 0D CC 37 F0 02                                   mov     ecx, cl_viewentity
+
+                  gAudEngine.cl_servercount = (decltype(gAudEngine.cl_servercount))pinst->detail->x86.operands[1].mem.disp;
+              }
+
+              if (address[0] == 0xCC)
+                  return TRUE;
+
+              if (pinst->id == X86_INS_RET)
+                  return TRUE;
+
+              return FALSE;
+          }, 0, NULL);
+
+          Sig_FuncNotFound(cl_servercount);
+      }
 
       if (1)
       {
@@ -723,22 +834,35 @@ void S_FillAddress()
 
   ULONG_PTR addr;
 
+  //Deprecated way
   if (!gAudEngine.cl_viewentity)
   {
-      addr = (ULONG_PTR)Search_Pattern_From_Size((void*)gAudEngine.SND_Spatialize, 0x10, "\x8B\x0D");
+      addr = (ULONG_PTR)Search_Pattern_From_Size((void*)gAudEngine.SND_Spatialize, 0x100, "\x8B\x0D");
 
       Sig_AddrNotFound(cl_viewentity);
 
       gAudEngine.cl_viewentity = *(int**)((ULONG_PTR)addr + 2);
+
+      //idk why but cl_num_entities always be at &cl_viewentity + sizeof(uintptr_t) * 3 no matter in Sven or in HL
+      gAudEngine.cl_num_entities = gAudEngine.cl_viewentity + 3;
   }
 
-  gAudEngine.cl_num_entities = gAudEngine.cl_viewentity + 3;
-  gAudEngine.cl_parsecount = gAudEngine.cl_viewentity - (0x1789C8 / 4);
-  gAudEngine.cl_servercount = gAudEngine.cl_parsecount - 2;
-  gAudEngine.cl_waterlevel = gAudEngine.cl_servercount + 0x450 / 4;
+  //gAudEngine.cl_parsecount = gAudEngine.cl_viewentity - (0x1789C8 / 4);
+  //gAudEngine.cl_servercount = gAudEngine.cl_parsecount - 2;
+  //gAudEngine.cl_waterlevel = gAudEngine.cl_servercount + 0x450 / 4;
 
-  gAudEngine.cl_time = (double *)(gAudEngine.cl_waterlevel + 11);
-  gAudEngine.cl_oldtime = gAudEngine.cl_time + 1;
+  addr = (ULONG_PTR)Search_Pattern_From_Size((void*)gEngfuncs.GetClientTime, 0x20, "\xDD\x05");
+  Sig_AddrNotFound("cl_time");
+  gAudEngine.cl_time = (decltype(gAudEngine.cl_time))*(ULONG_PTR*)(addr + 2);
+  gAudEngine.cl_oldtime = (decltype(gAudEngine.cl_oldtime))(gAudEngine.cl_time + 1);
+
+#define CL_WATERLEVEL_SIG "\x83\x3D\x2A\x2A\x2A\x2A\x02\xA1\x2A\x2A\x2A\x2A\x2A\x2A\x85\xC0"
+  addr = (ULONG_PTR)Search_Pattern(CL_WATERLEVEL_SIG);
+  Sig_AddrNotFound("cl_waterlevel");
+  gAudEngine.cl_waterlevel = (decltype(gAudEngine.cl_waterlevel))*(ULONG_PTR*)(addr + 2);
+
+ // gAudEngine.cl_time = (double *)(gAudEngine.cl_waterlevel + 11);
+ // gAudEngine.cl_oldtime = gAudEngine.cl_time + 1;
 
   if (!gAudEngine.cszrawsentences)
   {
