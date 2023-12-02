@@ -153,7 +153,7 @@ namespace MetaAudio
         IPLSceneSettings settings{};
         settings.type = IPLSceneType::IPL_SCENETYPE_DEFAULT;
         auto sceneResult = this->sa_context.CreateScene(settings);
-        if (std::get<1>(sceneResult) != IPLerror::IPL_STATUS_SUCCESS) {
+		if (std::holds_alternative<IPLerror>(sceneResult) && std::get<1>(sceneResult) != IPLerror::IPL_STATUS_SUCCESS) {
             // TODO: log error and return instead of throw?
             throw std::runtime_error("Error creating scene: " + std::to_string(std::get<1>(sceneResult)));
             //return;
@@ -170,7 +170,7 @@ namespace MetaAudio
         staticMeshSettings.materialIndices = materialIndices.data();
 
         auto staticMeshResult = scene.StaticMeshCreate(staticMeshSettings);
-        if (std::get<1>(staticMeshResult) != IPLerror::IPL_STATUS_SUCCESS) {
+		if (std::holds_alternative<IPLerror>(staticMeshResult) && std::get<1>(staticMeshResult) != IPLerror::IPL_STATUS_SUCCESS) {
             throw std::runtime_error("Error creating static mesh: " + std::to_string(std::get<1>(staticMeshResult)));
         }
         auto& staticMesh = std::get<0>(staticMeshResult);
@@ -178,7 +178,7 @@ namespace MetaAudio
         scene.Commit();
 
         auto simulatorResult = sa_context.CreateSimulator(sa_simul_settings);
-        if (std::get<1>(simulatorResult) != IPLerror::IPL_STATUS_SUCCESS) {
+		if (std::holds_alternative<IPLerror>(simulatorResult) && std::get<1>(simulatorResult) != IPLerror::IPL_STATUS_SUCCESS) {
             throw std::runtime_error("Error creating simulator: " + std::to_string(std::get<1>(simulatorResult)));
         }
         auto& simulator = std::get<0>(simulatorResult);

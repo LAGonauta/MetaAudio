@@ -35,7 +35,7 @@ namespace MetaAudio
 		IPLSourceSettings sourceSettings{};
 		sourceSettings.flags = IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT;
 		auto sourceResult = simulator.SourceCreate(sourceSettings);
-		if (std::get<1>(sourceResult) != IPLerror::IPL_STATUS_SUCCESS) {
+		if (std::holds_alternative<IPLerror>(sourceResult) && std::get<1>(sourceResult) != IPLerror::IPL_STATUS_SUCCESS) {
 			// TODO: LOG
 			return OcclusionFrequencyGain{ 1.0f, 1.0f, 1.0f };
 		}

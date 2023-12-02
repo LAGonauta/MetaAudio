@@ -728,9 +728,12 @@ namespace MetaAudio
 		settings.version = STEAMAUDIO_VERSION;
 		settings.logCallback = reinterpret_cast<IPLLogFunction>(SteamAudioLog);
 		auto result = SteamAudio::Context::Create(settings);
-		if (std::get<1>(result) != IPL_STATUS_SUCCESS) {
-			SteamAudioLog(IPLLogLevel::IPL_LOGLEVEL_ERROR, "Unable to load SteamAudio");
-			return;
+		if (std::holds_alternative<IPLerror>(result)) {
+			auto& err = std::get<1>(result);
+			if (err != IPL_STATUS_SUCCESS) {
+				SteamAudioLog(IPLLogLevel::IPL_LOGLEVEL_ERROR, "Unable to load SteamAudio");
+				return;
+			}
 		}
 		sa_context = std::get<0>(result);
 		IPLSimulationSettings simulationSettings{};
