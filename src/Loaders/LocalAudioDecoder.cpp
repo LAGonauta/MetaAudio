@@ -20,7 +20,7 @@ namespace MetaAudio
       return false;
     }
 
-    auto audioData = m_data[full_path];
+    auto& audioData = m_data[full_path];
     info = audioData.info;
 
     auto loop_points = dec->getLoopPoints();

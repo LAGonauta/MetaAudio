@@ -7,6 +7,7 @@
 #include "event_api.h"
 #include "snd_local.h"
 #include "Config/EfxJsonReader.hpp"
+#include "Config/SettingsManager.hpp"
 #include "Effects/EnvEffects.hpp"
 #include "Effects/GoldSrcOcclusionCalculator.hpp"
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
@@ -14,15 +15,8 @@
 #include "Workarounds/XFiWorkarounds.hpp"
 #include "SoundSources/BaseSoundSource.hpp"
 
-extern cvar_t* sxroomwater_type;
-extern cvar_t* sxroom_type;
-
 namespace MetaAudio
 {
-  static cvar_t* al_occlusion = nullptr;
-  static cvar_t* al_occlusion_fade = nullptr;
-  static cvar_t* sxroom_off = nullptr;
-
   // HL1 DSPROPERTY_EAXBUFFER_REVERBMIX seems to be always set to 0.38,
   // with no adjustment of reverb intensity with distance.
   // Reverb adjustment with distance is disabled per-source.
@@ -55,7 +49,7 @@ namespace MetaAudio
   void EnvEffects::InterplEffect(int roomtype)
   {
     EFXEAXREVERBPROPERTIES desired = presets_room[0];
-    if (roomtype > 0 && roomtype < CSXROOM && sxroom_off && !sxroom_off->value)
+    if (roomtype > 0 && roomtype < CSXROOM && settings.ReverbEnabled())
     {
       desired = presets_room[roomtype];
     }
@@ -115,7 +109,7 @@ namespace MetaAudio
     if (ch->entnum != *gAudEngine.cl_viewentity && pent != nullptr && sent != nullptr)
     {
       // Detect collisions and reduce gain on occlusion
-      if (al_occlusion->value)
+      if (settings.OcclusionEnabled())
       {
         // Check occlusion only on those entities that can be heard.
         float distance = alure::Vector3(ch->origin[0], ch->origin[1], ch->origin[2]).getDistanceSquared(
@@ -156,9 +150,9 @@ namespace MetaAudio
         ch->HighGain.target = 1.0f;
       }
 
-      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->LowGain);
-      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->MidGain);
-      FadeToNewValue(al_occlusion_fade->value, ch->firstpass, ch->HighGain);
+      FadeToNewValue(settings.OcclusionFade(), ch->firstpass, ch->LowGain);
+      FadeToNewValue(settings.OcclusionFade(), ch->firstpass, ch->MidGain);
+      FadeToNewValue(settings.OcclusionFade(), ch->firstpass, ch->HighGain);
 
       params.mGain = ch->MidGain.current;
       params.mGainHF = ch->HighGain.current;
@@ -189,21 +183,6 @@ namespace MetaAudio
 
   EnvEffects::EnvEffects(alure::Context& al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator) : occlusion_calculator(occlusion_calculator)
   {
-    if (al_occlusion == nullptr)
-    {
-      al_occlusion = gEngfuncs.pfnRegisterVariable("al_occlusion", "1", FCVAR_EXTDLL);
-    }
-
-    if (al_occlusion_fade == nullptr)
-    {
-      al_occlusion_fade = gEngfuncs.pfnRegisterVariable("al_occlusion_fade", "1", FCVAR_EXTDLL);
-    }
-
-    if (sxroom_off == nullptr)
-    {
-      sxroom_off = gEngfuncs.pfnGetCvarPointer("room_off");
-    }
-
     const char* _al_maxsends;
     CommandLine()->CheckParm("-al_maxsends", &_al_maxsends);
 
@@ -381,7 +360,7 @@ namespace MetaAudio
 
   void EnvEffects::OverrideEffects()
   {
-    std::array<char, 256> directory;
+    std::array<char, 256> directory{};
 
     FILESYSTEM_ANY_GETCURRENTDIRECTORY(directory.data(), directory.size());
 
