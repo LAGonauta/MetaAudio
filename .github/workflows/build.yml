@@ -115,7 +115,7 @@ jobs:
         uses: 'marvinpinto/action-automatic-releases@latest'
         with:
           repo_token: '${{secrets.GITHUB_TOKEN}}'
-          automatic_release_tag: 'latest'
+          automatic_release_tag: 'steamaudio'
           prerelease: true
           title: '[${{env.CurrentDate}}] MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}-${{env.BranchName}}'
           files: "Release/*"
