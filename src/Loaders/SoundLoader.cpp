@@ -193,7 +193,7 @@ namespace MetaAudio
       if (sc == nullptr)
         return nullptr;
 
-      wavinfo_t info = wavinfo_t();
+      wavinfo_t info{};
       //We can't interfere with Alure, so we need a copy of the data for mouth movement.
       if (!m_decoder->GetWavinfo(info, file_path.value(), sc->data))
         return nullptr;

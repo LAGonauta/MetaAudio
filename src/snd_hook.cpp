@@ -474,7 +474,7 @@ void S_FillAddress()
 
           if (!ctx.branch_succ)
           {
-              Sig_NotFound("SND_Spatialize_branch_succ");
+              // if not found, we will fallback to the old method at the end
           }
 
           g_pMetaHookAPI->DisasmRanges(ctx.branch_succ, 0x100, [](void* inst, PUCHAR address, size_t instLen, int instCount, int depth, PVOID context)
@@ -617,7 +617,7 @@ void S_FillAddress()
           }, 0, &ctx);
 
           Sig_FuncNotFound(cszrawsentences);
-          Sig_FuncNotFound(rgpszrawsentence);
+          // if rgpszrawsentence is not found we will fallback to the old way
       }
 
       if (1)
@@ -842,14 +842,20 @@ void S_FillAddress()
       Sig_AddrNotFound(cl_viewentity);
 
       gAudEngine.cl_viewentity = *(int**)((ULONG_PTR)addr + 2);
+  }
 
+  if (!gAudEngine.cl_num_entities)
+  {
       //idk why but cl_num_entities always be at &cl_viewentity + sizeof(uintptr_t) * 3 no matter in Sven or in HL
       gAudEngine.cl_num_entities = gAudEngine.cl_viewentity + 3;
   }
 
-  //gAudEngine.cl_parsecount = gAudEngine.cl_viewentity - (0x1789C8 / 4);
-  //gAudEngine.cl_servercount = gAudEngine.cl_parsecount - 2;
-  //gAudEngine.cl_waterlevel = gAudEngine.cl_servercount + 0x450 / 4;
+  if (!gAudEngine.cl_parsecount)
+  {
+      gAudEngine.cl_parsecount = gAudEngine.cl_viewentity - (0x1789C8 / 4);
+      gAudEngine.cl_servercount = gAudEngine.cl_parsecount - 2;
+      gAudEngine.cl_waterlevel = gAudEngine.cl_servercount + 0x450 / 4;
+  }
 
   addr = (ULONG_PTR)Search_Pattern_From_Size((void*)gEngfuncs.GetClientTime, 0x20, "\xDD\x05");
   Sig_AddrNotFound("cl_time");
@@ -857,12 +863,12 @@ void S_FillAddress()
   gAudEngine.cl_oldtime = (decltype(gAudEngine.cl_oldtime))(gAudEngine.cl_time + 1);
 
 #define CL_WATERLEVEL_SIG "\x83\x3D\x2A\x2A\x2A\x2A\x02\xA1\x2A\x2A\x2A\x2A\x2A\x2A\x85\xC0"
-  addr = (ULONG_PTR)Search_Pattern(CL_WATERLEVEL_SIG);
-  Sig_AddrNotFound("cl_waterlevel");
-  gAudEngine.cl_waterlevel = (decltype(gAudEngine.cl_waterlevel))*(ULONG_PTR*)(addr + 2);
-
- // gAudEngine.cl_time = (double *)(gAudEngine.cl_waterlevel + 11);
- // gAudEngine.cl_oldtime = gAudEngine.cl_time + 1;
+  if (!gAudEngine.cl_waterlevel)
+  {
+      addr = (ULONG_PTR)Search_Pattern(CL_WATERLEVEL_SIG);
+      Sig_AddrNotFound("cl_waterlevel");
+      gAudEngine.cl_waterlevel = (decltype(gAudEngine.cl_waterlevel)) * (ULONG_PTR*)(addr + 2);
+  }
 
   if (!gAudEngine.cszrawsentences)
   {

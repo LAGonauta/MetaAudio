@@ -10,6 +10,7 @@
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
 
 #include "SoundSources/SoundSourceFactory.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -311,20 +312,17 @@ namespace MetaAudio
 			AL_CopyVector(forward, orientation);
 			AL_CopyVector(up, orientation + 3);
 
-			alure::Listener al_listener = al_context->getListener();
-			if (openal_mute)
-			{
-				al_listener.setGain(0.0f);
-			}
-			else
-			{
-				if (volume)
-					al_listener.setGain(std::clamp(volume->value, 0.0f, 1.0f));
-				else
-					al_listener.setGain(1.0f);
-			}
+      alure::Listener al_listener = al_context->getListener();
+      if (openal_mute)
+      {
+        al_listener.setGain(0.0f);
+      }
+      else
+      {
+        al_listener.setGain(std::clamp(settings.Volume(), 0.0f, 1.0f));
+      }
 
-			al_context->setDopplerFactor(std::clamp(al_doppler->value, 0.0f, 10.0f));
+      al_context->setDopplerFactor(std::clamp(settings.DopplerFactor(), 0.0f, 10.0f));
 
 			std::pair<alure::Vector3, alure::Vector3> alure_orientation(
 				alure::Vector3(orientation[0], orientation[1], orientation[2]),
@@ -361,28 +359,26 @@ namespace MetaAudio
 			al_listener.setPosition(AL_UnpackVector(origin));
 			al_listener.setOrientation(alure_orientation);
 
-			int roomtype = 0;
-			bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
-			if (sxroomwater_type && sxroom_type)
-			{
-				roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
-			}
-			al_efx->InterplEffect(roomtype);
+      bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
+      int roomtype = underwater ?
+          (int)settings.ReverbUnderwaterType() :
+          (int)settings.ReverbType();
+      al_efx->InterplEffect(roomtype);
 
 			channel_manager->ForEachChannel([&](aud_channel_t& channel) { SND_Spatialize(&channel, false); });
 
-			if (snd_show && snd_show->value)
-			{
-				std::string output;
-				size_t total = 0;
-				channel_manager->ForEachChannel([&](aud_channel_t& channel)
-					{
-						if (channel.sfx && channel.volume > 0)
-						{
-							output.append(std::to_string(static_cast<int>(channel.volume * 255.0f)) + " " + channel.sfx->name + "\n");
-							++total;
-						}
-					});
+      if (settings.SoundShow())
+      {
+        std::string output;
+        size_t total = 0;
+        channel_manager->ForEachChannel([&](aud_channel_t& channel)
+          {
+            if (channel.sfx && channel.volume > 0)
+            {
+              output.append(std::to_string(static_cast<int>(channel.volume * 255.0f)) + " " + channel.sfx->name + "\n");
+              ++total;
+            }
+          });
 
 				if (!output.empty())
 				{
@@ -436,10 +432,10 @@ namespace MetaAudio
 			return;
 		}
 
-		if (nosound && nosound->value)
-		{
-			return;
-		}
+    if (settings.NoSound())
+    {
+      return;
+    }
 
 		if (sfx->name[0] == '*')
 			entchannel = CHAN_STREAM;
@@ -519,30 +515,30 @@ namespace MetaAudio
 			vox->InitMouth(entnum, entchannel);
 		}
 
-		if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
-		{
-			if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
-			{
-				ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 1024, 2);
-				delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
-				sc = nullptr;
-			}
-			else
-			{
-				ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 4096, 4);
-			}
-		}
-		else
-		{
-			if (al_xfi_workaround->value == 2.0f || sc->force_streaming)
-			{
-				ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
-			}
-			else
-			{
-				ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
-			}
-		}
+    if (ch->entchannel == CHAN_STREAM || (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END))
+    {
+      if (ch->entchannel >= CHAN_NETWORKVOICE_BASE && ch->entchannel <= CHAN_NETWORKVOICE_END)
+      {
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 1024, 2);
+        delete sc; // must be deleted here as voice data does not go to the cache to be deleted later
+        sc = nullptr;
+      }
+      else
+      {
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(sc->decoder, al_context->createSource(), 4096, 4);
+      }
+    }
+    else
+    {
+      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming)
+      {
+        ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
+      }
+      else
+      {
+        ch->sound_source = SoundSourceFactory::GetStaticSource(sc->buffer, al_context->createSource());
+      }
+    }
 
 		try
 		{
@@ -763,46 +759,34 @@ namespace MetaAudio
 		}
 	}
 
-	void AudioEngine::S_Init()
-	{
-		al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
-		al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
-		if (gSteamAudio.IsValid())
-		{
-			al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "0", FCVAR_EXTDLL);
-		}
+  void AudioEngine::S_Init()
+  {
+    gAudEngine.S_Init();
 
-		gAudEngine.S_Init();
+    if (!gEngfuncs.CheckParm("-nosound", NULL))
+    {
+      S_StopAllSounds(true);
+    }
 
-		if (!gEngfuncs.CheckParm("-nosound", NULL))
-		{
-			nosound = gEngfuncs.pfnGetCvarPointer("nosound");
-			volume = gEngfuncs.pfnGetCvarPointer("volume");
-			sxroomwater_type = gEngfuncs.pfnGetCvarPointer("waterroom_type");
-			sxroom_type = gEngfuncs.pfnGetCvarPointer("room_type");
-			snd_show = gEngfuncs.pfnGetCvarPointer("snd_show");
-
-			S_StopAllSounds(true);
-		}
-
-		SteamAudio_Init();
-		AL_ResetEFX();
+    SteamAudio_Init();
+    settings.Init(gEngfuncs);
+    AL_ResetEFX();
 
 		channel_manager = alure::MakeUnique<ChannelManager>();
 		vox = alure::MakeUnique<VoxManager>(this, m_loader);
 	}
 
-	std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
-	{
-		if (!al_occluder || al_occluder->value == 0.0f)
-		{
-			return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
-		}
-		else
-		{
-			return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
-		}
-	}
+  std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
+  {
+    if (settings.Occluder() == OccluderType::SteamAudio)
+    {
+      return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);  
+    }
+    else
+    {
+      return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
+    }
+  }
 
 	AudioEngine::~AudioEngine()
 	{

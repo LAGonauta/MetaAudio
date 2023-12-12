@@ -40,6 +40,7 @@ set(SOURCES
     src/Utilities/AudioCache.cpp
     src/interface.cpp
     src/Config/EfxJsonReader.cpp
+    src/Config/SettingsManager.cpp
     src/Effects/GoldSrcOcclusionCalculator.cpp
     src/Effects/SteamAudioOcclusionCalculator.cpp
     src/Utilities/Fade.cpp
