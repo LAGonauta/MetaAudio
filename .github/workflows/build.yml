@@ -96,7 +96,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-         name: '${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}'
+         name: '${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}-${{env.BranchName}}'
          path: Output/
 
       - name: Make Release folder
@@ -117,5 +117,5 @@ jobs:
           repo_token: '${{secrets.GITHUB_TOKEN}}'
           automatic_release_tag: 'latest'
           prerelease: true
-          title: '[${{env.CurrentDate}}] MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}'
+          title: '[${{env.CurrentDate}}] MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}-${{env.BranchName}}'
           files: "Release/*"
