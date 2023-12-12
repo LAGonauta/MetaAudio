@@ -22,11 +22,14 @@ jobs:
             submodules: recursive
             fetch-depth: 0
 
+      - name: Get branch name
+        run: echo "BranchName=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $env:GITHUB_ENV
+
       - name: Get commit hash
         run: echo "CommitHash=$(git rev-parse --short=7 HEAD)" >> $env:GITHUB_ENV
   
       - name: Get commit count
-        run: echo "CommitCount=$(git rev-list --count master)" >> $env:GITHUB_ENV
+        run: echo "CommitCount=$(git rev-list --count ${{env.BranchName}})" >> $env:GITHUB_ENV
 
       - name: Get current date
         run: echo "CurrentDate=$(date +'%Y-%m-%d')" >> $env:GITHUB_ENV
@@ -82,8 +85,8 @@ jobs:
 
       - name: Download MetaHook
         run: |
-          Invoke-WebRequest -Uri https://github.com/hzqst/MetaHookSv/releases/download/v20231124b/MetaHookSv-windows-x86.zip -OutFile MetaHook.zip
-          if (!(Get-FileHash ./MetaHook.zip).Hash.Equals("4B22EA01E0B025CAEABD7301FEF52FA05A807263B8B761760FA3AAD7E1D2EA23")) {
+          Invoke-WebRequest -Uri https://github.com/hzqst/MetaHookSv/releases/download/v20231210a/MetaHookSv-windows-x86.zip -OutFile MetaHook.zip
+          if (!(Get-FileHash ./MetaHook.zip).Hash.Equals("E5F3DB974C0D00241125757A6CE83E1BCF114D156E8E3E27C7622CAE7DDE36A1")) {
             Exit -1
           }
           Expand-Archive ./MetaHook.zip -DestinationPath MetaHook/
@@ -103,10 +106,10 @@ jobs:
         uses: papeloto/action-zip@v1
         with:
           files: 'Output/'
-          dest: 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}.zip'
+          dest: 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}-${{env.BranchName}}.zip'
 
       - name: Make copy for static download URL
-        run: copy 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}.zip' 'Release/MetaAudio.zip'
+        run: copy 'Release/${{env.CurrentDate}}_MetaAudio-${{env.CommitCount}}@${{env.CommitHash}}-${{env.BranchName}}.zip' 'Release/MetaAudio.zip'
   
       - name: GitHub pre-release
         uses: 'marvinpinto/action-automatic-releases@latest'
