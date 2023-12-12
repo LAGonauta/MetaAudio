@@ -8,6 +8,7 @@
 #include "Effects/SteamAudioOcclusionCalculator.hpp"
 
 #include "SoundSources/SoundSourceFactory.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -316,13 +317,10 @@ namespace MetaAudio
       }
       else
       {
-        if (volume)
-          al_listener.setGain(std::clamp(volume->value, 0.0f, 1.0f));
-        else
-          al_listener.setGain(1.0f);
+        al_listener.setGain(std::clamp(settings.Volume(), 0.0f, 1.0f));
       }
 
-      al_context->setDopplerFactor(std::clamp(al_doppler->value, 0.0f, 10.0f));
+      al_context->setDopplerFactor(std::clamp(settings.DopplerFactor(), 0.0f, 10.0f));
 
       std::pair<alure::Vector3, alure::Vector3> alure_orientation(
         alure::Vector3(orientation[0], orientation[1], orientation[2]),
@@ -359,17 +357,15 @@ namespace MetaAudio
       al_listener.setPosition(AL_UnpackVector(origin));
       al_listener.setOrientation(alure_orientation);
 
-      int roomtype = 0;
       bool underwater = (*gAudEngine.cl_waterlevel > 2) ? true : false;
-      if (sxroomwater_type && sxroom_type)
-      {
-        roomtype = underwater ? (int)sxroomwater_type->value : (int)sxroom_type->value;
-      }
+      int roomtype = underwater ?
+          (int)settings.ReverbUnderwaterType() :
+          (int)settings.ReverbType();
       al_efx->InterplEffect(roomtype);
 
       channel_manager->ForEachChannel([&](aud_channel_t& channel) { SND_Spatialize(&channel, false); });
 
-      if (snd_show && snd_show->value)
+      if (settings.SoundShow())
       {
         std::string output;
         size_t total = 0;
@@ -434,7 +430,7 @@ namespace MetaAudio
       return;
     }
 
-    if (nosound && nosound->value)
+    if (settings.NoSound())
     {
       return;
     }
@@ -532,7 +528,7 @@ namespace MetaAudio
     }
     else
     {
-      if (al_xfi_workaround->value == 2.0f || sc->force_streaming)
+      if (settings.XfiWorkaround() == XFiWorkaround::Streaming || sc->force_streaming)
       {
         ch->sound_source = SoundSourceFactory::GetStreamingSource(al_context->createDecoder(sc->buffer.getName()), al_context->createSource(), 16384, 4);
       }
@@ -756,27 +752,15 @@ namespace MetaAudio
 
   void AudioEngine::S_Init()
   {
-    al_doppler = gEngfuncs.pfnRegisterVariable("al_doppler", "1", FCVAR_EXTDLL);
-    al_xfi_workaround = gEngfuncs.pfnRegisterVariable("al_xfi_workaround", "0", FCVAR_EXTDLL);
-    if (gSteamAudio.iplCleanup != nullptr)
-    {
-      al_occluder = gEngfuncs.pfnRegisterVariable("al_occluder", "0", FCVAR_EXTDLL);
-    }
-
     gAudEngine.S_Init();
 
     if (!gEngfuncs.CheckParm("-nosound", NULL))
     {
-      nosound = gEngfuncs.pfnGetCvarPointer("nosound");
-      volume = gEngfuncs.pfnGetCvarPointer("volume");
-      sxroomwater_type = gEngfuncs.pfnGetCvarPointer("waterroom_type");
-      sxroom_type = gEngfuncs.pfnGetCvarPointer("room_type");
-      snd_show = gEngfuncs.pfnGetCvarPointer("snd_show");
-
       S_StopAllSounds(true);
     }
 
     SteamAudio_Init();
+    settings.Init(gEngfuncs);
     AL_ResetEFX();
 
     channel_manager = alure::MakeUnique<ChannelManager>();
@@ -785,13 +769,13 @@ namespace MetaAudio
 
   std::shared_ptr<IOcclusionCalculator> AudioEngine::GetOccluder()
   {
-    if (!al_occluder || al_occluder->value == 0.0f)
+    if (settings.Occluder() == OccluderType::SteamAudio)
     {
-      return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
+      return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);  
     }
     else
     {
-      return std::make_shared<SteamAudioOcclusionCalculator>(sa_meshloader, *gEngfuncs.pEventAPI);
+      return std::make_shared<GoldSrcOcclusionCalculator>(*gEngfuncs.pEventAPI);
     }
   }
 

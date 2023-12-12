@@ -4,8 +4,10 @@
 #include "Utilities/AudioCache.hpp"
 #include "Loaders/SoundLoader.hpp"
 #include "Vox/VoxManager.hpp"
+#include "Config/SettingsManager.hpp"
 #include "AudioEngine.hpp"
 
+MetaAudio::SettingsManager settings;
 MetaAudio::SteamAudio gSteamAudio;
 static std::shared_ptr<MetaAudio::SoundLoader> sound_loader;
 static std::unique_ptr<MetaAudio::AudioEngine> audio_engine;

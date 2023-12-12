@@ -14,7 +14,7 @@ namespace MetaAudio
   private:
     struct Audio
     {
-      wavinfo_t info;
+      wavinfo_t info{};
       alure::Vector<ALubyte> data;
     };
 
