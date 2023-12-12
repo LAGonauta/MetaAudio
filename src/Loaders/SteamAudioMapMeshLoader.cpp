@@ -4,6 +4,8 @@
 #include "Utilities/VectorUtils.hpp"
 #include "Loaders/SteamAudioMapMeshLoader.hpp"
 
+extern int g_iEngineType;
+
 namespace MetaAudio
 {
   constexpr const float EPSILON = 0.000001f;
@@ -67,13 +69,26 @@ namespace MetaAudio
 
         for (int i = 0; i < mapModel->nummodelsurfaces; ++i)
         {
-          auto surface = mapModel->surfaces[mapModel->firstmodelsurface + i];
-          glpoly_t* poly = surface.polys;
+          glpoly_t* firstPoly = nullptr;
+          if (g_iEngineType == ENGINE_GOLDSRC_HL25)
+          {
+              msurface_hl25_t* surfaces = reinterpret_cast<msurface_hl25_t*>(mapModel->surfaces);
+              msurface_hl25_t* surface = &surfaces[mapModel->firstmodelsurface + i];
+              firstPoly = surface->polys;
+          }
+          else
+          {
+              msurface_t* surface = &mapModel->surfaces[mapModel->firstmodelsurface + i];
+              firstPoly = surface->polys;
+          }
           std::vector<alure::Vector3> surfaceVerts;
+          glpoly_t* poly = firstPoly;
           while (poly)
           {
             if (poly->numverts <= 0)
+            {
               continue;
+            }
 
             for (int j = 0; j < poly->numverts; ++j)
             {
@@ -83,8 +98,10 @@ namespace MetaAudio
             poly = poly->next;
 
             // escape rings
-            if (poly == surface.polys)
+            if (poly == firstPoly)
+            {
               break;
+            }
           }
 
           // triangulation
