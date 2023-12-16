@@ -119,8 +119,13 @@ namespace MetaAudio
 			}
 		}
 
-		auto getFactor = [&](size_t index) { return std::clamp((result.direct.occlusion + (1 - result.direct.occlusion) * result.direct.transmission[index]) / attenuationMultiplier, 0.0f, 1.0f); };
-		auto ret = OcclusionFrequencyGain{ getFactor(0), getFactor(1), getFactor(2) };
+		auto getFactor = [=](float occlusion, float transmission) { return std::clamp((occlusion + (1 - occlusion) * transmission) / attenuationMultiplier, 0.0f, 1.0f); };
+		auto ret = OcclusionFrequencyGain
+		{
+			getFactor(result.direct.occlusion, result.direct.transmission[0]),
+			getFactor(result.direct.occlusion, result.direct.transmission[1]),
+			getFactor(result.direct.occlusion, result.direct.transmission[2])
+		};
 		return ret;
 	}
 }
