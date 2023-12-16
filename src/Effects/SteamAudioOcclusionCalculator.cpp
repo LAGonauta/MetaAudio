@@ -88,7 +88,8 @@ namespace MetaAudio
 		simulator.SourceRemove(source);
 		simulator.Commit();
 
-		if (result.direct.occlusion < 0.5f) //more than half occluded, add transmission component based on obstruction length
+		// More than half occluded, add transmission component based on obstruction length
+		if (result.direct.occlusion < 0.5f)
 		{
 			pmtrace_s tr;
 
@@ -108,9 +109,12 @@ namespace MetaAudio
 				if ((tr.fraction < 1.0f || tr.allsolid || tr.startsolid) && tr.fraction < 0.99f && !tr.startsolid)
 				{
 					auto distance = obstruction_first_point.getDistance(tr.endpos) * AL_UnitToMeters;
-					result.direct.transmission[0] = alure::dBToLinear(-distance * result.direct.transmission[0]);
-					result.direct.transmission[1] = alure::dBToLinear(-distance * result.direct.transmission[1]);
-					result.direct.transmission[2] = alure::dBToLinear(-distance * result.direct.transmission[2]);
+					if (distance > 0)
+					{
+						result.direct.transmission[0] = std::clamp(result.direct.transmission[0] / distance, 0.0f, 1.0f);
+						result.direct.transmission[1] = std::clamp(result.direct.transmission[1] / distance, 0.0f, 1.0f);
+						result.direct.transmission[2] = std::clamp(result.direct.transmission[2] / distance, 0.0f, 1.0f);
+					}
 				}
 			}
 		}
