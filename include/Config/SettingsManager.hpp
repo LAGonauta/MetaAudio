@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Enums/XFiWorkaround.hpp"
 #include "Enums/OccluderType.hpp"
 
@@ -26,6 +28,7 @@ namespace MetaAudio
         float Volume();
 
         OccluderType Occluder();
+        void RegisterOccluderCallback(std::function<void(cvar_t*)> f);
 
         XFiWorkaround XfiWorkaround();
     };

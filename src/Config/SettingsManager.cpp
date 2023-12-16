@@ -24,12 +24,20 @@ namespace MetaAudio
     static constexpr char* DEFAULT_OCCLUSION = "1";
     static constexpr char* DEFAULT_OCCLUSION_FADE = "1";
     static constexpr char* DEFAULT_DOPPLER_FACTOR = "0.3";
+    static std::vector<std::function<void(cvar_t* pcvar)>> occluderChangeCallbacks;
+
+    static void alOccluderCallback(cvar_t* pcvar)
+    {
+        for (const auto& func : occluderChangeCallbacks)
+        {
+            func(pcvar);
+        }
+    }
 
     void SettingsManager::Init(const cl_enginefunc_t& engFuncs)
     {
         if (al_xfi_workaround == nullptr) al_xfi_workaround = engFuncs.pfnRegisterVariable("al_xfi_workaround", DEFAULT_XFI_WORKAROUND, FCVAR_EXTDLL);
         if (al_doppler == nullptr) al_doppler = engFuncs.pfnRegisterVariable("al_doppler", DEFAULT_DOPPLER_FACTOR, FCVAR_EXTDLL);
-        if (gSteamAudio.IsValid() && al_occluder == nullptr) al_occluder = engFuncs.pfnRegisterVariable("al_occluder", DEFAULT_OCCLUDER, FCVAR_EXTDLL);
         if (al_occlusion == nullptr) al_occlusion = engFuncs.pfnRegisterVariable("al_occlusion", DEFAULT_OCCLUSION, FCVAR_EXTDLL);
         if (al_occlusion_fade == nullptr) al_occlusion_fade = engFuncs.pfnRegisterVariable("al_occlusion_fade", DEFAULT_OCCLUSION_FADE, FCVAR_EXTDLL);
 
@@ -41,6 +49,12 @@ namespace MetaAudio
             if (sxroom_type == nullptr) sxroom_type = engFuncs.pfnGetCvarPointer("room_type");
             if (sxroom_off == nullptr) sxroom_off = engFuncs.pfnGetCvarPointer("room_off");
             if (snd_show == nullptr) snd_show = engFuncs.pfnGetCvarPointer("snd_show");
+        }
+
+        if (gSteamAudio.IsValid() && al_occluder == nullptr)
+        {
+            al_occluder = engFuncs.pfnRegisterVariable("al_occluder", DEFAULT_OCCLUDER, FCVAR_EXTDLL);
+            g_pMetaHookAPI->RegisterCvarCallback("al_occluder", alOccluderCallback, nullptr);
         }
     }
 
@@ -87,6 +101,11 @@ namespace MetaAudio
     OccluderType SettingsManager::Occluder()
     {
         return al_occluder == nullptr ? OccluderType::GoldSrc : static_cast<OccluderType>(al_occluder->value);
+    }
+
+    void SettingsManager::RegisterOccluderCallback(std::function<void(cvar_t*)> f)
+    {
+        occluderChangeCallbacks.push_back(f);
     }
 
     bool SettingsManager::OcclusionEnabled()

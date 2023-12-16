@@ -773,6 +773,9 @@ namespace MetaAudio
 
 		SteamAudio_Init();
 		settings.Init(gEngfuncs);
+		settings.RegisterOccluderCallback([&](auto cvar) {
+			AL_ResetEFX();
+		});
 		AL_ResetEFX();
 
 		channel_manager = alure::MakeUnique<ChannelManager>();
