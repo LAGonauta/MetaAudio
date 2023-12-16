@@ -21,6 +21,7 @@ namespace MetaAudio {
 
 			void SetSharedInputs(IPLSimulationFlags flags, IPLSimulationSharedInputs& inputs);
 			void RunDirect();
+			void RunReflections();
 		};
 	}
 }

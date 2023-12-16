@@ -38,5 +38,9 @@ namespace MetaAudio {
 		void Simulator::RunDirect() {
 			gSteamAudio.iplSimulatorRunDirect(this->m_handle);
 		}
+
+		void Simulator::RunReflections() {
+			gSteamAudio.iplSimulatorRunReflections(this->m_handle);
+		}
 	}
 }

@@ -45,9 +45,18 @@ namespace MetaAudio
 		simulator.Commit();
 
 		IPLSimulationInputs sourceInputs{};
-		sourceInputs.flags = IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT;
-		sourceInputs.directFlags = static_cast<IPLDirectSimulationFlags>(IPLDirectSimulationFlags::IPL_DIRECTSIMULATIONFLAGS_OCCLUSION |
+		sourceInputs.flags = static_cast<IPLSimulationFlags>(
+			IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT |
+			IPLSimulationFlags::IPL_SIMULATIONFLAGS_REFLECTIONS);
+		sourceInputs.directFlags = static_cast<IPLDirectSimulationFlags>(
+			IPLDirectSimulationFlags::IPL_DIRECTSIMULATIONFLAGS_OCCLUSION |
+			IPLDirectSimulationFlags::IPL_DIRECTSIMULATIONFLAGS_AIRABSORPTION |
+			IPLDirectSimulationFlags::IPL_DIRECTSIMULATIONFLAGS_DISTANCEATTENUATION |
 			IPLDirectSimulationFlags::IPL_DIRECTSIMULATIONFLAGS_TRANSMISSION);
+		sourceInputs.reverbScale[0] = 1.0f;
+		sourceInputs.reverbScale[1] = 1.0f;
+		sourceInputs.reverbScale[2] = 1.0f;
+		sourceInputs.numTransmissionRays = SteamAudioOcclusionCalculator::NUMBER_OCCLUSION_RAYS;
 		sourceInputs.numOcclusionSamples = SteamAudioOcclusionCalculator::NUMBER_OCCLUSION_RAYS;
 		sourceInputs.source = {
 			{1,0,0},
@@ -57,7 +66,7 @@ namespace MetaAudio
 		};
 		sourceInputs.occlusionRadius = sourceRadius;
 		sourceInputs.occlusionType = IPLOcclusionType::IPL_OCCLUSIONTYPE_VOLUMETRIC;
-		source.SetInputs(IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT, sourceInputs);
+		source.SetInputs(sourceInputs.flags, sourceInputs);
 
 		IPLSimulationSharedInputs simulationSharedInputs{};
 		simulationSharedInputs.listener = {
@@ -66,10 +75,16 @@ namespace MetaAudio
 			toIPLVector3(&listenerAhead),
 			toIPLVector3(&listenerPosition)
 		};
-		simulator.SetSharedInputs(IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT, simulationSharedInputs);
+		simulationSharedInputs.numRays = 4096;
+		simulationSharedInputs.numBounces = 16;
+		simulationSharedInputs.duration = 2.0f;
+		simulationSharedInputs.order = 1;
+		simulationSharedInputs.irradianceMinDistance = 1.0f;
+		simulator.SetSharedInputs(sourceInputs.flags, simulationSharedInputs);
 		simulator.RunDirect();
+		//simulator.RunReflections();
 
-		auto result = source.GetOutputs(IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT);
+		auto result = source.GetOutputs(sourceInputs.flags);
 		simulator.SourceRemove(source);
 		simulator.Commit();
 

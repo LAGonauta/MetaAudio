@@ -21,5 +21,10 @@ namespace MetaAudio {
 		void Scene::Commit() {
 			gSteamAudio.iplSceneCommit(this->m_handle);
 		}
+
+		void Scene::SaveOBJ(const std::filesystem::path& path) const
+		{
+			gSteamAudio.iplSceneSaveOBJ(this->m_handle, path.string().c_str());
+		}
 	}
 }

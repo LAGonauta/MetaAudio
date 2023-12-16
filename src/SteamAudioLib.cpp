@@ -38,6 +38,7 @@ namespace MetaAudio {
 		ret.iplSimulatorCommit = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSimulatorCommit)>(GetProcAddress(saModule, "_iplSimulatorCommit@4"));
 		ret.iplSimulatorSetSharedInputs = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSimulatorSetSharedInputs)>(GetProcAddress(saModule, "_iplSimulatorSetSharedInputs@12"));
 		ret.iplSimulatorRunDirect = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSimulatorRunDirect)>(GetProcAddress(saModule, "_iplSimulatorRunDirect@4"));
+		ret.iplSimulatorRunReflections = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSimulatorRunReflections)>(GetProcAddress(saModule, "_iplSimulatorRunReflections@4"));
 
 		ret.iplSourceCreate = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSourceCreate)>(GetProcAddress(saModule, "_iplSourceCreate@12"));
 		ret.iplSourceRetain = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSourceRetain)>(GetProcAddress(saModule, "_iplSourceRetain@4"));
@@ -51,6 +52,7 @@ namespace MetaAudio {
 		ret.iplSceneRetain = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSceneRetain)>(GetProcAddress(saModule, "_iplSceneRetain@4"));
 		ret.iplSceneRelease = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSceneRelease)>(GetProcAddress(saModule, "_iplSceneRelease@4"));
 		ret.iplSceneCommit = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSceneCommit)>(GetProcAddress(saModule, "_iplSceneCommit@4"));
+		ret.iplSceneSaveOBJ = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplSceneSaveOBJ)>(GetProcAddress(saModule, "_iplSceneSaveOBJ@8"));
 
 		ret.iplStaticMeshRelease = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplStaticMeshRelease)>(GetProcAddress(saModule, "_iplStaticMeshRelease@4"));
 		ret.iplStaticMeshRetain = reinterpret_cast<decltype(MetaAudio::SteamAudioLib::iplStaticMeshRetain)>(GetProcAddress(saModule, "_iplStaticMeshRetain@4"));

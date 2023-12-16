@@ -708,7 +708,7 @@ namespace MetaAudio
 		}
 	}
 
-	static void SteamAudioLog(IPLLogLevel level, const char* message)
+	static void IPLCALL SteamAudioLog(IPLLogLevel level, const char* message)
 	{
 		std::stringstream ss;
 		ss << "SteamAudio - " << level << " - " << message;
@@ -725,7 +725,8 @@ namespace MetaAudio
 
 		IPLContextSettings settings{};
 		settings.version = STEAMAUDIO_VERSION;
-		settings.logCallback = reinterpret_cast<IPLLogFunction>(SteamAudioLog);
+		settings.logCallback = SteamAudioLog;
+		//settings.flags = IPLContextFlags::IPL_CONTEXTFLAGS_VALIDATION;
 		auto result = SteamAudio::Context::Create(settings);
 		if (std::holds_alternative<IPLerror>(result)) {
 			auto& err = std::get<1>(result);
@@ -736,7 +737,9 @@ namespace MetaAudio
 		}
 		sa_context = std::get<0>(result);
 		IPLSimulationSettings simulationSettings{};
-		simulationSettings.flags = IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT;
+		simulationSettings.flags = static_cast<IPLSimulationFlags>(
+			IPLSimulationFlags::IPL_SIMULATIONFLAGS_DIRECT |
+			IPLSimulationFlags::IPL_SIMULATIONFLAGS_REFLECTIONS);
 		simulationSettings.sceneType = IPLSceneType::IPL_SCENETYPE_DEFAULT;
 		simulationSettings.reflectionType = IPLReflectionEffectType::IPL_REFLECTIONEFFECTTYPE_PARAMETRIC; // maybe we can use EFX for this one?
 		simulationSettings.maxNumRays = 4096;

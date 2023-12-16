@@ -1,6 +1,7 @@
 #pragma once
 
 #include <variant>
+#include <filesystem>
 
 #include "SteamAudioLib.h"
 #include "ObjectPtr.hpp"
@@ -20,6 +21,7 @@ namespace MetaAudio {
 			void StaticMeshAdd(const StaticMesh& staticMesh);
 
 			void Commit();
+			void SaveOBJ(const std::filesystem::path& path) const;
 		};
 	}
 }

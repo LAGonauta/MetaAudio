@@ -47,7 +47,7 @@ namespace MetaAudio
 		// SteamAudio returns the transmission property of the material that was hit, not how much was transmitted
 		// We should calculate ourselves how much is actually transmitted. The unit used in MetaAudio is actually
 		// the attenuation `dB/m`, not how much is transmitted per meter. 
-		std::array<IPLMaterial, 1> materials{ {0.10f,0.20f,0.30f,0.05f,0.100f,0.050f,0.030f} };
+		std::array<IPLMaterial, 1> materials{ {0.10f, 0.20f, 0.30f, 0.05f, 0.100f, 0.050f, 0.030f} };
 	public:
 		SteamAudioMapMeshLoader(SteamAudio::Context sa_context, IPLSimulationSettings simulSettings);
 

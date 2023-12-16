@@ -17,6 +17,7 @@ namespace MetaAudio
 		decltype(&iplSimulatorCommit) iplSimulatorCommit;
 		decltype(&iplSimulatorSetSharedInputs) iplSimulatorSetSharedInputs;
 		decltype(&iplSimulatorRunDirect) iplSimulatorRunDirect;
+		decltype(&iplSimulatorRunReflections) iplSimulatorRunReflections;
 
 		decltype(&iplSourceCreate) iplSourceCreate;
 		decltype(&iplSourceRetain) iplSourceRetain;
@@ -30,6 +31,7 @@ namespace MetaAudio
 		decltype(&iplSceneRetain) iplSceneRetain;
 		decltype(&iplSceneRelease) iplSceneRelease;
 		decltype(&iplSceneCommit) iplSceneCommit;
+		decltype(&iplSceneSaveOBJ) iplSceneSaveOBJ;
 
 		decltype(&iplStaticMeshRelease) iplStaticMeshRelease;
 		decltype(&iplStaticMeshRetain) iplStaticMeshRetain;
