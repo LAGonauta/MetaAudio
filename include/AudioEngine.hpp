@@ -36,7 +36,7 @@ namespace MetaAudio
     std::shared_ptr<SoundLoader> m_loader;
 
     //Print buffer
-    std::string dprint_buffer;
+    std::stringstream dprint_buffer;
 
     void S_FreeCache(sfx_t* sfx);
     void S_FlushCaches(void);

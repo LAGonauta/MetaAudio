@@ -303,10 +303,13 @@ namespace MetaAudio
 			channel_manager->ClearLoopingRemovedEntities();
 
 			// Print buffer and clear it.
-			if (dprint_buffer.length())
 			{
-				gEngfuncs.Con_DPrintf(const_cast<char*>((dprint_buffer.c_str())));
-				dprint_buffer.clear();
+				auto str = dprint_buffer.str();
+				if (!str.empty())
+				{
+					gEngfuncs.Con_DPrintf(const_cast<char*>((str.c_str())));
+					dprint_buffer.clear();
+				}
 			}
 
 			AL_CopyVector(forward, orientation);
@@ -369,21 +372,21 @@ namespace MetaAudio
 
 			if (settings.SoundShow())
 			{
-				std::string output;
+				std::stringstream output;
 				size_t total = 0;
 				channel_manager->ForEachChannel([&](aud_channel_t& channel)
 					{
 						if (channel.sfx && channel.volume > 0)
 						{
-							output.append(std::to_string(static_cast<int>(channel.volume * 255.0f)) + " " + channel.sfx->name + "\n");
+							output << static_cast<int>(channel.volume * 255.0f) << " " << channel.sfx->name << std::endl;
 							++total;
 						}
 					});
 
-				if (!output.empty())
+				if (total > 0)
 				{
-					output.append("----(" + std::to_string(total) + ")----\n");
-					gEngfuncs.Con_Printf(const_cast<char*>(output.c_str()));
+					output << "----(" << total << ")----" << std::endl;
+					gEngfuncs.Con_Printf(const_cast<char*>(output.str().c_str()));
 				}
 			}
 		}
@@ -548,7 +551,7 @@ namespace MetaAudio
 		}
 		catch (const std::runtime_error& error)
 		{
-			dprint_buffer.append(_function_name).append(": ").append(error.what()).append("\n");
+			dprint_buffer << _function_name << ": " << error.what() << std::endl;
 		}
 	}
 
