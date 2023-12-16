@@ -12,8 +12,6 @@ namespace MetaAudio
     friend AudioEngine;
 
   private:
-    cvar_t* al_xfi_workaround;
-
     struct
     {
       std::vector<aud_channel_t> static_;

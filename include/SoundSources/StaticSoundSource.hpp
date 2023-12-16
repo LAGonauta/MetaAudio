@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseSoundSource.hpp"
-
+#include "Enums/XFiWorkaround.hpp"
 
 namespace MetaAudio
 {
@@ -16,7 +16,7 @@ namespace MetaAudio
 
     alure::Buffer m_buffer;
 
-    float* al_xfi_workaround;
+    XFiWorkaround m_xfi_workaround{};
 
   public:
     StaticSoundSource(const alure::Buffer& buffer, alure::Source& source);
