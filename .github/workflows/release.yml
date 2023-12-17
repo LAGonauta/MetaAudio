@@ -79,8 +79,8 @@ jobs:
 
       - name: Download MetaHook
         run: |
-          Invoke-WebRequest -Uri https://github.com/hzqst/MetaHookSv/releases/download/v20231210a/MetaHookSv-windows-x86.zip -OutFile MetaHook.zip
-          if (!(Get-FileHash ./MetaHook.zip).Hash.Equals("E5F3DB974C0D00241125757A6CE83E1BCF114D156E8E3E27C7622CAE7DDE36A1")) {
+          Invoke-WebRequest -Uri https://github.com/hzqst/MetaHookSv/releases/download/v20231217b/MetaHookSv-windows-x86.zip -OutFile MetaHook.zip
+          if (!(Get-FileHash ./MetaHook.zip).Hash.Equals("E7754D67BC8982F03CB26E3663D820821E64FD9755B0AE7C92381F9C08033EF5")) {
             Exit -1
           }
           Expand-Archive ./MetaHook.zip -DestinationPath MetaHook/
