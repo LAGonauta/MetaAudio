@@ -80,18 +80,18 @@ namespace MetaAudio
         alAuxEffectSlots[effect_slot].gain.target = AL_REVERBMIX;
         FadeToNewValue(true, false, alAuxEffectSlots[effect_slot].gain);
 
-        alAuxEffectSlots[effect_slot].effect.setReverbProperties(desired);
+        alAuxEffectSlots[effect_slot].effect->setReverbProperties(desired);
       }
     }
     else if (alAuxEffectSlots.size() == 1)
     {
-      alAuxEffectSlots[0].effect.setReverbProperties(desired);
+      alAuxEffectSlots[0].effect->setReverbProperties(desired);
     }
 
     for (auto& effectSlot : alAuxEffectSlots)
     {
-      effectSlot.slot.setGain(effectSlot.gain.current);
-      effectSlot.slot.applyEffect(effectSlot.effect);
+      effectSlot.slot->setGain(effectSlot.gain.current);
+      effectSlot.slot->applyEffect(effectSlot.effect.get());
     }
   }
 
@@ -177,7 +177,7 @@ namespace MetaAudio
 
     for (size_t i = 0; i < alAuxEffectSlots.size(); ++i)
     {
-      ch->sound_source->SetAuxiliarySendFilter(alAuxEffectSlots[i].slot, i, params);
+      ch->sound_source->SetAuxiliarySendFilter(alAuxEffectSlots[i].slot.get(), i, params);
     }
   }
 
@@ -211,7 +211,7 @@ namespace MetaAudio
 
     if (alAuxEffectSlots.size() > 0)
     {
-      alAuxEffectSlots[0].slot.setGain(AL_REVERBMIX);
+      alAuxEffectSlots[0].slot->setGain(AL_REVERBMIX);
       alAuxEffectSlots[0].gain.current = AL_REVERBMIX;
       alAuxEffectSlots[0].gain.initial_value = AL_REVERBMIX;
       alAuxEffectSlots[0].gain.last_target = AL_REVERBMIX;
@@ -219,7 +219,7 @@ namespace MetaAudio
 
       if (alAuxEffectSlots.size() > 1)
       {
-        alAuxEffectSlots[1].slot.setGain(0.0f);
+        alAuxEffectSlots[1].slot->setGain(0.0f);
       }
     }
 
@@ -383,15 +383,6 @@ namespace MetaAudio
       {
         break;
       }
-    }
-  }
-
-  EnvEffects::~EnvEffects()
-  {
-    for (auto& effectSlot : alAuxEffectSlots)
-    {
-      effectSlot.slot.destroy();
-      effectSlot.effect.destroy();
     }
   }
 }

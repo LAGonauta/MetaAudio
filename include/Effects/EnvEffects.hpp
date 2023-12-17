@@ -14,13 +14,13 @@ namespace MetaAudio
 
     struct effectSlot
     {
-      alure::AuxiliaryEffectSlot slot;
-      alure::Effect effect;
+      alure::AutoObj<alure::AuxiliaryEffectSlot> slot;
+      alure::AutoObj<alure::Effect> effect;
       GainFading gain;
-      effectSlot(alure::AuxiliaryEffectSlot _slot, alure::Effect _effect)
+      effectSlot(alure::AuxiliaryEffectSlot slot, alure::Effect effect)
+          : slot(alure::MakeAuto(slot)),
+            effect(alure::MakeAuto(effect))
       {
-        slot = _slot;
-        effect = _effect;
       };
     };
 
@@ -82,7 +82,6 @@ namespace MetaAudio
 
   public:
     EnvEffects(alure::Context& al_context, ALCuint max_sends, std::shared_ptr<IOcclusionCalculator> occlusion_calculator);
-    ~EnvEffects();
 
     void InterplEffect(int roomtype);
     void ApplyEffect(aud_channel_t* ch, qboolean underwater);
