@@ -111,9 +111,9 @@ namespace MetaAudio
 					auto distance = obstruction_first_point.getDistance(tr.endpos) * AL_UnitToMeters;
 					if (distance > 0)
 					{
-						result.direct.transmission[0] = std::clamp(result.direct.transmission[0] / distance, 0.0f, 1.0f);
-						result.direct.transmission[1] = std::clamp(result.direct.transmission[1] / distance, 0.0f, 1.0f);
-						result.direct.transmission[2] = std::clamp(result.direct.transmission[2] / distance, 0.0f, 1.0f);
+						result.direct.transmission[0] = std::powf(result.direct.transmission[0], distance);
+						result.direct.transmission[1] = std::powf(result.direct.transmission[1], distance);
+						result.direct.transmission[2] = std::powf(result.direct.transmission[2], distance);
 					}
 				}
 			}

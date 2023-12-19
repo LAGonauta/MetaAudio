@@ -777,7 +777,7 @@ namespace MetaAudio
 		SteamAudio_Init();
 		settings.Init(gEngfuncs);
 		settings.RegisterOccluderCallback([&](auto cvar) {
-			AL_ResetEFX();
+			al_efx->SetOccluder(GetOccluder());
 		});
 		AL_ResetEFX();
 

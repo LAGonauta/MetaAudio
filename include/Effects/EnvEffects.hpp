@@ -86,5 +86,6 @@ namespace MetaAudio
     void InterplEffect(int roomtype);
     void ApplyEffect(aud_channel_t* ch, qboolean underwater);
     void SetListenerOrientation(std::pair<alure::Vector3, alure::Vector3> listenerOrientation);
+    void SetOccluder(std::shared_ptr<IOcclusionCalculator> occlusion_calculator);
   };
 }
