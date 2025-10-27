@@ -71,6 +71,8 @@ namespace MetaAudio
     case alure::SampleType::UInt8:
       return 1;
     }
+
+    throw std::runtime_error("Sample type not supported: " + std::to_string(static_cast<size_t>(type)));
   }
 
   soxr_datatype_t SoxrResamplerHelper::GetSoxType(alure::SampleType type)
