@@ -26,3 +26,6 @@
 [submodule "externals/vorbis"]
 	path = externals/vorbis
 	url = https://github.com/xiph/vorbis
+[submodule "externals/soxr"]
+	path = externals/soxr
+	url = https://git.code.sf.net/p/soxr/code
