@@ -3,9 +3,9 @@
 
 namespace MetaAudio
 {
-  SoxrDecoder::SoxrDecoder(alure::SharedPtr<alure::Decoder> dec)
+  SoxrDecoder::SoxrDecoder(alure::SharedPtr<alure::Decoder> dec, size_t frequency)
   {
-    m_buffer = m_helper.GetAudio(dec, 48000);
+    m_buffer = m_helper.GetAudio(dec, frequency);
   }
 
   ALuint SoxrDecoder::getFrequency() const noexcept
