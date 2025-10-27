@@ -6,7 +6,7 @@
 
 namespace MetaAudio
 {
-  SoundLoader::SoundLoader(const std::shared_ptr<AudioCache>& cache)
+  SoundLoader::SoundLoader(const alure::SharedPtr<AudioCache>& cache)
   {
     m_cache = cache;
     m_decoder = std::make_shared<LocalAudioDecoder>();
@@ -114,6 +114,18 @@ namespace MetaAudio
       try
       {
         sc->decoder = context.createDecoder(file_path.value());
+
+        if (settings.ResampleAll() && sc->decoder->getLength() > 0)
+        {
+          alure::SharedPtr<alure::Decoder> decoder = alure::MakeShared<SoxrDecoder>(file_path.value(), context);
+
+          if (!alure::Context::GetCurrent().isSupported(decoder->getChannelConfig(), decoder->getSampleType()))
+          {
+            decoder = alure::MakeShared<SoxrBitDepthNormalizerDecoder>(decoder);
+          }
+          sc->decoder = decoder;
+        }
+
         sc->length = sc->decoder->getLength();
         sc->samplerate = sc->decoder->getFrequency();
         sc->stype = sc->decoder->getSampleType();
@@ -187,7 +199,8 @@ namespace MetaAudio
       {
         if (settings.ResampleAll())
         {
-          alure::SharedPtr<alure::Decoder> decoder = alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value()));
+          alure::SharedPtr<alure::Decoder> decoder = alure::MakeShared<SoxrDecoder>(file_path.value(), context);
+
           if (!alure::Context::GetCurrent().isSupported(decoder->getChannelConfig(), decoder->getSampleType()))
           {
             decoder = alure::MakeShared<SoxrBitDepthNormalizerDecoder>(decoder);
