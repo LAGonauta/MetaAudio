@@ -20,7 +20,9 @@ namespace MetaAudio
         audioData,
         alure::SampleType::Float32,
         dec->getChannelConfig(),
-        dec->getFrequency()
+        dec->getFrequency(),
+        dec->hasLoopPoints(),
+        dec->getLoopPoints()
         );
     }
 
@@ -73,11 +75,22 @@ namespace MetaAudio
     }
 
     auto array_view = alure::ArrayView<float>(resampledAudio).reinterpret_as<ALubyte>();
+
+    auto loopPoints = dec->getLoopPoints();
+    if (dec->hasLoopPoints())
+    {
+      auto ratio = alure::BytesToFrames(array_view.size(), inputChannelConfig, alure::SampleType::Float32) / dec->getLength();
+      loopPoints.first *= ratio;
+      loopPoints.second *= ratio;
+    }
+
     return alure::MakeShared<AudioBuffer>(
       alure::Vector<ALubyte>(array_view.begin(), array_view.end()),
       alure::SampleType::Float32,
       inputChannelConfig,
-      finalSampleRate
+      finalSampleRate,
+      dec->hasLoopPoints(),
+      loopPoints
       );
   }
 

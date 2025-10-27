@@ -49,6 +49,7 @@ set(SOURCES
     src/Loaders/GoldSrcFileStream.cpp
     src/Loaders/GoldSrcFileFactory.cpp
     src/Loaders/SoundLoader.cpp
+    src/Loaders/SoxrDecoder.cpp
     src/AudioEngine.cpp
     src/Utilities/ChannelManager.cpp
     src/Utilities/SoxrResamplerHelper.cpp
