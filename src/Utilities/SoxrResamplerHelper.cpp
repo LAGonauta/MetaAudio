@@ -1,23 +1,28 @@
+#include <fstream>
+
 #include "Utilities/SoxrResamplerHelper.hpp"
 
 namespace MetaAudio
 {
-  SoxrResamplerHelper::SoxrResamplerHelper() : runtimeSpec(soxr_runtime_spec(0)), qualitySpec(soxr_quality_spec(SOXR_VHQ, 0))
+  SoxrResamplerHelper::SoxrResamplerHelper()
+    : runtimeSpec(soxr_runtime_spec(0)), qualitySpec(soxr_quality_spec(SOXR_VHQ | SOXR_LINEAR_PHASE | SOXR_STEEP_FILTER, 0))
   {
   }
 
-  std::shared_ptr<AudioBuffer> SoxrResamplerHelper::GetAudio(std::string filename, alure::Context al_context, size_t finalSampleRate)
+  std::shared_ptr<AudioBuffer> SoxrResamplerHelper::GetAudio(alure::SharedPtr<alure::Decoder> dec, size_t finalSampleRate)
   {
-    auto dec = al_context.createDecoder(filename);
+    alure::Vector<ALubyte> audioData(alure::FramesToBytes(dec->getLength(), dec->getChannelConfig(), dec->getSampleType()));
+    dec->read(audioData.data(), dec->getLength());
+
     if (dec->getFrequency() == finalSampleRate && dec->getSampleType() == alure::SampleType::Float32)
     {
-      std::vector<float> audioData(dec->getLength() * GetChannelQuantity(dec->getChannelConfig()));
-      dec->read(audioData.data(), dec->getLength());
-      return std::make_shared<AudioBuffer>(audioData, alure::SampleType::Float32, dec->getChannelConfig());
+      return alure::MakeShared<AudioBuffer>(
+        audioData,
+        alure::SampleType::Float32,
+        dec->getChannelConfig(),
+        dec->getFrequency()
+        );
     }
-
-    std::vector<ALbyte> audioData(alure::FramesToBytes(dec->getLength(), dec->getChannelConfig(), dec->getSampleType()));
-    dec->read(audioData.data(), dec->getLength());
 
     auto inputSampleType = dec->getSampleType();
     auto inputLength = dec->getLength();
@@ -25,38 +30,55 @@ namespace MetaAudio
     auto inputFrequency = dec->getFrequency();
     auto inputChannelConfig = dec->getChannelConfig();
 
-    std::vector<float> resampledAudio(inputSize / GetSampleSize(inputSampleType) * finalSampleRate / inputFrequency + 1);
+    if (inputSampleType == alure::SampleType::UInt8)
+    {
+      alure::Vector<int16_t> int_data(audioData.size());
+      for (size_t i = 0; i < int_data.size(); ++i)
+      {
+        int_data[i] = static_cast<int16_t>(audioData[i] - 128) << 8;
+      }
+      
+      auto reinterpreted = alure::ArrayView<int16_t>(int_data).reinterpret_as<ALubyte>();
+      audioData = alure::Vector<ALubyte>(reinterpreted.begin(), reinterpreted.end());
+
+      inputSampleType = alure::SampleType::Int16;
+      inputSize = audioData.size();
+    }
+
+    std::vector<float> resampledAudio(((inputSize / GetSampleSize(inputSampleType)) * (finalSampleRate / inputFrequency)) * 2 + 1);
 
     auto audioSpec = soxr_io_spec(GetSoxType(inputSampleType), SOXR_FLOAT32_I);
-    auto resampler = soxr_create(inputFrequency, finalSampleRate, GetChannelQuantity(inputChannelConfig), nullptr, &audioSpec, &qualitySpec, &runtimeSpec);
 
-    size_t j = 0;
-    for (size_t i = 0,
-      block = 262144,
-      idone = 0,
-      odone = 0,
-      m = alure::BytesToFrames(audioData.size(), inputChannelConfig, inputSampleType);
-      i < m;)
+    size_t odone, idone;
+    auto err = soxr_oneshot(
+      inputFrequency, finalSampleRate, GetChannelQuantity(inputChannelConfig),
+      audioData.data(), alure::BytesToFrames(audioData.size(), inputChannelConfig, inputSampleType), &idone,
+      resampledAudio.data(), resampledAudio.size() / GetChannelQuantity(inputChannelConfig), &odone,
+      &audioSpec, &qualitySpec, &runtimeSpec
+    );
+
+    if (odone > 0)
     {
-      if (block + i > m)
-      {
-        block = m - i;
-      }
-      soxr_process(resampler, audioData.data() + alure::FramesToBytes(i, inputChannelConfig, inputSampleType),
-        block, &idone,
-        resampledAudio.data() + j, resampledAudio.size() - j, &odone);
+      resampledAudio.resize(odone);
 
-      i += idone;
-      j += odone * GetChannelQuantity(inputChannelConfig);
-      if (odone == 0)
+      auto max = std::abs(*std::max_element(
+        resampledAudio.cbegin(),
+        resampledAudio.cend(),
+        [](const auto& lhs, const auto& rhs) { return std::abs(lhs) < std::abs(rhs); }
+      ));
+      if (max > 1.0f)
       {
-        break;
+        std::for_each(resampledAudio.begin(), resampledAudio.end(), [=](auto& value) { value /= max; });
       }
     }
-    resampledAudio.shrink_to_fit();
 
-    soxr_delete(resampler);
-    return std::make_shared<AudioBuffer>(resampledAudio, alure::SampleType::Float32, inputChannelConfig);
+    auto array_view = alure::ArrayView<float>(resampledAudio).reinterpret_as<ALubyte>();
+    return alure::MakeShared<AudioBuffer>(
+      alure::Vector<ALubyte>(array_view.begin(), array_view.end()),
+      alure::SampleType::Float32,
+      inputChannelConfig,
+      finalSampleRate
+      );
   }
 
   size_t SoxrResamplerHelper::GetSampleSize(alure::SampleType type)

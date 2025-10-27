@@ -1,5 +1,6 @@
 #include "Loaders/SoundLoader.hpp"
 #include "Voice/VoiceDecoder.hpp"
+#include "Loaders/SoxrDecoder.hpp"
 
 namespace MetaAudio
 {
@@ -183,6 +184,7 @@ namespace MetaAudio
       try
       {
         al_buffer = context.getBuffer(file_path.value());
+        //al_buffer = context.createBufferFrom(file_path.value(), alure::MakeShared<SoxrDecoder>(context.createDecoder(file_path.value())));
       }
       catch (const std::exception& error)
       {

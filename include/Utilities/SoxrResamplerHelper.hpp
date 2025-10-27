@@ -19,6 +19,6 @@ namespace MetaAudio
   public:
     SoxrResamplerHelper();
 
-    std::shared_ptr<AudioBuffer> GetAudio(std::string filename, alure::Context al_context, size_t finalSampleRate);
+    std::shared_ptr<AudioBuffer> GetAudio(alure::SharedPtr<alure::Decoder> dec, size_t finalSampleRate);
   };
 }
