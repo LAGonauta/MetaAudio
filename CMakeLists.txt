@@ -121,6 +121,12 @@ option(ALSOFT_INSTALL_EXAMPLES "Install example programs" OFF)
 # Add OpenAL-Soft as subdirectory
 add_subdirectory(externals/openal-soft)
 
+# This fixes OpenAL not found for alure2 in some cases
+export(TARGETS OpenAL
+    NAMESPACE OpenAL::
+    FILE "${CMAKE_BINARY_DIR}/OpenALConfig.cmake"
+)
+
 # Set OpenAL variables for Alure's find_package to succeed
 # openal-soft creates a target 'OpenAL' that we can reference
 set(OPENAL_LIBRARY OpenAL)

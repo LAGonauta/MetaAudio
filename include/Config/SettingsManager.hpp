@@ -1,5 +1,7 @@
 #pragma once
 
+#include <metahook.h>
+
 #include "Enums/XFiWorkaround.hpp"
 #include "Enums/OccluderType.hpp"
 #include "Enums/ClampingMode.hpp"
