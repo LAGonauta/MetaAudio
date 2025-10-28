@@ -2,28 +2,29 @@
 
 namespace MetaAudio
 {
-  SoxrBitDepthNormalizerDecoder::SoxrBitDepthNormalizerDecoder(alure::SharedPtr<alure::Decoder> dec) : m_decoder(dec)
+	SoxrBitDepthNormalizerDecoder::SoxrBitDepthNormalizerDecoder(alure::SharedPtr<alure::Decoder> dec) : m_decoder(dec), m_soxr(nullptr, &soxr_delete)
   {
-    SoxrResamplerHelper helper;
     soxr_error_t error;
     auto runtime_spec = soxr_runtime_spec(0);
     auto quality = soxr_quality_spec(SOXR_QQ, 0);
-    auto io_spec = soxr_io_spec(helper.GetSoxType(dec->getSampleType()), SOXR_INT16_I);
+    auto io_spec = soxr_io_spec(m_helper.GetSoxType(dec->getSampleType()), SOXR_INT16_I);
 
-    m_soxr = soxr_create(dec->getFrequency(), dec->getFrequency(), helper.GetChannelQuantity(dec->getChannelConfig()), &error, &io_spec, &quality, &runtime_spec);
+    m_soxr = std::unique_ptr<std::remove_pointer_t<soxr_t>, decltype(&soxr_delete)>(
+        soxr_create(
+            dec->getFrequency(),
+            dec->getFrequency(),
+            m_helper.GetChannelQuantity(dec->getChannelConfig()),
+            &error,
+            &io_spec,
+            &quality,
+            &runtime_spec
+        ),
+        &soxr_delete
+    );
 
     if (error)
     {
       throw std::runtime_error("Unable to create soxr instance");
-    }
-  }
-
-  SoxrBitDepthNormalizerDecoder::~SoxrBitDepthNormalizerDecoder()
-  {
-    if (m_soxr)
-    {
-      soxr_delete(m_soxr);
-      m_soxr = nullptr;
     }
   }
 
@@ -60,7 +61,7 @@ namespace MetaAudio
   {
     if (m_decoder->seek(pos))
     {
-      soxr_clear(m_soxr);
+      soxr_clear(m_soxr.get());
       return true;
     }
 
@@ -73,16 +74,35 @@ namespace MetaAudio
       return m_decoder->read(ptr, count);
     }
 
-    alure::Vector<ALubyte> read_data(alure::FramesToBytes(count, m_decoder->getChannelConfig(), m_decoder->getSampleType()));
-    auto read = m_decoder->read(read_data.data(), count);
+    // Prepare a buffer large enough for 'count' frames of the decoder's sample type
+	m_scratch_buffer.resize(alure::FramesToBytes(count, m_decoder->getChannelConfig(), m_decoder->getSampleType()));
+    // Read up to 'count' frames from upstream decoder
+    auto read = m_decoder->read(m_scratch_buffer.data(), count);
 
     size_t idone = 0;
     size_t odone = 0;
-    // ~ on input count means flush
-    auto error = soxr_process(m_soxr, read_data.data(), ~count, &idone, ptr, count, &odone);
+    soxr_error_t error = nullptr;
 
-    auto clipped = soxr_num_clips(m_soxr);
+    if (read == 0)
+    {
+      // No more input available; flush any remaining samples from soxr
+      error = soxr_process(m_soxr.get(), nullptr, 0, nullptr, ptr, count, &odone);
+    }
+    else
+    {
+      // Provide the actual number of frames read as input
+      error = soxr_process(m_soxr.get(), m_scratch_buffer.data(), static_cast<size_t>(read), &idone, ptr, static_cast<size_t>(count), &odone);
+    }
 
-    return odone;
+    if (error)
+    {
+      // On soxr error, return 0 frames produced
+      return 0;
+    }
+
+    // Consume any clipping information if needed (currently ignored)
+    //auto clipped = soxr_num_clips(m_soxr.get());
+
+    return static_cast<ALuint>(odone);
   }
 }

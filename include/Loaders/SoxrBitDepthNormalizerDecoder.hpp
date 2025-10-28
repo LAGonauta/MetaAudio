@@ -9,13 +9,13 @@ namespace MetaAudio
   class SoxrBitDepthNormalizerDecoder final : public alure::Decoder
   {
   private:
+    alure::Vector<ALubyte> m_scratch_buffer;
     alure::SharedPtr<alure::Decoder> m_decoder = nullptr;
-    soxr_t m_soxr = nullptr;
+    std::unique_ptr<std::remove_pointer_t<soxr_t>, decltype(&soxr_delete)> m_soxr;
     SoxrResamplerHelper m_helper;
 
   public:
     SoxrBitDepthNormalizerDecoder(alure::SharedPtr<alure::Decoder> dec);
-    ~SoxrBitDepthNormalizerDecoder();
 
     ALuint getFrequency() const noexcept override;
     alure::ChannelConfig getChannelConfig() const noexcept override;
