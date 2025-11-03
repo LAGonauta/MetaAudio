@@ -36,6 +36,8 @@ namespace MetaAudio
 
         XFiWorkaround XfiWorkaround();
     };
+
+    const int SOXR_SAMPLE_RATE = 48000;
 }
 
 #ifndef _METAAUDIO_SETTINGS_MANAGER_

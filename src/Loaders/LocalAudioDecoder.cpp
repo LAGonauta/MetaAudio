@@ -29,9 +29,10 @@ namespace MetaAudio
     info.loopstart = loop_points.first;
     info.loopend = loop_points.second;
 
+    // The decoder `dec` was not created with the resampled audio data, so we need to workaround this
     if (settings.ResampleAll() && info.looping)
     {
-      auto ratio = 48000 / dec->getFrequency();
+      auto ratio = SOXR_SAMPLE_RATE / dec->getFrequency();
       info.loopstart *= ratio;
       info.loopend *= ratio;
     }

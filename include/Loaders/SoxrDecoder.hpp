@@ -3,6 +3,7 @@
 #include "alure2.h"
 #include "Structures/AudioBuffer.hpp"
 #include "Utilities/SoxrResamplerHelper.hpp"
+#include "Config/SettingsManager.hpp"
 
 namespace MetaAudio
 {
@@ -14,8 +15,8 @@ namespace MetaAudio
     SoxrResamplerHelper m_helper;
 
   public:
-    SoxrDecoder(alure::String file_path, alure::Context context, size_t frequency = 48000);
-    SoxrDecoder(alure::SharedPtr<alure::Decoder> dec, size_t frequency = 48000);
+    SoxrDecoder(alure::String file_path, alure::Context context, size_t frequency = SOXR_SAMPLE_RATE);
+    SoxrDecoder(alure::SharedPtr<alure::Decoder> dec, size_t frequency = SOXR_SAMPLE_RATE);
 
     ALuint getFrequency() const noexcept override;
     alure::ChannelConfig getChannelConfig() const noexcept override;
