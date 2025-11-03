@@ -52,6 +52,11 @@ Working engine:
   - 1: MetaAudio will also use the system clock to estimate when the sound effect ended. (preferred)
   - 2: MetaAudio will force all sound effects to be played as a stream.
 - al_occluder (when SteamAudio is available. 0 is GoldSrc-based occluder, 1 is SteamAudio-based occluder)
+- al_resample_all (1 resamples all audio using Soxr, with 0.95 passband, to 48 kHz. Can greatly increase audio quality as OpenAL Soft's real-time resampler is not as good)
+- al_clamping_mode (when resampling, what to do with samples that overload the pipeline)
+  - 0: Clamp
+  - 1: Reduce gain of the whole audio
+  - 2: Keep as is (allow clipping)
 
 # Console commands
 - al_version (shows current MetaAudio version, along with the current OpenAL device and the OpenAL version)

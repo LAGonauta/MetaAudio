@@ -3,6 +3,7 @@
 
 namespace MetaAudio
 {
+  // TODO: Add disk cache (SteamAudio will always stream in the future)
   SoxrDecoder::SoxrDecoder(alure::String file_path, alure::Context context, size_t frequency)
   {
     m_buffer = m_helper.GetAudio(context.createDecoder(file_path), frequency);
